@@ -32,6 +32,8 @@ srun -p ${PARTITION} \
     --kill-on-bad-exit=1 \
     --quotatype=${QUOTA_TYPE} \
     --async \
+    --output="logs/${PROJECT_NAME}.out" \
+    --error="logs/${PROJECT_NAME}.err" \
     ${SRUN_ARGS} \
     python -u main.py \
     --model ${MODEL} \
