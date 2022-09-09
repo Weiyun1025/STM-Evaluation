@@ -195,13 +195,10 @@ class SwinTransformerBlock(nn.Module):
     """
 
     def __init__(self, dim, input_resolution, num_heads, window_size=7, shift_size=0,
-                 mlp_ratio=4., qkv_bias=True, qk_scale=None, drop=0., attn_drop=0., drop_path_rate=0.,
+                 mlp_ratio=4., qkv_bias=True, qk_scale=None, drop=0., attn_drop=0., drop_path=0.,
                  act_layer=nn.GELU, norm_layer=nn.LayerNorm,
-                 layer_scale_init_value=None,
                  fused_window_process=False):
         super().__init__()
-        drop_path = drop_path_rate
-
         self.dim = dim
         self.input_resolution = input_resolution
         self.num_heads = num_heads
