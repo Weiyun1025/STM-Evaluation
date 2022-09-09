@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# training script for ConvNeXt-Tiny. CONVNEXT-T-1K-PT-224-BS4096
+# poolformer_[ s12 | s24 | s36 | m36 | m48 ]
 
 set -x
 mkdir logs
 
 PARTITION=VC
 MODEL="convnext_tiny"
-DESC="pt_224_bs409"  # shimin: better describe the experiment setting briefly here. 
+DESC="pt_224_bs4096" 
 
-JOB_NAME="conv_t_pt1k"
+JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_${DESC}"
 
 GPUS=${GPUS:-8}
 GPUS_PER_NODE=${GPUS_PER_NODE:-8}
-QUOTA_TYPE="spot"
+QUOTA_TYPE="auto"
 
 CPUS_PER_TASK=${CPUS_PER_TASK:-12}
 SRUN_ARGS=${SRUN_ARGS:-""}
@@ -27,6 +27,9 @@ srun -p ${PARTITION} \
     --cpus-per-task=${CPUS_PER_TASK} \
     --kill-on-bad-exit=1 \
     --quotatype=${QUOTA_TYPE} \
+    --async \
+    --output="logs/${PROJECT_NAME}.out" \
+    --error="logs/${PROJECT_NAME}.err" \
     ${SRUN_ARGS} \
     python -u main.py \
     --model ${MODEL} \
@@ -34,8 +37,8 @@ srun -p ${PARTITION} \
     --batch_size 512 \
     --warmup_epochs 20 \
     --lr 4e-3\
-    --warmup_init_lr 0\
-    --min_lr 1e-6\
+    --warmup_init_lr 0 \
+    --min_lr 1e-6 \
     --opt adamw \
     --drop_path 0.1 \
     --weight_decay 0.05 \
@@ -50,6 +53,7 @@ srun -p ${PARTITION} \
     --mixup_prob 1.0 \
     --mixup_switch_prob 0.5 \
     --aa rand-m9-mstd0.5-inc1 \
+    --repeated_aug false \
     --reprob 0.25 \
     --color_jitter 0.4 \
     --crop_pct 0.875 \
@@ -58,9 +62,6 @@ srun -p ${PARTITION} \
     --nb_classes 1000 \
     --use_amp false \
     --save_ckpt true \
-    --output_dir "backbone_outputdir/${PROJECT_NAME}" \
-    --async \
-    -o logs/"${PROJECT_NAME}.out" \
-    -e logs/"${PROJECT_NAME}.err"
+    --output_dir "backbone_outputdir/${PROJECT_NAME}"
 
 # sh train.sh

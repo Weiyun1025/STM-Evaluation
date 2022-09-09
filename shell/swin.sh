@@ -6,14 +6,14 @@ mkdir logs
 
 PARTITION=VC
 MODEL="swin_tiny"
-DESC="unified" 
+DESC="pt_224_bs1024" 
 
 JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_${DESC}"
 
 GPUS=${GPUS:-8}
 GPUS_PER_NODE=${GPUS_PER_NODE:-8}
-QUOTA_TYPE="spot"
+QUOTA_TYPE="auto"
 
 CPUS_PER_TASK=${CPUS_PER_TASK:-12}
 SRUN_ARGS=${SRUN_ARGS:-""}
@@ -54,6 +54,7 @@ srun -p ${PARTITION} \
     --mixup_prob 1.0 \
     --mixup_switch_prob 0.5 \
     --aa rand-m9-mstd0.5-inc1 \
+    --repeated_aug false \
     --reprob 0.25 \
     --color_jitter 0.4 \
     --crop_pct 0.875 \
