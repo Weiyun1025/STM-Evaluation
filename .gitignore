@@ -1,0 +1,7 @@
+.*
+__pycache__
+
+object_detection
+semantic_segmentation
+
+!.gitignore
