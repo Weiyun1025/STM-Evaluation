@@ -6,7 +6,8 @@ logs/*
 object_detection
 semantic_segmentation
 
-# shimin add
+# shimin add, omitting training outputs
 outputs/*
+backbone_outputdir/*
 
 !.gitignore

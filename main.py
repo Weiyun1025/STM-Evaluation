@@ -17,7 +17,6 @@ import torch
 import numpy as np
 from torch.backends import cudnn
 
-
 from timm.data.mixup import Mixup
 from timm.models import create_model
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
@@ -27,6 +26,7 @@ from optim_factory import create_optimizer, LayerDecayValueAssigner
 from datasets import build_dataset
 from engine import train_one_epoch, evaluate
 
+from samplers import RASampler
 from utils import NativeScalerWithGradNormCount as NativeScaler
 import utils
 
@@ -34,6 +34,7 @@ import utils
 import models.convnext
 import models.swin_transformer
 import models.poolformer
+
 
 
 def str2bool(v):
@@ -113,6 +114,7 @@ def get_args_parser():
                         help='Label smoothing (default: 0.1)')
     parser.add_argument('--train_interpolation', type=str, default='bicubic',
                         help='Training interpolation (random, bilinear, bicubic default: "bicubic")')
+    parser.add_argument('--repeated_aug', action='store_true', help="Use repeated augmentation.")
 
     # Evaluation parameters
     parser.add_argument('--crop_pct', type=float, default=None)
@@ -232,9 +234,15 @@ def main(args):
     num_tasks = utils.get_world_size()
     global_rank = utils.get_rank()
 
-    sampler_train = torch.utils.data.DistributedSampler(
-        dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True, seed=args.seed,
-    )
+    if not args.repeated_aug: 
+        sampler_train = torch.utils.data.DistributedSampler(
+            dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True, seed=args.seed,
+        )
+    else:
+        sampler_train = RASampler(
+                dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True
+            )
+
     print("Sampler_train = %s" % str(sampler_train))
     if args.dist_eval:
         if len(dataset_val) % num_tasks != 0:
