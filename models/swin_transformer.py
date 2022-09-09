@@ -581,7 +581,12 @@ class SwinTransformer(nn.Module):
 
     @torch.jit.ignore
     def no_weight_decay(self):
-        return {'absolute_pos_embed'}
+        no_weight_decay = {'absolute_pos_embed'}
+        for name, _ in self.named_parameters():
+            if 'relative_position_bias_table' in name:
+                no_weight_decay.add(name)
+
+        return no_weight_decay
 
     @torch.jit.ignore
     def no_weight_decay_keywords(self):
