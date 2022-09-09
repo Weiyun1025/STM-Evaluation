@@ -7,6 +7,7 @@
 
 
 import os
+import sys
 import math
 import time
 import datetime
@@ -495,7 +496,7 @@ def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, mode
                 latest_ckpt = max(int(t), latest_ckpt)
         if latest_ckpt >= 0:
             args.resume = os.path.join(output_dir, 'checkpoint-%d.pth' % latest_ckpt)
-        print("Auto resume checkpoint: %s" % args.resume)
+        print("Auto resume checkpoint: %s" % args.resume, file=sys.stderr)
 
     if args.resume:
         if args.resume.startswith('https'):
@@ -504,7 +505,7 @@ def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, mode
         else:
             checkpoint = torch.load(args.resume, map_location='cpu')
         model_without_ddp.load_state_dict(checkpoint['model'])
-        print("Resume checkpoint %s" % args.resume)
+        print("Resume checkpoint %s" % args.resume, file=sys.stderr)
         if 'optimizer' in checkpoint and 'epoch' in checkpoint:
             optimizer.load_state_dict(checkpoint['optimizer'])
             if not isinstance(checkpoint['epoch'], str):  # does not support resuming with 'best', 'best-ema'
@@ -518,4 +519,4 @@ def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, mode
                     model_ema.ema.load_state_dict(checkpoint['model'])
             if 'scaler' in checkpoint:
                 loss_scaler.load_state_dict(checkpoint['scaler'])
-            print("With optim & sched!")
+            print("With optim & sched!", file=sys.stderr)
