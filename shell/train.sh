@@ -62,6 +62,6 @@ srun -p ${PARTITION} \
     --use_amp true \
     --save_ckpt true \
     --output_dir backbone_outputdir/"${MODEL}_1k_${DATE}" \
-    1>logs/"${MODEL}_1k_${DATE}.out" 2>logs/"${MODEL}_1k_${DATE}.out"
+    1>logs/"${MODEL}_1k_${DATE}.out" 2>logs/"${MODEL}_1k_${DATE}.err"
 
 # sh train.sh
