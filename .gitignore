@@ -6,4 +6,7 @@ logs/*
 object_detection
 semantic_segmentation
 
+# shimin add
+outputs/*
+
 !.gitignore
