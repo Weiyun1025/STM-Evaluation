@@ -57,7 +57,7 @@ srun -p ${PARTITION} \
     --data_set IMNET1k \
     --data_path /mnt/cache/share/images/ \
     --nb_classes 1000 \
-    --use_amp true \
+    --use_amp false \
     --save_ckpt true \
     --output_dir "backbone_outputdir/${PROJECT_NAME}" \
     --async \
