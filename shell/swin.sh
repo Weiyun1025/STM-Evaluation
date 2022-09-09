@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# poolformer_[ s12 | s24 | s36 | m36 | m48 ]
+# swin_[ tiny | small | base | large ]
 
 set -x
 mkdir logs
 
 PARTITION=VC
-MODEL="poolformer_s12"
+MODEL="swin_tiny"
 DESC="unified" 
 
 JOB_NAME=${MODEL}
@@ -32,14 +32,14 @@ srun -p ${PARTITION} \
     python -u main.py \
     --model ${MODEL} \
     --epochs 300 \
-    --batch_size 512 \
-    --warmup_epochs 5 \
-    --lr 4e-3\
-    --warmup_init_lr 4e-6\
-    --min_lr 4e-6\
+    --batch_size 128 \
+    --warmup_epochs 20 \
+    --lr 1e-3\
+    --warmup_init_lr 1e-6\
+    --min_lr 1e-6\
     --opt adamw \
     --clip_grad 5.0 \
-    --drop_path 0.1 \
+    --drop_path 0.2 \
     --weight_decay 0.05 \
     --layer_scale_init_value 1e-5 \
     --smoothing 0.1 \
