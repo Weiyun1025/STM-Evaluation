@@ -2,8 +2,8 @@
 # convnext_[ tiny | small | base | large | xlarge ]
 # swin_[ tiny | small | base | large ]
 # poolformer_[ s12 | s24 | s36 | m36 | m48 ]
-# deit_[ s12 | s24 | s36 | m36 | m48 ]
-# resnet[ s12 | s24 | s36 | m36 | m48 ]
+# deit_[ tiny_patch16_224 | small_patch16_224 | base_patch16_224 ]
+# todo: resnet
 
 set -x
 
