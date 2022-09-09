@@ -11,8 +11,8 @@ DESC="unified"
 JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_${DESC}"
 
-GPUS=${GPUS:-2}
-GPUS_PER_NODE=${GPUS_PER_NODE:-2}
+GPUS=${GPUS:-8}
+GPUS_PER_NODE=${GPUS_PER_NODE:-8}
 QUOTA_TYPE="spot"
 
 CPUS_PER_TASK=${CPUS_PER_TASK:-12}
@@ -32,7 +32,7 @@ srun -p ${PARTITION} \
     python -u main.py \
     --model ${MODEL} \
     --epochs 300 \
-    --batch_size 512 \
+    --batch_size 128 \
     --warmup_epochs 20 \
     --lr 1e-3\
     --warmup_init_lr 1e-6\
