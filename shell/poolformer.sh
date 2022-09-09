@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
-# convnext_[ tiny | small | base | large | xlarge ]
-# swin_[ tiny | small | base | large ]
 # poolformer_[ s12 | s24 | s36 | m36 | m48 ]
-# deit_[ tiny_patch16_224 | small_patch16_224 | base_patch16_224 ]
-# todo: resnet, pvt
 
 set -x
+mkdir logs
 
 PARTITION=VC
 MODEL="poolformer_s12"
@@ -61,6 +58,7 @@ srun -p ${PARTITION} \
     --nb_classes 1000 \
     --use_amp true \
     --save_ckpt true \
-    --output_dir backbone_outputdir/"${MODEL}_1k_${DATE}"
+    --output_dir backbone_outputdir/"${MODEL}_1k_${DATE}" \
+    1>logs/"${MODEL}_1k_${DATE}.out" 2>logs/"${MODEL}_1k_${DATE}.out"
 
 # sh train.sh

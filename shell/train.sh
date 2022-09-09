@@ -6,12 +6,12 @@
 # todo: resnet, pvt
 
 set -x
+mkdir logs
 
 PARTITION=VC
 MODEL="swin_tiny"
 JOB_NAME=${MODEL}
 DATE=$(date +%Y%m%d-%H%M%S) 
-
 
 GPUS=${GPUS:-2}
 GPUS_PER_NODE=${GPUS_PER_NODE:-2}
@@ -61,6 +61,7 @@ srun -p ${PARTITION} \
     --nb_classes 1000 \
     --use_amp true \
     --save_ckpt true \
-    --output_dir backbone_outputdir/"${MODEL}_1k_${DATE}"
+    --output_dir backbone_outputdir/"${MODEL}_1k_${DATE}" \
+    1>logs/"${MODEL}_1k_${DATE}.out" 2>logs/"${MODEL}_1k_${DATE}.out"
 
 # sh train.sh

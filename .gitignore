@@ -2,6 +2,7 @@
 test*.py
 __pycache__
 
+logs/*
 object_detection
 semantic_segmentation
 
