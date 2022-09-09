@@ -31,6 +31,9 @@ srun -p ${PARTITION} \
     --cpus-per-task=${CPUS_PER_TASK} \
     --kill-on-bad-exit=1 \
     --quotatype=${QUOTA_TYPE} \
+    --async \
+    -o logs/"${PROJECT_NAME}.out" \
+    -e logs/"${PROJECT_NAME}.err"
     ${SRUN_ARGS} \
     python -u main.py \
     --model ${MODEL} \
@@ -63,9 +66,6 @@ srun -p ${PARTITION} \
     --nb_classes 1000 \
     --use_amp false \
     --save_ckpt true \
-    --output_dir "backbone_outputdir/${PROJECT_NAME}" \
-    --async \
-    -o logs/"${PROJECT_NAME}.out" \
-    -e logs/"${PROJECT_NAME}.err"
+    --output_dir "backbone_outputdir/${PROJECT_NAME}"
 
 # sh train.sh
