@@ -3,7 +3,7 @@
 # swin_[ tiny | small | base | large ]
 # poolformer_[ s12 | s24 | s36 | m36 | m48 ]
 # deit_[ tiny_patch16_224 | small_patch16_224 | base_patch16_224 ]
-# todo: resnet
+# todo: resnet, pvt
 
 set -x
 
@@ -20,8 +20,7 @@ QUOTA_TYPE="spot"
 CPUS_PER_TASK=${CPUS_PER_TASK:-12}
 SRUN_ARGS=${SRUN_ARGS:-""}
 
-# todo: stochastic depth, dropout
-# what's the meaning of weight_decay_end ?
+# todo: dropout
 srun -p ${PARTITION} \
     --job-name=${JOB_NAME} \
     --gres=gpu:${GPUS_PER_NODE} \
@@ -43,7 +42,6 @@ srun -p ${PARTITION} \
     --clip_grad 5.0 \
     --drop_path 0.1 \
     --weight_decay 0.05 \
-    --weight_decay_end 0.05 \
     --layer_scale_init_value 0 \
     --smoothing 0.1 \
     --model_ema true \
@@ -57,6 +55,7 @@ srun -p ${PARTITION} \
     --aa rand-m9-mstd0.5-inc1 \
     --reprob 0.25 \
     --color_jitter 0.4 \
+    --crop_pct 0.875 \
     --data_set IMNET1k \
     --data_path /mnt/cache/share/images/ \
     --nb_classes 1000 \
