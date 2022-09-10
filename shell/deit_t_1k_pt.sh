@@ -49,7 +49,7 @@ srun -p ${PARTITION} \
     --input_size 224 \
     --mixup 0.8 \
     --cutmix 1.0 \
-    --repeated_aug \
+    --repeated_aug true \
     --mixup_prob 1.0 \
     --mixup_switch_prob 0.5 \
     --aa rand-m9-mstd0.5-inc1 \
