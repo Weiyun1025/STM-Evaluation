@@ -9,5 +9,6 @@ semantic_segmentation
 # shimin add, omitting training outputs
 outputs/*
 backbone_outputdir/*
+batchscript-*
 
 !.gitignore

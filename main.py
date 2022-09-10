@@ -303,6 +303,13 @@ def main(args):
             num_classes=args.nb_classes,
             drop_path_rate=args.drop_path,
         )
+    elif 'resnet' in args.model:  # TODO: other elegant way to wrap this model creation part
+        model = create_model(
+            args.model,
+            pretrained=False,
+            num_classes=args.nb_classes,
+            drop_path_rate=args.drop_path,
+        )
     else:
         model = create_model(
             args.model,
