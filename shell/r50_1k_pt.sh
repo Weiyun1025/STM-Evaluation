@@ -3,7 +3,7 @@
 # NOTE:
 # for RSB-ResNet: bs=2048, lr=5e-3, weight_decay=0.02, opt=LAMB, droppath=0.05, test_crop_ratio=0.95, warm_up_epoch=5
 # however, we retain the data augmentation to be the same as swin and convnext
-# rand aug: m7 std0.5 -> m9 std0.5, mixup alpha: 0.1 -> 0.8
+# rand aug: modified to m7 std0.5, mixup alpha: 0.1 -> 0.8
 
 set -x
 mkdir logs
