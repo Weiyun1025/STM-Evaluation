@@ -13,7 +13,7 @@ PROJECT_NAME="${MODEL}_1k_${DESC}"
 
 GPUS=${GPUS:-4}
 GPUS_PER_NODE=${GPUS_PER_NODE:-4}
-QUOTA_TYPE="spot"
+QUOTA_TYPE="auto"
 
 CPUS_PER_TASK=${CPUS_PER_TASK:-12}
 SRUN_ARGS=${SRUN_ARGS:-""}
@@ -27,6 +27,9 @@ srun -p ${PARTITION} \
     --cpus-per-task=${CPUS_PER_TASK} \
     --kill-on-bad-exit=1 \
     --quotatype=${QUOTA_TYPE} \
+    --async \
+    --output="logs/${PROJECT_NAME}.out" \
+    --error="logs/${PROJECT_NAME}.err" \
     ${SRUN_ARGS} \
     python -u main.py \
     --model ${MODEL} \
@@ -58,9 +61,6 @@ srun -p ${PARTITION} \
     --nb_classes 1000 \
     --use_amp false \
     --save_ckpt true \
-    --output_dir "backbone_outputdir/${PROJECT_NAME}" \
-    --async \
-    -o logs/"${PROJECT_NAME}.out" \
-    -e logs/"${PROJECT_NAME}.err"
+    --output_dir "backbone_outputdir/${PROJECT_NAME}"
 
 # sh train.sh
