@@ -75,7 +75,7 @@ class ConvNeXt(nn.Module):
                  drop_path_rate=0.,
                  layer_scale_init_value=1e-6,
                  head_init_scale=1.,
-                 pretrained_cfg=None,
+                 **kwargs,
                  ):
         super().__init__()
 

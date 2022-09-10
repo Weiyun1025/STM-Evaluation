@@ -34,6 +34,8 @@ import utils
 import models.convnext
 import models.swin_transformer
 import models.poolformer
+import models.pvt
+import models.pvt_v2
 
 
 def str2bool(v):
