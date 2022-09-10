@@ -294,14 +294,22 @@ def main(args):
             label_smoothing=args.smoothing, num_classes=args.nb_classes)
 
     # TODO: dropout, head_init_scale
-    model = create_model(
-        args.model,
-        pretrained=False,
-        num_classes=args.nb_classes,
-        drop_path_rate=args.drop_path,
-        layer_scale_init_value=args.layer_scale_init_value,
-        # head_init_scale=args.head_init_scale,
-    )
+    if 'deit' in args.model:
+        model = create_model(
+            args.model,
+            pretrained=False,
+            num_classes=args.nb_classes,
+            drop_path_rate=args.drop_path,
+        )
+    else:
+        model = create_model(
+            args.model,
+            pretrained=False,
+            num_classes=args.nb_classes,
+            drop_path_rate=args.drop_path,
+            layer_scale_init_value=args.layer_scale_init_value,
+            # head_init_scale=args.head_init_scale,
+        )
 
     if args.finetune:
         if args.finetune.startswith('https'):
