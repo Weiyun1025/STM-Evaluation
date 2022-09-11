@@ -36,9 +36,9 @@ srun -p ${PARTITION} \
     --epochs 300 \
     --batch_size 256 \
     --warmup_epochs 5 \
-    --lr 1e-3\
-    --warmup_init_lr 1e-6\
-    --min_lr 1e-3\
+    --lr 1e-3 \
+    --warmup_init_lr 1e-6 \
+    --min_lr 1e-5 \
     --opt adamw \
     --drop_path 0.1 \
     --weight_decay 0.05 \
