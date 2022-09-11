@@ -8,7 +8,7 @@ PARTITION=VC
 MODEL="deit_tiny_patch16_224"
 DESC="pt_bs1024"  # shimin: better describe the experiment setting briefly here. 
 
-JOB_NAME="deit_t_pt1k"
+JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_${DESC}"
 
 GPUS=${GPUS:-4}
