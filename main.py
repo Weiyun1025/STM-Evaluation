@@ -31,11 +31,7 @@ from utils import NativeScalerWithGradNormCount as NativeScaler
 import utils
 
 # timm register while not used
-import models.convnext
-import models.swin_transformer
-import models.poolformer
-import models.pvt
-import models.pvt_v2
+import models
 
 
 def str2bool(v):
@@ -414,7 +410,7 @@ def main(args):
         print(f"Eval only mode")
         test_stats = evaluate(data_loader_val, model, device, use_amp=args.use_amp)
         print(f"Accuracy of the network on {len(dataset_val)} test images: {test_stats['acc1']:.5f}%")
-        return
+        return test_stats['acc1']
 
     max_accuracy = 0.0
     if args.model_ema and args.model_ema_eval:
@@ -504,7 +500,7 @@ def main(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser('ConvNeXt training and evaluation script', parents=[get_args_parser()])
+    parser = argparse.ArgumentParser('training and evaluation script', parents=[get_args_parser()])
     args = parser.parse_args()
     if args.output_dir:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
