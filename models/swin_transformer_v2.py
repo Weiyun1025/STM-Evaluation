@@ -13,6 +13,7 @@ from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 from timm.models.registry import register_model
 import numpy as np
 
+
 class Mlp(nn.Module):
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
         super().__init__()
@@ -150,7 +151,7 @@ class WindowAttention(nn.Module):
 
         # cosine attention
         attn = (F.normalize(q, dim=-1) @ F.normalize(k, dim=-1).transpose(-2, -1))
-        logit_scale = torch.clamp(self.logit_scale, max=torch.log(torch.tensor(1. / 0.01))).exp()
+        logit_scale = torch.clamp(self.logit_scale, max=torch.log(torch.tensor(1. / 0.01, device=self.logit_scale.device))).exp()
         attn = attn * logit_scale
 
         relative_position_bias_table = self.cpb_mlp(self.relative_coords_table).view(-1, self.num_heads)
@@ -264,14 +265,14 @@ class SwinTransformerBlock(nn.Module):
 
         self.register_buffer("attn_mask", attn_mask)
 
-        ### ----- layerscale -----
+        # ----- layerscale -----
         if layerscale_opt:
             self.gamma_1 = nn.Parameter(layerscale_init_values * torch.ones((1, 1, dim)), requires_grad=True)
             self.gamma_2 = nn.Parameter(layerscale_init_values * torch.ones((1, 1, dim)), requires_grad=True)
         else:
             self.gamma_1, self.gamma_2 = None, None
 
-        ### ----- final norm -----
+        # ----- final norm -----
         if final_norm:
             self.final_norm = nn.LayerNorm(normalized_shape=dim)
         else:
@@ -325,7 +326,7 @@ class SwinTransformerBlock(nn.Module):
         else:
             x = shortcut + self.drop_path(x)
 
-        ### ----- final norm -----
+        # ----- final norm -----
         if self.final_norm is not None:
             x = self.final_norm(x)
 
@@ -666,19 +667,19 @@ class SwinTransformerV2(nn.Module):
 
     @torch.jit.ignore
     def lr_decay_keywards(self, decay_ratio=0.87):
-        lr_ratios = {} 
+        lr_ratios = {}
         total_blocks = sum(self.depths)
         # blocks
         idx = 0
         for i in range(4):
-            layer_num = 3 - i  #  3 2 1 0
+            layer_num = 3 - i  # 3 2 1 0
             for j in range(self.depths[layer_num]):
-                block_num = self.depths[layer_num] - j - 1 
+                block_num = self.depths[layer_num] - j - 1
                 tag = 'layers.{}.blocks.{}.'.format(layer_num, block_num)
-                decay = 1.0 * (decay_ratio ** idx) 
+                decay = 1.0 * (decay_ratio ** idx)
                 lr_ratios[tag] = decay
                 idx += 1
-        
+
         # patch_embed (before stage-1)
         lr_ratios["patch_embed"] = lr_ratios['layers.0.blocks.0.']
         # layers.0.downsample (between stage-1 and stage-2)
@@ -688,8 +689,8 @@ class SwinTransformerV2(nn.Module):
         # layers.2.downsample (between stage-3 and stage-4)
         lr_ratios["layers.2.downsample"] = lr_ratios['layers.3.blocks.0.']
 
-        for k,v in lr_ratios.items():
-            print(k,v)
+        for k, v in lr_ratios.items():
+            print(k, v)
 
         return lr_ratios
 
@@ -741,6 +742,7 @@ def swinv2_tiny(pretrained=False, layerscale_opt=False, layerscale_init_values=1
 
     return model
 
+
 @register_model
 def swinv2_small(pretrained=False, layerscale_opt=False, layerscale_init_values=1e-6, **kwargs):
     embed_dim = 96
@@ -749,12 +751,12 @@ def swinv2_small(pretrained=False, layerscale_opt=False, layerscale_init_values=
     window_size = 7
 
     model = SwinTransformerV2(embed_dim=embed_dim,
-                            depths=depths,
-                            num_heads=num_heads,
-                            window_size=window_size,
-                            layerscale_opt=layerscale_opt,
-                            layerscale_init_values=layerscale_init_values,
-                            **kwargs)
+                              depths=depths,
+                              num_heads=num_heads,
+                              window_size=window_size,
+                              layerscale_opt=layerscale_opt,
+                              layerscale_init_values=layerscale_init_values,
+                              **kwargs)
     if pretrained:
         raise NotImplementedError()
 
