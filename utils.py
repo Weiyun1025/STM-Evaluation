@@ -320,7 +320,8 @@ def init_distributed_mode(args):
         args.world_size = world_size
 
         if "MASTER_PORT" not in os.environ:
-            os.environ["MASTER_PORT"] = "22110"
+            port = 22110 + int(time.time())
+            os.environ["MASTER_PORT"] = str(port)
         node_list = os.environ["SLURM_NODELIST"]
         addr = subprocess.getoutput(f"scontrol show hostname {node_list} | head -n1")
         if "MASTER_ADDR" not in os.environ:
