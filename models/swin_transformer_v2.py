@@ -721,6 +721,7 @@ class SwinTransformerV2(nn.Module):
         flops += self.num_features * self.num_classes
         return flops
 
+
 @register_model
 def swinv2_tiny(pretrained=False, layerscale_opt=False, layerscale_init_values=1e-6, **kwargs):
     embed_dim = 96
@@ -740,3 +741,61 @@ def swinv2_tiny(pretrained=False, layerscale_opt=False, layerscale_init_values=1
 
     return model
 
+@register_model
+def swinv2_small(pretrained=False, layerscale_opt=False, layerscale_init_values=1e-6, **kwargs):
+    embed_dim = 96
+    depths = [2, 2, 18, 2]
+    num_heads = [3, 6, 12, 24]
+    window_size = 7
+
+    model = SwinTransformerV2(embed_dim=embed_dim,
+                            depths=depths,
+                            num_heads=num_heads,
+                            window_size=window_size,
+                            layerscale_opt=layerscale_opt,
+                            layerscale_init_values=layerscale_init_values,
+                            **kwargs)
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@register_model
+def swinv2_base(pretrained=False, layerscale_opt=False, layerscale_init_values=1e-6, **kwargs):
+    embed_dim = 128
+    depths = [2, 2, 18, 2]
+    num_heads = [4, 8, 16, 32]
+    window_size = 7
+
+    model = SwinTransformerV2(embed_dim=embed_dim,
+                              depths=depths,
+                              num_heads=num_heads,
+                              window_size=window_size,
+                              layerscale_opt=layerscale_opt,
+                              layerscale_init_values=layerscale_init_values,
+                              **kwargs)
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@register_model
+def swinv2_large(pretrained=False, layerscale_opt=False, layerscale_init_values=1e-6, **kwargs):
+    embed_dim = 192
+    depths = [2, 2, 18, 2]
+    num_heads = [6, 12, 24, 48]
+    window_size = 7
+
+    model = SwinTransformerV2(embed_dim=embed_dim,
+                              depths=depths,
+                              num_heads=num_heads,
+                              window_size=window_size,
+                              layerscale_opt=layerscale_opt,
+                              layerscale_init_values=layerscale_init_values,
+                              **kwargs)
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
