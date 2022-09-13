@@ -16,7 +16,8 @@ import torch
 from torch import nn as nn
 
 from timm.data import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
-from timm.models.vision_transformer import VisionTransformer, trunc_normal_, checkpoint_filter_fn
+from .vit import VisionTransformer
+from timm.models.vision_transformer import trunc_normal_, checkpoint_filter_fn
 
 from timm.models.helpers import build_model_with_cfg, checkpoint_seq
 from timm.models.registry import register_model

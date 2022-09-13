@@ -294,24 +294,15 @@ def main(args):
             label_smoothing=args.smoothing, num_classes=args.nb_classes)
 
     # TODO: dropout, head_init_scale
-    # TODO: other elegant way to wrap this model creation part
-    if 'deit' in args.model or 'resnet' in args.model:
-        model = create_model(
-            args.model,
-            pretrained=False,
-            num_classes=args.nb_classes,
-            drop_path_rate=args.drop_path,
-        )
-    else:
-        model = create_model(
-            args.model,
-            pretrained=False,
-            num_classes=args.nb_classes,
-            drop_path_rate=args.drop_path,
-            layerscale_opt=args.layerscale_opt, 
-            layerscale_init_values=args.layerscale_init_values,
-            # head_init_scale=args.head_init_scale,
-        )
+    model = create_model(
+        args.model,
+        pretrained=False,
+        num_classes=args.nb_classes,
+        drop_path_rate=args.drop_path,
+        layerscale_opt=args.layerscale_opt,
+        layerscale_init_values=args.layerscale_init_values,
+        # head_init_scale=args.head_init_scale,
+    )
 
     if args.finetune:
         if args.finetune.startswith('https'):
