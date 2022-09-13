@@ -129,7 +129,7 @@ class Attention(nn.Module):
 class Block(nn.Module):
 
     def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop=0., attn_drop=0.,
-                 drop_path=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm, sr_ratio=1, linear=False):
+                 drop_path=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm, sr_ratio=1, linear=False, layerscale_opt=False, layerscale_init_values=1e-6,):
         super().__init__()
         self.norm1 = norm_layer(dim)
         self.attn = Attention(
@@ -143,6 +143,14 @@ class Block(nn.Module):
         self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop, linear=linear)
 
         self.apply(self._init_weights)
+
+        ### ----- layerscale -----
+        if layerscale_opt:
+            self.gamma_1 = nn.Parameter(layerscale_init_values * torch.ones((1, 1, dim)), requires_grad=True)
+            self.gamma_2 = nn.Parameter(layerscale_init_values * torch.ones((1, 1, dim)), requires_grad=True)
+        else:
+            self.gamma_1, self.gamma_2 = None, None
+
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
@@ -160,8 +168,23 @@ class Block(nn.Module):
                 m.bias.data.zero_()
 
     def forward(self, x, H, W):
-        x = x + self.drop_path(self.attn(self.norm1(x), H, W))
-        x = x + self.drop_path(self.mlp(self.norm2(x), H, W))
+
+        #x = x + self.drop_path(self.attn(self.norm1(x), H, W))
+        #x = x + self.drop_path(self.mlp(self.norm2(x), H, W))
+        shortcut = x
+        x = self.attn(self.norm1(x), H, W)
+
+        if self.gamma_1 is not None:
+            x = shortcut + self.drop_path(x * self.gamma_1)
+        else:
+            x = shortcut + self.drop_path(x)
+        
+        shortcut = x
+        x = self.mlp(self.norm2(x))
+        if self.gamma_2 is not None:
+            x = shortcut + self.drop_path(x * self.gamma_2)
+        else:
+            x = shortcut + self.drop_path(x)
 
         return x
 
@@ -216,7 +239,7 @@ class PyramidVisionTransformerV2(nn.Module):
     def __init__(self, img_size=224, patch_size=16, in_chans=3, num_classes=1000, embed_dims=[64, 128, 256, 512],
                  num_heads=[1, 2, 4, 8], mlp_ratios=[4, 4, 4, 4], qkv_bias=False, qk_scale=None, drop_rate=0.,
                  attn_drop_rate=0., drop_path_rate=0., norm_layer=nn.LayerNorm,
-                 depths=[3, 4, 6, 3], sr_ratios=[8, 4, 2, 1], num_stages=4, linear=False, **kwargs):
+                 depths=[3, 4, 6, 3], sr_ratios=[8, 4, 2, 1], num_stages=4, linear=False, layerscale_opt=False, layerscale_init_values=1e-6, **kwargs):
         super().__init__()
         self.num_classes = num_classes
         self.depths = depths
@@ -235,7 +258,7 @@ class PyramidVisionTransformerV2(nn.Module):
             block = nn.ModuleList([Block(
                 dim=embed_dims[i], num_heads=num_heads[i], mlp_ratio=mlp_ratios[i], qkv_bias=qkv_bias, qk_scale=qk_scale,
                 drop=drop_rate, attn_drop=attn_drop_rate, drop_path=dpr[cur + j], norm_layer=norm_layer,
-                sr_ratio=sr_ratios[i], linear=linear)
+                sr_ratio=sr_ratios[i], linear=linear, layerscale_opt=layerscale_opt, layerscale_init_values=layerscale_init_values)
                 for j in range(depths[i])])
             norm = norm_layer(embed_dims[i])
             cur += depths[i]
@@ -327,10 +350,10 @@ def _conv_filter(state_dict, patch_size=16):
 
 
 @register_model
-def pvt_v2_b0(pretrained=False, **kwargs):
+def pvt_v2_b0(pretrained=False, layerscale_opt=False, layerscale_init_values=1e-6, **kwargs):
     model = PyramidVisionTransformerV2(
         patch_size=4, embed_dims=[32, 64, 160, 256], num_heads=[1, 2, 5, 8], mlp_ratios=[8, 8, 4, 4], qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[2, 2, 2, 2], sr_ratios=[8, 4, 2, 1],
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[2, 2, 2, 2], sr_ratios=[8, 4, 2, 1], layerscale_opt=layerscale_opt, layerscale_init_values=layerscale_init_values,
         **kwargs)
     model.default_cfg = _cfg()
 
@@ -338,10 +361,10 @@ def pvt_v2_b0(pretrained=False, **kwargs):
 
 
 @register_model
-def pvt_v2_b1(pretrained=False, **kwargs):
+def pvt_v2_b1(pretrained=False, layerscale_opt=False, layerscale_init_values=1e-6, **kwargs):
     model = PyramidVisionTransformerV2(
         patch_size=4, embed_dims=[64, 128, 320, 512], num_heads=[1, 2, 5, 8], mlp_ratios=[8, 8, 4, 4], qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[2, 2, 2, 2], sr_ratios=[8, 4, 2, 1],
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[2, 2, 2, 2], sr_ratios=[8, 4, 2, 1], layerscale_opt=layerscale_opt, layerscale_init_values=layerscale_init_values,
         **kwargs)
     model.default_cfg = _cfg()
 
@@ -349,20 +372,20 @@ def pvt_v2_b1(pretrained=False, **kwargs):
 
 
 @register_model
-def pvt_v2_b2(pretrained=False, **kwargs):
+def pvt_v2_b2(pretrained=False, layerscale_opt=False, layerscale_init_values=1e-6, **kwargs):
     model = PyramidVisionTransformerV2(
         patch_size=4, embed_dims=[64, 128, 320, 512], num_heads=[1, 2, 5, 8], mlp_ratios=[8, 8, 4, 4], qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 4, 6, 3], sr_ratios=[8, 4, 2, 1], **kwargs)
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 4, 6, 3], sr_ratios=[8, 4, 2, 1], layerscale_opt=layerscale_opt, layerscale_init_values=layerscale_init_values, **kwargs)
     model.default_cfg = _cfg()
 
     return model
 
 
 @register_model
-def pvt_v2_b3(pretrained=False, **kwargs):
+def pvt_v2_b3(pretrained=False, layerscale_opt=False, layerscale_init_values=1e-6, **kwargs):
     model = PyramidVisionTransformerV2(
         patch_size=4, embed_dims=[64, 128, 320, 512], num_heads=[1, 2, 5, 8], mlp_ratios=[8, 8, 4, 4], qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 4, 18, 3], sr_ratios=[8, 4, 2, 1],
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 4, 18, 3], sr_ratios=[8, 4, 2, 1], layerscale_opt=layerscale_opt, layerscale_init_values=layerscale_init_values,
         **kwargs)
     model.default_cfg = _cfg()
 
@@ -370,10 +393,10 @@ def pvt_v2_b3(pretrained=False, **kwargs):
 
 
 @register_model
-def pvt_v2_b4(pretrained=False, **kwargs):
+def pvt_v2_b4(pretrained=False, layerscale_opt=False, layerscale_init_values=1e-6, **kwargs):
     model = PyramidVisionTransformerV2(
         patch_size=4, embed_dims=[64, 128, 320, 512], num_heads=[1, 2, 5, 8], mlp_ratios=[8, 8, 4, 4], qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 8, 27, 3], sr_ratios=[8, 4, 2, 1],
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 8, 27, 3], sr_ratios=[8, 4, 2, 1], layerscale_opt=layerscale_opt, layerscale_init_values=layerscale_init_values,
         **kwargs)
     model.default_cfg = _cfg()
 
@@ -381,10 +404,10 @@ def pvt_v2_b4(pretrained=False, **kwargs):
 
 
 @register_model
-def pvt_v2_b5(pretrained=False, **kwargs):
+def pvt_v2_b5(pretrained=False, layerscale_opt=False, layerscale_init_values=1e-6, **kwargs):
     model = PyramidVisionTransformerV2(
         patch_size=4, embed_dims=[64, 128, 320, 512], num_heads=[1, 2, 5, 8], mlp_ratios=[4, 4, 4, 4], qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 6, 40, 3], sr_ratios=[8, 4, 2, 1],
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 6, 40, 3], sr_ratios=[8, 4, 2, 1], layerscale_opt=layerscale_opt, layerscale_init_values=layerscale_init_values,
         **kwargs)
     model.default_cfg = _cfg()
 
@@ -392,10 +415,11 @@ def pvt_v2_b5(pretrained=False, **kwargs):
 
 
 @register_model
-def pvt_v2_b2_li(pretrained=False, **kwargs):
+def pvt_v2_b2_li(pretrained=False, layerscale_opt=False, layerscale_init_values=1e-6, **kwargs):
     model = PyramidVisionTransformerV2(
         patch_size=4, embed_dims=[64, 128, 320, 512], num_heads=[1, 2, 5, 8], mlp_ratios=[8, 8, 4, 4], qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 4, 6, 3], sr_ratios=[8, 4, 2, 1], linear=True, **kwargs)
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 4, 6, 3], sr_ratios=[8, 4, 2, 1], linear=True, layerscale_opt=layerscale_opt, layerscale_init_values=layerscale_init_values,
+        **kwargs)
     model.default_cfg = _cfg()
 
     return model

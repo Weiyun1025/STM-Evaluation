@@ -6,14 +6,14 @@ mkdir logs
 
 PARTITION=VC
 MODEL="pvt_tiny"
-DESC="pt_224_bs1024" 
+DESC="1k_pt_224_bs1024_configv3" 
 
 JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_${DESC}"
 
 GPUS=${GPUS:-4}
 GPUS_PER_NODE=${GPUS_PER_NODE:-4}
-QUOTA_TYPE="auto"
+QUOTA_TYPE="spot"
 
 CPUS_PER_TASK=${CPUS_PER_TASK:-12}
 SRUN_ARGS=${SRUN_ARGS:-""}
@@ -41,6 +41,7 @@ srun -p ${PARTITION} \
     --min_lr 1e-5 \
     --opt adamw \
     --drop_path 0.1 \
+    --clip_grad 5.0 \
     --weight_decay 0.05 \
     --layerscale_opt True \
     --layerscale_init_values 1e-6 \
@@ -65,4 +66,4 @@ srun -p ${PARTITION} \
     --save_ckpt true \
     --output_dir "backbone_outputdir/${PROJECT_NAME}"
 
-# sh train.sh
+# sh shell/pvt_t_1k_pt_v3config.sh
