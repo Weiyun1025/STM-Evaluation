@@ -337,7 +337,8 @@ class BasicBlock(nn.Module):
     def __init__(
             self, inplanes, planes, stride=1, downsample=None, cardinality=1, base_width=64,
             reduce_first=1, dilation=1, first_dilation=None, act_layer=nn.ReLU, norm_layer=nn.BatchNorm2d,
-            attn_layer=None, aa_layer=None, drop_block=None, drop_path=None):
+            attn_layer=None, aa_layer=None, drop_block=None, drop_path=None,
+            layerscale_opt=False, layerscale_init_values=1e-6):
         super(BasicBlock, self).__init__()
 
         assert cardinality == 1, 'BasicBlock only supports cardinality of 1'
@@ -367,6 +368,12 @@ class BasicBlock(nn.Module):
         self.dilation = dilation
         self.drop_path = drop_path
 
+        # ----- layerscale -----
+        if layerscale_opt:
+            self.gamma = nn.Parameter(layerscale_init_values * torch.ones((1, 1, outplanes)), requires_grad=True)
+        else:
+            self.gamma = None
+
     def zero_init_last(self):
         nn.init.zeros_(self.bn2.weight)
 
@@ -384,6 +391,9 @@ class BasicBlock(nn.Module):
 
         if self.se is not None:
             x = self.se(x)
+
+        if self.gamma is not None:
+            x = self.gamma * x
 
         if self.drop_path is not None:
             x = self.drop_path(x)
