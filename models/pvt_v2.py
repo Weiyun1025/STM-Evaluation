@@ -144,13 +144,12 @@ class Block(nn.Module):
 
         self.apply(self._init_weights)
 
-        ### ----- layerscale -----
+        # ----- layerscale -----
         if layerscale_opt:
             self.gamma_1 = nn.Parameter(layerscale_init_values * torch.ones((1, 1, dim)), requires_grad=True)
             self.gamma_2 = nn.Parameter(layerscale_init_values * torch.ones((1, 1, dim)), requires_grad=True)
         else:
             self.gamma_1, self.gamma_2 = None, None
-
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
@@ -178,9 +177,9 @@ class Block(nn.Module):
             x = shortcut + self.drop_path(x * self.gamma_1)
         else:
             x = shortcut + self.drop_path(x)
-        
+
         shortcut = x
-        x = self.mlp(self.norm2(x))
+        x = self.mlp(self.norm2(x), H, W)
         if self.gamma_2 is not None:
             x = shortcut + self.drop_path(x * self.gamma_2)
         else:
