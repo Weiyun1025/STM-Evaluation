@@ -87,7 +87,7 @@ def get_args_parser():
     parser.add_argument('--weight_decay_end', type=float, default=None, help="""Final value of the
         weight decay. We use a cosine schedule for WD and using a larger decay by
         the end of training improves performance for ViTs.""")
-    parser.add_argument('--layerscale_opt', type=bool, default=False,
+    parser.add_argument('--layerscale_opt', type=str2bool, default=False,
                         help='whether to use layer scale')
     parser.add_argument('--layerscale_init_values', type=float, default=1e-6,
                         help='the initial value for layer scale, default=1e-6')

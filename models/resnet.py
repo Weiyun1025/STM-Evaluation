@@ -370,7 +370,7 @@ class BasicBlock(nn.Module):
 
         # ----- layerscale -----
         if layerscale_opt:
-            self.gamma = nn.Parameter(layerscale_init_values * torch.ones((1, 1, outplanes)), requires_grad=True)
+            self.gamma = nn.Parameter(layerscale_init_values * torch.ones((1, outplanes, 1, 1)), requires_grad=True)
         else:
             self.gamma = None
 
@@ -412,7 +412,8 @@ class Bottleneck(nn.Module):
     def __init__(
             self, inplanes, planes, stride=1, downsample=None, cardinality=1, base_width=64,
             reduce_first=1, dilation=1, first_dilation=None, act_layer=nn.ReLU, norm_layer=nn.BatchNorm2d,
-            attn_layer=None, aa_layer=None, drop_block=None, drop_path=None):
+            attn_layer=None, aa_layer=None, drop_block=None, drop_path=None,
+            layerscale_opt=False, layerscale_init_values=1e-6):
         super(Bottleneck, self).__init__()
 
         width = int(math.floor(planes * (base_width / 64)) * cardinality)
@@ -444,6 +445,12 @@ class Bottleneck(nn.Module):
         self.dilation = dilation
         self.drop_path = drop_path
 
+        # ----- layerscale -----
+        if layerscale_opt:
+            self.gamma = nn.Parameter(layerscale_init_values * torch.ones((1, outplanes, 1, 1)), requires_grad=True)
+        else:
+            self.gamma = None
+
     def zero_init_last(self):
         nn.init.zeros_(self.bn3.weight)
 
@@ -465,6 +472,9 @@ class Bottleneck(nn.Module):
 
         if self.se is not None:
             x = self.se(x)
+
+        if self.gamma is not None:
+            x = self.gamma * x
 
         if self.drop_path is not None:
             x = self.drop_path(x)
@@ -620,7 +630,8 @@ class ResNet(nn.Module):
             self, block, layers, num_classes=1000, in_chans=3, output_stride=32, global_pool='avg',
             cardinality=1, base_width=64, stem_width=64, stem_type='', replace_stem_pool=False, block_reduce_first=1,
             down_kernel_size=1, avg_down=False, act_layer=nn.ReLU, norm_layer=nn.BatchNorm2d, aa_layer=None,
-            drop_rate=0.0, drop_path_rate=0., drop_block_rate=0., zero_init_last=True, block_args=None):
+            drop_rate=0.0, drop_path_rate=0., drop_block_rate=0., zero_init_last=True, block_args=None,
+            layerscale_opt=False, layerscale_init_values=1e-6):
         super(ResNet, self).__init__()
         block_args = block_args or dict()
         assert output_stride in (8, 16, 32)
@@ -674,7 +685,8 @@ class ResNet(nn.Module):
             block, channels, layers, inplanes, cardinality=cardinality, base_width=base_width,
             output_stride=output_stride, reduce_first=block_reduce_first, avg_down=avg_down,
             down_kernel_size=down_kernel_size, act_layer=act_layer, norm_layer=norm_layer, aa_layer=aa_layer,
-            drop_block_rate=drop_block_rate, drop_path_rate=drop_path_rate, **block_args)
+            drop_block_rate=drop_block_rate, drop_path_rate=drop_path_rate,
+            layerscale_opt=layerscale_opt, layerscale_init_values=layerscale_init_values, **block_args)
         for stage in stage_modules:
             self.add_module(*stage)  # layer1, layer2, etc
         self.feature_info.extend(stage_feature_info)
