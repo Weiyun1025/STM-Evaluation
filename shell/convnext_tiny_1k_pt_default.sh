@@ -42,6 +42,7 @@ srun -p ${PARTITION} \
     --opt adamw \
     --drop_path 0.1 \
     --weight_decay 0.05 \
+    --layerscale_opt true \
     --layer_scale_init_value 1e-6 \
     --smoothing 0.1 \
     --model_ema true \

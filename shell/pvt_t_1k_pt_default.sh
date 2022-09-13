@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# poolformer_[ s12 | s24 | s36 | m36 | m48 ]
+# pvt_[ tiny | small | medium | large | huge_v2 ]
 
 set -x
 mkdir logs
 
 PARTITION=VC
-MODEL="poolformer_s12"
-DESC="pt_224_bs4096" 
+MODEL="pvt_tiny"
+DESC="pt_224_bs1024_default" 
 
 JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_${DESC}"
 
-GPUS=${GPUS:-8}
-GPUS_PER_NODE=${GPUS_PER_NODE:-8}
-QUOTA_TYPE="auto"
+GPUS=${GPUS:-4}
+GPUS_PER_NODE=${GPUS_PER_NODE:-4}
+QUOTA_TYPE="reserved"
 
 CPUS_PER_TASK=${CPUS_PER_TASK:-12}
 SRUN_ARGS=${SRUN_ARGS:-""}
@@ -34,16 +34,16 @@ srun -p ${PARTITION} \
     python -u main.py \
     --model ${MODEL} \
     --epochs 300 \
-    --batch_size 512 \
+    --batch_size 256 \
     --warmup_epochs 5 \
-    --lr 4e-3\
-    --warmup_init_lr 4e-6\
-    --min_lr 4e-6\
+    --lr 1e-3\
+    --warmup_init_lr 1e-6 \
+    --min_lr 1e-5 \
     --opt adamw \
-    --clip_grad 5.0 \
     --drop_path 0.1 \
     --weight_decay 0.05 \
-    --layer_scale_init_value 1e-5 \
+    --layerscale_opt false \
+    --layerscale_init_values 1e-6 \
     --smoothing 0.1 \
     --model_ema true \
     --model_ema_decay 0.9999 \

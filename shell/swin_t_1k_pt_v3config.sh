@@ -6,7 +6,7 @@ mkdir logs
 
 PARTITION=VC
 MODEL="swin_tiny"
-DESC="pt_224_bs1024" 
+DESC="pt_224_bs1024_v3config" 
 
 JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_${DESC}"

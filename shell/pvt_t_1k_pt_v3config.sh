@@ -13,7 +13,7 @@ PROJECT_NAME="${MODEL}_1k_${DESC}"
 
 GPUS=${GPUS:-4}
 GPUS_PER_NODE=${GPUS_PER_NODE:-4}
-QUOTA_TYPE="spot"
+QUOTA_TYPE="reserved"
 
 CPUS_PER_TASK=${CPUS_PER_TASK:-12}
 SRUN_ARGS=${SRUN_ARGS:-""}
@@ -43,7 +43,7 @@ srun -p ${PARTITION} \
     --drop_path 0.1 \
     --clip_grad 5.0 \
     --weight_decay 0.05 \
-    --layerscale_opt True \
+    --layerscale_opt true \
     --layerscale_init_values 1e-6 \
     --smoothing 0.1 \
     --model_ema true \
