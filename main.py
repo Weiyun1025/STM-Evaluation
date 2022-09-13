@@ -68,8 +68,6 @@ def get_args_parser():
                         help='Drop path rate (default: 0.0)')
     parser.add_argument('--input_size', default=224, type=int,
                         help='image input size')
-    parser.add_argument('--layer_scale_init_value', default=1e-6, type=float,
-                        help="Layer scale initial values")
 
     # EMA related parameters
     parser.add_argument('--model_ema', type=str2bool, default=False)
@@ -93,6 +91,10 @@ def get_args_parser():
     parser.add_argument('--weight_decay_end', type=float, default=None, help="""Final value of the
         weight decay. We use a cosine schedule for WD and using a larger decay by
         the end of training improves performance for ViTs.""")
+    parser.add_argument('--layerscale_opt', type=bool, default=False,
+                        help='whether to use layer scale')
+    parser.add_argument('--layerscale_init_values', type=float, default=1e-6,
+                        help='the initial value for layer scale, default=1e-6')
 
     parser.add_argument('--lr', type=float, default=4e-3, metavar='LR',
                         help='learning rate (default: 4e-3), with total batch size 4096')
@@ -310,7 +312,8 @@ def main(args):
             pretrained=False,
             num_classes=args.nb_classes,
             drop_path_rate=args.drop_path,
-            layer_scale_init_value=args.layer_scale_init_value,
+            layerscale_opt=args.layerscale_opt, 
+            layerscale_init_values=args.layerscale_init_values,
             # head_init_scale=args.head_init_scale,
         )
 

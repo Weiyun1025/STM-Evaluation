@@ -11,9 +11,9 @@ DESC="pt_224_bs1024"
 JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_${DESC}"
 
-GPUS=${GPUS:-8}
-GPUS_PER_NODE=${GPUS_PER_NODE:-8}
-QUOTA_TYPE="auto"
+GPUS=${GPUS:-4}
+GPUS_PER_NODE=${GPUS_PER_NODE:-4}
+QUOTA_TYPE="reserved"
 
 CPUS_PER_TASK=${CPUS_PER_TASK:-12}
 SRUN_ARGS=${SRUN_ARGS:-""}
@@ -34,16 +34,17 @@ srun -p ${PARTITION} \
     python -u main.py \
     --model ${MODEL} \
     --epochs 300 \
-    --batch_size 128 \
+    --batch_size 256 \
     --warmup_epochs 20 \
     --lr 1e-3\
     --warmup_init_lr 1e-6\
-    --min_lr 1e-6\
+    --min_lr 1e-5\
     --opt adamw \
     --clip_grad 5.0 \
     --drop_path 0.2 \
     --weight_decay 0.05 \
-    --layer_scale_init_value 1e-6 \
+    --layerscale_opt True \
+    --layerscale_init_values 1e-6 \
     --smoothing 0.1 \
     --model_ema true \
     --model_ema_decay 0.9999 \
@@ -65,4 +66,4 @@ srun -p ${PARTITION} \
     --save_ckpt true \
     --output_dir "backbone_outputdir/${PROJECT_NAME}"
 
-# sh train.sh
+# sh shell/swin_t_1k_pt_v3config.sh

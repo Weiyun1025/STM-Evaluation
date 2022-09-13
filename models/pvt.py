@@ -79,7 +79,7 @@ class Attention(nn.Module):
 class Block(nn.Module):
 
     def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop=0., attn_drop=0.,
-                 drop_path=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm, sr_ratio=1):
+                 drop_path=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm, sr_ratio=1, layerscale_opt=False, layerscale_init_values=1e-6):
         super().__init__()
         self.norm1 = norm_layer(dim)
         self.attn = Attention(
@@ -92,10 +92,31 @@ class Block(nn.Module):
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
 
-    def forward(self, x, H, W):
-        x = x + self.drop_path(self.attn(self.norm1(x), H, W))
-        x = x + self.drop_path(self.mlp(self.norm2(x)))
+        ### ----- layerscale -----
+        if layerscale_opt:
+            self.gamma_1 = nn.Parameter(layerscale_init_values * torch.ones((1, 1, dim)), requires_grad=True)
+            self.gamma_2 = nn.Parameter(layerscale_init_values * torch.ones((1, 1, dim)), requires_grad=True)
+        else:
+            self.gamma_1, self.gamma_2 = None, None
 
+    def forward(self, x, H, W):
+        shortcut = x
+        x = self.attn(self.norm1(x), H, W)
+
+        if self.gamma_1 is not None:
+            x = shortcut + self.drop_path(x * self.gamma_1)
+        else:
+            x = shortcut + self.drop_path(x)
+        
+        shortcut = x
+        x = self.mlp(self.norm2(x))
+        if self.gamma_2 is not None:
+            x = shortcut + self.drop_path(x * self.gamma_2)
+        else:
+            x = shortcut + self.drop_path(x)
+
+        #x = x + self.drop_path(self.attn(self.norm1(x), H, W))
+        #x = x + self.drop_path(self.mlp(self.norm2(x)))
         return x
 
 
@@ -131,7 +152,7 @@ class PyramidVisionTransformer(nn.Module):
     def __init__(self, img_size=224, patch_size=16, in_chans=3, num_classes=1000, embed_dims=[64, 128, 256, 512],
                  num_heads=[1, 2, 4, 8], mlp_ratios=[4, 4, 4, 4], qkv_bias=False, qk_scale=None, drop_rate=0.,
                  attn_drop_rate=0., drop_path_rate=0., norm_layer=nn.LayerNorm,
-                 depths=[3, 4, 6, 3], sr_ratios=[8, 4, 2, 1], num_stages=4, **kwargs):
+                 depths=[3, 4, 6, 3], sr_ratios=[8, 4, 2, 1], num_stages=4, layerscale_opt=False, layerscale_init_values=1e-6, **kwargs):
         super().__init__()
         self.num_classes = num_classes
         self.depths = depths
@@ -152,7 +173,7 @@ class PyramidVisionTransformer(nn.Module):
             block = nn.ModuleList([Block(
                 dim=embed_dims[i], num_heads=num_heads[i], mlp_ratio=mlp_ratios[i], qkv_bias=qkv_bias,
                 qk_scale=qk_scale, drop=drop_rate, attn_drop=attn_drop_rate, drop_path=dpr[cur + j],
-                norm_layer=norm_layer, sr_ratio=sr_ratios[i])
+                norm_layer=norm_layer, sr_ratio=sr_ratios[i], layerscale_opt=layerscale_opt, layerscale_init_values=layerscale_init_values)
                 for j in range(depths[i])])
             cur += depths[i]
 
@@ -252,10 +273,10 @@ def _conv_filter(state_dict, patch_size=16):
 
 
 @register_model
-def pvt_tiny(pretrained=False, **kwargs):
+def pvt_tiny(pretrained=False, layerscale_opt=False, layerscale_init_values=1e-6, **kwargs):
     model = PyramidVisionTransformer(
         patch_size=4, embed_dims=[64, 128, 320, 512], num_heads=[1, 2, 5, 8], mlp_ratios=[8, 8, 4, 4], qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[2, 2, 2, 2], sr_ratios=[8, 4, 2, 1],
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[2, 2, 2, 2], sr_ratios=[8, 4, 2, 1], layerscale_opt=layerscale_opt, layerscale_init_values=layerscale_init_values,
         **kwargs)
     model.default_cfg = _cfg()
 
@@ -263,20 +284,20 @@ def pvt_tiny(pretrained=False, **kwargs):
 
 
 @register_model
-def pvt_small(pretrained=False, **kwargs):
+def pvt_small(pretrained=False, layerscale_opt=False, layerscale_init_values=1e-6, **kwargs):
     model = PyramidVisionTransformer(
         patch_size=4, embed_dims=[64, 128, 320, 512], num_heads=[1, 2, 5, 8], mlp_ratios=[8, 8, 4, 4], qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 4, 6, 3], sr_ratios=[8, 4, 2, 1], **kwargs)
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 4, 6, 3], sr_ratios=[8, 4, 2, 1], layerscale_opt=layerscale_opt, layerscale_init_values=layerscale_init_values, **kwargs)
     model.default_cfg = _cfg()
 
     return model
 
 
 @register_model
-def pvt_medium(pretrained=False, **kwargs):
+def pvt_medium(pretrained=False, layerscale_opt=False, layerscale_init_values=1e-6, **kwargs):
     model = PyramidVisionTransformer(
         patch_size=4, embed_dims=[64, 128, 320, 512], num_heads=[1, 2, 5, 8], mlp_ratios=[8, 8, 4, 4], qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 4, 18, 3], sr_ratios=[8, 4, 2, 1],
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 4, 18, 3], sr_ratios=[8, 4, 2, 1], layerscale_opt=layerscale_opt, layerscale_init_values=layerscale_init_values,
         **kwargs)
     model.default_cfg = _cfg()
 
@@ -284,10 +305,10 @@ def pvt_medium(pretrained=False, **kwargs):
 
 
 @register_model
-def pvt_large(pretrained=False, **kwargs):
+def pvt_large(pretrained=False, layerscale_opt=False, layerscale_init_values=1e-6, **kwargs):
     model = PyramidVisionTransformer(
         patch_size=4, embed_dims=[64, 128, 320, 512], num_heads=[1, 2, 5, 8], mlp_ratios=[8, 8, 4, 4], qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 8, 27, 3], sr_ratios=[8, 4, 2, 1],
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 8, 27, 3], sr_ratios=[8, 4, 2, 1], layerscale_opt=layerscale_opt, layerscale_init_values=layerscale_init_values,
         **kwargs)
     model.default_cfg = _cfg()
 
@@ -295,10 +316,10 @@ def pvt_large(pretrained=False, **kwargs):
 
 
 @register_model
-def pvt_huge_v2(pretrained=False, **kwargs):
+def pvt_huge_v2(pretrained=False, layerscale_opt=False, layerscale_init_values=1e-6, **kwargs):
     model = PyramidVisionTransformer(
         patch_size=4, embed_dims=[128, 256, 512, 768], num_heads=[2, 4, 8, 12], mlp_ratios=[8, 8, 4, 4], qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 10, 60, 3], sr_ratios=[8, 4, 2, 1],
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 10, 60, 3], sr_ratios=[8, 4, 2, 1], layerscale_opt=layerscale_opt, layerscale_init_values=layerscale_init_values,
         # drop_rate=0.0, drop_path_rate=0.02)
         **kwargs)
     model.default_cfg = _cfg()

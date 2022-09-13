@@ -197,7 +197,7 @@ class SwinTransformerBlock(nn.Module):
     def __init__(self, dim, input_resolution, num_heads, window_size=7, shift_size=0,
                  mlp_ratio=4., qkv_bias=True, qk_scale=None, drop=0., attn_drop=0., drop_path=0.,
                  act_layer=nn.GELU, norm_layer=nn.LayerNorm,
-                 fused_window_process=False):
+                 fused_window_process=False, layerscale_opt=False, layerscale_init_values=0):
         super().__init__()
         self.dim = dim
         self.input_resolution = input_resolution
@@ -247,6 +247,13 @@ class SwinTransformerBlock(nn.Module):
         self.register_buffer("attn_mask", attn_mask)
         self.fused_window_process = fused_window_process
 
+        ### ----- layerscale -----
+        if layerscale_opt:
+            self.gamma_1 = nn.Parameter(layerscale_init_values * torch.ones((1, 1, dim)), requires_grad=True)
+            self.gamma_2 = nn.Parameter(layerscale_init_values * torch.ones((1, 1, dim)), requires_grad=True)
+        else:
+            self.gamma_1, self.gamma_2 = None, None
+
     def forward(self, x):
         H, W = self.input_resolution
         B, L, C = x.shape
@@ -288,10 +295,21 @@ class SwinTransformerBlock(nn.Module):
             shifted_x = window_reverse(attn_windows, self.window_size, H, W)  # B H' W' C
             x = shifted_x
         x = x.view(B, H * W, C)
-        x = shortcut + self.drop_path(x)
 
-        # FFN
-        x = x + self.drop_path(self.mlp(self.norm2(x)))
+        # skip connection with layerscale
+        #x = shortcut + self.drop_path(x)
+        if self.gamma_1 is not None:
+            x = shortcut + self.drop_path(self.gamma_1 * x)
+        else:
+            x = shortcut + self.drop_path(x)
+
+        # FFN with layer scale
+        shortcut = x
+        x = self.mlp(self.norm2(x))
+        if self.gamma_2 is not None:
+            x = shortcut + self.drop_path(self.gamma_2 * x)
+        else:
+            x = shortcut + self.drop_path(x)
 
         return x
 
@@ -387,7 +405,7 @@ class BasicLayer(nn.Module):
     def __init__(self, dim, input_resolution, depth, num_heads, window_size,
                  mlp_ratio=4., qkv_bias=True, qk_scale=None, drop=0., attn_drop=0.,
                  drop_path=0., norm_layer=nn.LayerNorm, downsample=None, use_checkpoint=False,
-                 fused_window_process=False):
+                 fused_window_process=False, layerscale_opt=False, layerscale_init_values=0.0):
 
         super().__init__()
         self.dim = dim
@@ -405,7 +423,8 @@ class BasicLayer(nn.Module):
                                  drop=drop, attn_drop=attn_drop,
                                  drop_path=drop_path[i] if isinstance(drop_path, list) else drop_path,
                                  norm_layer=norm_layer,
-                                 fused_window_process=fused_window_process)
+                                 fused_window_process=fused_window_process,
+                                 layerscale_opt=layerscale_opt, layerscale_init_values=layerscale_init_values)
             for i in range(depth)])
 
         # patch merging layer
@@ -413,6 +432,7 @@ class BasicLayer(nn.Module):
             self.downsample = downsample(input_resolution, dim=dim, norm_layer=norm_layer)
         else:
             self.downsample = None
+        
 
     def forward(self, x):
         for blk in self.blocks:
@@ -516,7 +536,7 @@ class SwinTransformer(nn.Module):
                  window_size=7, mlp_ratio=4., qkv_bias=True, qk_scale=None,
                  drop_rate=0., attn_drop_rate=0., drop_path_rate=0.1,
                  norm_layer=nn.LayerNorm, ape=False, patch_norm=True,
-                 use_checkpoint=False, fused_window_process=False, **kwargs):
+                 use_checkpoint=False, fused_window_process=False, layerscale_opt=False, layerscale_init_values=0.0, **kwargs):
         super().__init__()
 
         self.num_classes = num_classes
@@ -561,7 +581,8 @@ class SwinTransformer(nn.Module):
                                norm_layer=norm_layer,
                                downsample=PatchMerging if (i_layer < self.num_layers - 1) else None,
                                use_checkpoint=use_checkpoint,
-                               fused_window_process=fused_window_process)
+                               fused_window_process=fused_window_process,
+                               layerscale_opt=layerscale_opt, layerscale_init_values=layerscale_init_values)
             self.layers.append(layer)
 
         self.norm = norm_layer(self.num_features)
@@ -622,7 +643,7 @@ class SwinTransformer(nn.Module):
 
 
 @register_model
-def swin_tiny(pretrained=False, **kwargs):
+def swin_tiny(pretrained=False, layerscale_opt=False, layerscale_init_values=1e-6, **kwargs):
     embed_dim = 96
     depths = [2, 2, 6, 2]
     num_heads = [3, 6, 12, 24]
@@ -632,6 +653,8 @@ def swin_tiny(pretrained=False, **kwargs):
                             depths=depths,
                             num_heads=num_heads,
                             window_size=window_size,
+                            layerscale_opt=layerscale_opt,
+                            layerscale_init_values=layerscale_init_values,
                             **kwargs)
     if pretrained:
         raise NotImplementedError()
@@ -640,7 +663,7 @@ def swin_tiny(pretrained=False, **kwargs):
 
 
 @register_model
-def swin_small(pretrained=False, **kwargs):
+def swin_small(pretrained=False, layerscale_opt=False, layerscale_init_values=1e-6, **kwargs):
     embed_dim = 96
     depths = [2, 2, 18, 2]
     num_heads = [3, 6, 12, 24]
@@ -650,6 +673,8 @@ def swin_small(pretrained=False, **kwargs):
                             depths=depths,
                             num_heads=num_heads,
                             window_size=window_size,
+                            layerscale_opt=layerscale_opt,
+                            layerscale_init_values=layerscale_init_values,
                             **kwargs)
     if pretrained:
         raise NotImplementedError()
@@ -658,7 +683,7 @@ def swin_small(pretrained=False, **kwargs):
 
 
 @register_model
-def swin_base(pretrained=False, **kwargs):
+def swin_base(pretrained=False, layerscale_opt=False, layerscale_init_values=1e-6, **kwargs):
     embed_dim = 128
     depths = [2, 2, 18, 2]
     num_heads = [4, 8, 16, 32]
@@ -668,6 +693,8 @@ def swin_base(pretrained=False, **kwargs):
                             depths=depths,
                             num_heads=num_heads,
                             window_size=window_size,
+                            layerscale_opt=layerscale_opt,
+                            layerscale_init_values=layerscale_init_values,
                             **kwargs)
     if pretrained:
         raise NotImplementedError()
@@ -676,7 +703,7 @@ def swin_base(pretrained=False, **kwargs):
 
 
 @register_model
-def swin_large(pretrained=False, **kwargs):
+def swin_large(pretrained=False, layerscale_opt=False, layerscale_init_values=1e-6, **kwargs):
     embed_dim = 192
     depths = [2, 2, 18, 2]
     num_heads = [6, 12, 24, 48]
@@ -686,6 +713,8 @@ def swin_large(pretrained=False, **kwargs):
                             depths=depths,
                             num_heads=num_heads,
                             window_size=window_size,
+                            layerscale_opt=layerscale_opt,
+                            layerscale_init_values=layerscale_init_values,
                             **kwargs)
     if pretrained:
         raise NotImplementedError()
