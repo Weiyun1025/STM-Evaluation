@@ -11,7 +11,7 @@ DESC="pt_224_bs1024_v3config"
 JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_${DESC}"
 
-GPUS=${GPUS:-16}
+GPUS=${GPUS:-8}
 GPUS_PER_NODE=${GPUS_PER_NODE:-8}
 QUOTA_TYPE="spot"
 
@@ -34,7 +34,7 @@ srun -p ${PARTITION} \
     python -u main.py \
     --model ${MODEL} \
     --epochs 300 \
-    --batch_size 256 \
+    --batch_size 512 \
     --warmup_epochs 20 \
     --lr 4e-3\
     --warmup_init_lr 0.0\
