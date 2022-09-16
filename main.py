@@ -297,7 +297,7 @@ def main(args):
         pretrained=False,
         num_classes=args.nb_classes,
         drop_path_rate=args.drop_path,
-        layerscale_init_values=args.layerscale_init_values,
+        layer_scale_init_values=args.layer_scale_init_values,
     )
 
     if args.finetune:
