@@ -43,8 +43,7 @@ srun -p ${PARTITION} \
     --clip_grad 5.0 \
     --drop_path 0.2 \
     --weight_decay 0.05 \
-    --layerscale_opt false \
-    --layer_scale_init_value 1e-6 \
+    --layer_scale_init_value 0 \
     --smoothing 0.1 \
     --model_ema true \
     --model_ema_decay 0.9999 \

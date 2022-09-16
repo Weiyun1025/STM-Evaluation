@@ -74,7 +74,7 @@ class ConvNeXtHead(nn.Module):
 
 
 @ register_model
-def meta_convnext_tiny(pretrained=False, **kwargs):
+def convnext_tiny(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
                      depths=[3, 3, 9, 3],
                      dims=[96, 192, 384, 768],

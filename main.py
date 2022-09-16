@@ -87,8 +87,6 @@ def get_args_parser():
     parser.add_argument('--weight_decay_end', type=float, default=None, help="""Final value of the
         weight decay. We use a cosine schedule for WD and using a larger decay by
         the end of training improves performance for ViTs.""")
-    parser.add_argument('--layerscale_opt', type=str2bool, default=False,
-                        help='whether to use layer scale')
     parser.add_argument('--layerscale_init_values', type=float, default=1e-6,
                         help='the initial value for layer scale, default=1e-6')
 
@@ -294,24 +292,13 @@ def main(args):
             label_smoothing=args.smoothing, num_classes=args.nb_classes)
 
     # TODO: dropout, head_init_scale
-    if 'deit' in args.model:
-        model = create_model(
-            args.model,
-            pretrained=False,
-            num_classes=args.nb_classes,
-            drop_path_rate=args.drop_path,
-            init_values=args.layerscale_init_values if args.layerscale_opt else None,
-        )
-    else:
-        model = create_model(
-            args.model,
-            pretrained=False,
-            num_classes=args.nb_classes,
-            drop_path_rate=args.drop_path,
-            layerscale_opt=args.layerscale_opt,
-            layerscale_init_values=args.layerscale_init_values if args.layerscale_opt else None,
-            # head_init_scale=args.head_init_scale,
-        )
+    model = create_model(
+        args.model,
+        pretrained=False,
+        num_classes=args.nb_classes,
+        drop_path_rate=args.drop_path,
+        layerscale_init_values=args.layerscale_init_values,
+    )
 
     if args.finetune:
         if args.finetune.startswith('https'):

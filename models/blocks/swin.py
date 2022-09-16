@@ -179,7 +179,7 @@ class SwinHead(nn.Module):
 
 
 @register_model
-def meta_swin_tiny(pretrained=False, **kwargs):
+def swin_tiny(pretrained=False, **kwargs):
     embed_dim = 96
     depths = [2, 2, 6, 2]
     num_heads = [3, 6, 12, 24]
