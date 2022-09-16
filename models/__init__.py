@@ -1,9 +1,11 @@
-import models.convnext
-import models.convnext_isotropic
-import models.swin_transformer
-import models.poolformer
-import models.pvt
-import models.pvt_v2
-import models.resnet
-import models.swin_transformer_v2
-import models.halonet
+from .deprecation import convnext
+from .deprecation import convnext_isotropic
+from .deprecation import swin_transformer
+from .deprecation import swin_transformer_v2
+from .deprecation import poolformer
+from .deprecation import pvt
+from .deprecation import pvt_v2
+from .deprecation import resnet
+from .deprecation import halonet
+
+from . import blocks
