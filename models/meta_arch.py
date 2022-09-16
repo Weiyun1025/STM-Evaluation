@@ -2,12 +2,7 @@ import torch
 from torch import nn
 from timm.models.layers import LayerNorm2d, to_2tuple, trunc_normal_
 
-# TODO: 丢弃分类头的话只丢弃最后一个MLP，还是 1x1 Conv 和 MLP 都丢
-
 # TODO: params: ape
-# TODO: methods: init_weight, no_weight_decay, group_matcher
-# TODO: tricks: drop_path, dropout
-
 # TODO: 检查所有norm的位置
 
 
@@ -121,13 +116,13 @@ class MetaArch(nn.Module):
         cur = 0
         dp_rates = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]
         self.stages = nn.ModuleList()
-        for i in range(4):
+        for i, (depth, dim) in enumerate(zip(depths, dims)):
             stage = nn.Sequential(
-                *[block_type(dim=dims[i], drop_path=dp_rates[cur + j], stage=i, depth=j,
+                *[block_type(dim=dim, drop_path=dp_rates[cur + j], stage=i, depth=j,
                              input_resolution=(self.patch_grid[0] // (2 ** i), self.patch_grid[1] // (2 ** i)),
                              layer_scale_init_value=layer_scale_init_value,
                              **block_kwargs)
-                  for j in range(depths[i])]
+                  for j in range(depth)]
             )
             self.stages.append(stage)
             cur += depths[i]
