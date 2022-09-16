@@ -7,11 +7,10 @@ from ..meta_arch import MetaArch
 
 
 class SwinBlock(nn.Module):
-    def __init__(
-            self, dim, drop_path, layer_scale_init_value,
-            input_resolution, stage, depth, num_heads, window_size,
-            mlp_ratio=4., qkv_bias=True, drop=0., attn_drop=0.,
-            head_dim=None, act_layer=nn.GELU, norm_layer=LayerNorm2d):
+    def __init__(self, dim, drop_path, layer_scale_init_value,
+                 input_resolution, stage, depth, num_heads, window_size,
+                 mlp_ratio=4., qkv_bias=True, drop=0., attn_drop=0.,
+                 head_dim=None, act_layer=nn.GELU, norm_layer=LayerNorm2d):
         super().__init__()
         self.dim = dim
         self.input_resolution = input_resolution
@@ -180,15 +179,14 @@ class SwinHead(nn.Module):
 
 @register_model
 def swin_tiny(pretrained=False, **kwargs):
-    embed_dim = 96
+    dims = [96 * 2 ** i for i in range(4)]
     depths = [2, 2, 6, 2]
     num_heads = [3, 6, 12, 24]
     window_size = 7
 
     model = MetaArch(img_size=224,
-                     embed_dim=embed_dim,
                      depths=depths,
-                     window_size=window_size,
+                     dims=dims,
                      stem_type=SwinStem,
                      stem_kwargs=dict(patch_size=4),
                      block_type=SwinBlock,

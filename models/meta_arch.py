@@ -7,17 +7,17 @@ from timm.models.layers import LayerNorm2d, to_2tuple, trunc_normal_
 
 
 class Stem(nn.Module):
-    def __init__(self, in_channels, embed_dim, img_size, norm_layer, act_layer, ratio=0.5, **kwargs):
+    def __init__(self, in_channels, out_channels, img_size, norm_layer, act_layer, ratio=0.5, **kwargs):
         super().__init__()
         img_size = to_2tuple(img_size)
         self.grid_size = (img_size[0] // 4, img_size[1] // 4)
 
         # input_shape: B x C x H x W
         self.stem = nn.Sequential(
-            nn.Conv2d(in_channels, int(embed_dim * ratio), kernel_size=(3, 3), stride=(2, 2), padding=(1, 1)),
+            nn.Conv2d(in_channels, int(out_channels * ratio), kernel_size=(3, 3), stride=(2, 2), padding=(1, 1)),
             act_layer(),
-            nn.Conv2d(int(embed_dim * ratio), embed_dim, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1)),
-            norm_layer(embed_dim)
+            nn.Conv2d(int(out_channels * ratio), out_channels, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1)),
+            norm_layer(out_channels)
         )
 
     def forward(self, x):
