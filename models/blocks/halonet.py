@@ -85,8 +85,8 @@ class HaloAttention(nn.Module):
         dim,
         block_size,
         halo_size,
+        heads,
         dim_head=None,
-        heads=8,
     ):
         super().__init__()
         assert halo_size > 0, 'halo size must be greater than 0'
@@ -166,7 +166,7 @@ class HaloBlock(nn.Module):
     """ ResNet-like Bottleneck Block - 1x1 - optional kxk - self attn - 1x1
     """
 
-    def __init__(self, dim, drop_path, layer_scale_init_value,
+    def __init__(self, dim, drop_path, layer_scale_init_value, stage, num_heads,
                  block_size, halo_size, act_layer=nn.ReLU, norm_layer=nn.BatchNorm2d,
                  **kwargs):
         super().__init__()
@@ -178,7 +178,7 @@ class HaloBlock(nn.Module):
         )
 
         self.self_attn = nn.Sequential(
-            HaloAttention(dim=dim, block_size=block_size, halo_size=halo_size),
+            HaloAttention(dim=dim, block_size=block_size, halo_size=halo_size, heads=num_heads[stage]),
             norm_layer(dim),
             act_layer(),
         )
@@ -192,7 +192,7 @@ class HaloBlock(nn.Module):
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.act = act_layer()
 
-        self.gamma = nn.Parameter(layer_scale_init_value * torch.ones((dim)),
+        self.gamma = nn.Parameter(layer_scale_init_value * torch.ones((1, dim, 1, 1)),
                                   requires_grad=True) if layer_scale_init_value > 0 else None
 
     def forward(self, x):
@@ -210,7 +210,7 @@ class HaloBlock(nn.Module):
 
 
 class HaloBlockV2(nn.Module):
-    def __init__(self, dim, drop_path, layer_scale_init_value, block_size, halo_size,
+    def __init__(self, dim, drop_path, layer_scale_init_value, block_size, halo_size, stage, num_heads,
                  mlp_ratio=4., drop=0., head_dim=None, act_layer=nn.GELU, norm_layer=LayerNorm2d,
                  **kwargs):
         super().__init__()
@@ -218,7 +218,7 @@ class HaloBlockV2(nn.Module):
         self.mlp_ratio = mlp_ratio
 
         self.norm1 = norm_layer(dim)
-        self.attn = HaloAttention(dim=dim, dim_head=head_dim,
+        self.attn = HaloAttention(dim=dim, dim_head=head_dim, heads=num_heads[stage],
                                   block_size=block_size, halo_size=halo_size)
 
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
@@ -252,6 +252,27 @@ class HaloBlockV2(nn.Module):
         x = shortcut + self.drop_path(x)
 
         return x
+
+
+@register_model
+def halo_tiny(pretrained=False, **kwargs):
+    dims = [96 * 2 ** i for i in range(4)]
+    depths = [2, 2, 6, 2]
+    num_heads = [3, 6, 12, 24]
+    block_size = 7
+    halo_size = 3
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     block_type=HaloBlock,
+                     block_kwargs=dict(num_heads=num_heads, block_size=block_size, halo_size=halo_size),
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
 
 
 @register_model
