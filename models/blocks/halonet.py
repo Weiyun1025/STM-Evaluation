@@ -255,7 +255,7 @@ class HaloBlockV2(nn.Module):
 
 
 @register_model
-def halo_tiny(pretrained=False, **kwargs):
+def unified_halo_tiny(pretrained=False, **kwargs):
     dims = [96 * 2 ** i for i in range(4)]
     depths = [2, 2, 6, 2]
     num_heads = [3, 6, 12, 24]
@@ -276,7 +276,7 @@ def halo_tiny(pretrained=False, **kwargs):
 
 
 @register_model
-def halo_v2_tiny(pretrained=False, **kwargs):
+def unified_halo_v2_tiny(pretrained=False, **kwargs):
     dims = [96 * 2 ** i for i in range(4)]
     depths = [2, 2, 6, 2]
     num_heads = [3, 6, 12, 24]

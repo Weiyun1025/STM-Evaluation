@@ -88,3 +88,17 @@ def convnext_tiny(pretrained=False, **kwargs):
         raise NotImplementedError()
 
     return model
+
+
+@ register_model
+def unified_convnext_tiny(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[3, 3, 9, 3],
+                     dims=[96, 192, 384, 768],
+                     block_type=ConvNeXtBlock,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model

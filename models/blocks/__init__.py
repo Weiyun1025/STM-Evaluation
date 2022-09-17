@@ -2,6 +2,6 @@ from . import (
     convnext,
     swin,
     halonet,
-    pvt,
+    pvt_v2,
     resnet,
 )
