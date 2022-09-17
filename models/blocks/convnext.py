@@ -22,7 +22,7 @@ class ConvNeXtBlock(nn.Module):
             nn.Linear(dim, 4 * dim),
             nn.GELU(),
             nn.Linear(4 * dim, dim),
-        ) if extra_ffn else nn.Identity()
+        ) if extra_ffn else None
 
         self.gamma_2 = nn.Parameter(layer_scale_init_value * torch.ones((dim)),
                                     requires_grad=True) if extra_ffn and layer_scale_init_value > 0 else None
@@ -30,7 +30,7 @@ class ConvNeXtBlock(nn.Module):
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
 
     def forward(self, x):
-        shortcut = x
+        shortcut = x.permute(0, 2, 3, 1)
         x = self.dwconv(x)
         # (N, C, H, W) -> (N, H, W, C)
         x = x.permute(0, 2, 3, 1)
@@ -42,11 +42,12 @@ class ConvNeXtBlock(nn.Module):
             x = self.gamma_1 * x
         x = shortcut + self.drop_path(x)
 
-        shortcut = x
-        x = self.ffn(x)
-        if self.gamma_2 is not None:
-            x = self.gamma_2 * x
-        x = shortcut + self.drop_path(x)
+        if self.ffn is not None:
+            shortcut = x
+            x = self.ffn(x)
+            if self.gamma_2 is not None:
+                x = self.gamma_2 * x
+            x = shortcut + self.drop_path(x)
 
         # (N, H, W, C) -> (N, C, H, W)
         x = x.permute(0, 3, 1, 2)
