@@ -87,7 +87,7 @@ def get_args_parser():
     parser.add_argument('--weight_decay_end', type=float, default=None, help="""Final value of the
         weight decay. We use a cosine schedule for WD and using a larger decay by
         the end of training improves performance for ViTs.""")
-    parser.add_argument('--layer_scale_init_values', type=float, default=1e-6,
+    parser.add_argument('--layer_scale_init_value', type=float, default=1e-6,
                         help='the initial value for layer scale, default=1e-6')
 
     parser.add_argument('--lr', type=float, default=4e-3, metavar='LR',
@@ -297,7 +297,7 @@ def main(args):
         pretrained=False,
         num_classes=args.nb_classes,
         drop_path_rate=args.drop_path,
-        layer_scale_init_values=args.layer_scale_init_values,
+        layer_scale_init_value=args.layer_scale_init_value,
     )
 
     if args.finetune:
@@ -476,10 +476,6 @@ def main(args):
 
         if wandb_logger:
             wandb_logger.log_epoch_metrics(log_stats)
-
-        total_time = time.time() - start_time
-        total_time_str = str(datetime.timedelta(seconds=int(total_time)))
-        print('Training time {}'.format(total_time_str))
 
     if wandb_logger and args.wandb_ckpt and args.save_ckpt and args.output_dir:
         wandb_logger.log_checkpoints()

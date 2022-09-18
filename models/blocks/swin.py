@@ -28,6 +28,9 @@ class SwinBlock(nn.Module):
             dim, num_heads=num_heads[stage], head_dim=head_dim, window_size=to_2tuple(self.window_size),
             qkv_bias=qkv_bias, attn_drop=attn_drop, proj_drop=drop)
 
+        self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((dim)),
+                                    requires_grad=True) if layer_scale_init_value > 0 else None
+
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.norm2 = norm_layer(dim)
         self.mlp = Mlp(in_features=dim, hidden_features=int(dim * mlp_ratio), act_layer=act_layer, drop=drop)
@@ -55,9 +58,6 @@ class SwinBlock(nn.Module):
             attn_mask = None
 
         self.register_buffer("attn_mask", attn_mask)
-
-        self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((dim)),
-                                    requires_grad=True) if layer_scale_init_value > 0 else None
 
         self.gamma_2 = nn.Parameter(layer_scale_init_value * torch.ones((dim)),
                                     requires_grad=True) if layer_scale_init_value > 0 else None
@@ -178,7 +178,7 @@ class SwinHead(nn.Module):
 
 
 @register_model
-def swin_tiny(pretrained=False, **kwargs):
+def official_swin_tiny(pretrained=False, **kwargs):
     dims = [96 * 2 ** i for i in range(4)]
     depths = [2, 2, 6, 2]
     num_heads = [3, 6, 12, 24]
@@ -193,26 +193,7 @@ def swin_tiny(pretrained=False, **kwargs):
                      block_kwargs=dict(num_heads=num_heads, window_size=window_size),
                      downsample_type=SwinDownsampleLayer,
                      head_type=SwinHead,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@register_model
-def unified_swin_tiny(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [2, 2, 6, 2]
-    num_heads = [3, 6, 12, 24]
-    window_size = 7
-
-    model = MetaArch(img_size=224,
-                     depths=depths,
-                     dims=dims,
-                     block_type=SwinBlock,
-                     block_kwargs=dict(num_heads=num_heads, window_size=window_size),
+                     head_norm_first=True,
                      **kwargs)
 
     if pretrained:

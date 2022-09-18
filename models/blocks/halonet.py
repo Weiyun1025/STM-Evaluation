@@ -221,12 +221,12 @@ class HaloBlockV2(nn.Module):
         self.attn = HaloAttention(dim=dim, dim_head=head_dim, heads=num_heads[stage],
                                   block_size=block_size, halo_size=halo_size)
 
+        self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((1, dim, 1, 1)),
+                                    requires_grad=True) if layer_scale_init_value > 0 else None
+
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.norm2 = norm_layer(dim)
         self.mlp = Mlp(in_features=dim, hidden_features=int(dim * mlp_ratio), act_layer=act_layer, drop=drop)
-
-        self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((1, dim, 1, 1)),
-                                    requires_grad=True) if layer_scale_init_value > 0 else None
 
         self.gamma_2 = nn.Parameter(layer_scale_init_value * torch.ones((1, 1, 1, dim)),
                                     requires_grad=True) if layer_scale_init_value > 0 else None
