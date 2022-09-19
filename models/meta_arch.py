@@ -24,17 +24,18 @@ class Stem(nn.Module):
 
 
 class DownsampleLayer(nn.Module):
-    def __init__(self, in_channels, out_channels, norm_layer, **kwargs):
+    def __init__(self, in_channels, out_channels, norm_layer, pre_norm=True, **kwargs):
         super().__init__()
 
         # input_shape: B x C x H x W
         self.reduction = nn.Sequential(
-            norm_layer(in_channels),
+            norm_layer(in_channels) if pre_norm else nn.Identity(),
             nn.Conv2d(in_channels, out_channels,
                       kernel_size=(3, 3),
                       stride=(2, 2),
                       padding=(1, 1),
                       bias=False),
+            nn.Identity() if pre_norm else norm_layer(out_channels),
         )
 
     def forward(self, x):
