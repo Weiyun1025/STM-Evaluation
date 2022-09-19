@@ -1,9 +1,10 @@
+from torch import nn
 from timm.models import register_model
 from .meta_arch import MetaArch, PatchEmbed, PatchMerging
 from .blocks.convnext import ConvNeXtBlock, ConvNeXtV2Block
 from .blocks.swin import SwinBlock
 from .blocks.pvt_v2 import PvtV2Block
-from .blocks.halonet import HaloBlock, HaloBlockV2
+from .blocks import halonet, halonet_timm
 
 
 @ register_model
@@ -183,8 +184,9 @@ def conv_halo_tiny(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
                      depths=depths,
                      dims=dims,
-                     block_type=HaloBlock,
+                     block_type=halonet.HaloBlock,
                      block_kwargs=dict(num_heads=num_heads, block_size=block_size, halo_size=halo_size),
+                     norm_layer=nn.BatchNorm2d,
                      **kwargs)
 
     if pretrained:
@@ -204,8 +206,30 @@ def conv_halo_v2_tiny(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
                      depths=depths,
                      dims=dims,
-                     block_type=HaloBlockV2,
+                     block_type=halonet.HaloBlockV2,
                      block_kwargs=dict(num_heads=num_heads, block_size=block_size, halo_size=halo_size),
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@register_model
+def conv_halo_v2_timm_tiny(pretrained=False, **kwargs):
+    dims = [96 * 2 ** i for i in range(4)]
+    depths = [2, 2, 6, 2]
+    num_heads = [3, 6, 12, 24]
+    block_size = 7
+    halo_size = 3
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     block_type=halonet_timm.HaloBlockV2,
+                     block_kwargs=dict(num_heads=num_heads, block_size=block_size, halo_size=halo_size),
+                     downsample_type=nn.Identity,
                      **kwargs)
 
     if pretrained:
