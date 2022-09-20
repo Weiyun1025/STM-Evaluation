@@ -3,6 +3,7 @@ from timm.models import register_model
 from .meta_arch import MetaArch, PatchEmbed, PatchMerging
 from .blocks.convnext import ConvNeXtBlock, ConvNeXtV2Block
 from .blocks.swin import SwinBlock
+from .blocks.dcn_v3 import DCNv3Block
 from .blocks.pvt_v2 import PvtV2Block
 from .blocks import halonet, halonet_timm
 
@@ -147,6 +148,26 @@ def conv_swin_tiny(pretrained=False, **kwargs):
                      dims=dims,
                      block_type=SwinBlock,
                      block_kwargs=dict(num_heads=num_heads, window_size=window_size),
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@register_model
+def dcn_v3(pretrained=False, **kwargs):
+    dims = [192 * 2 ** i for i in range(4)]
+    depths = [4, 4, 18, 4]
+    num_heads = [12, 24, 48, 96]
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     num_heads=num_heads,
+                     block_type=DCNv3Block,
+                     block_kwargs=dict(num_heads=num_heads, deform_points=9, kernel_size=3),
                      **kwargs)
 
     if pretrained:

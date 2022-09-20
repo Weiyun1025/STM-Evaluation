@@ -177,26 +177,26 @@ class SwinHead(nn.Module):
         return self.head(torch.mean(x, dim=(-2, -1)))
 
 
-@register_model
-def official_swin_tiny(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [2, 2, 6, 2]
-    num_heads = [3, 6, 12, 24]
-    window_size = 7
+# @register_model
+# def official_swin_tiny(pretrained=False, **kwargs):
+#     dims = [96 * 2 ** i for i in range(4)]
+#     depths = [2, 2, 6, 2]
+#     num_heads = [3, 6, 12, 24]
+#     window_size = 7
 
-    model = MetaArch(img_size=224,
-                     depths=depths,
-                     dims=dims,
-                     stem_type=SwinStem,
-                     stem_kwargs=dict(patch_size=4),
-                     block_type=SwinBlock,
-                     block_kwargs=dict(num_heads=num_heads, window_size=window_size),
-                     downsample_type=SwinDownsampleLayer,
-                     head_type=SwinHead,
-                     head_norm_first=True,
-                     **kwargs)
+#     model = MetaArch(img_size=224,
+#                      depths=depths,
+#                      dims=dims,
+#                      stem_type=SwinStem,
+#                      stem_kwargs=dict(patch_size=4),
+#                      block_type=SwinBlock,
+#                      block_kwargs=dict(num_heads=num_heads, window_size=window_size),
+#                      downsample_type=SwinDownsampleLayer,
+#                      head_type=SwinHead,
+#                      head_norm_first=True,
+#                      **kwargs)
 
-    if pretrained:
-        raise NotImplementedError()
+#     if pretrained:
+#         raise NotImplementedError()
 
-    return model
+#     return model

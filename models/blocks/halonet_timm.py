@@ -131,25 +131,25 @@ class HaloStem(nn.Module):
         return self.stem(x)
 
 
-@register_model
-def official_halo_timm_tiny(pretrained=False, **kwargs):
-    dims = [64 * 2 ** i for i in range(4)]
-    depths = [3, 3, 10, 3]
-    num_heads = [8, 8, 8, 8]
-    block_size = 7
-    halo_size = 3
+# @register_model
+# def official_halo_timm_tiny(pretrained=False, **kwargs):
+#     dims = [64 * 2 ** i for i in range(4)]
+#     depths = [3, 3, 10, 3]
+#     num_heads = [8, 8, 8, 8]
+#     block_size = 7
+#     halo_size = 3
 
-    model = MetaArch(img_size=224,
-                     depths=depths,
-                     dims=dims,
-                     stem_type=HaloStem,
-                     block_type=HaloBlock,
-                     block_kwargs=dict(num_heads=num_heads, block_size=block_size, halo_size=halo_size),
-                     norm_layer=nn.BatchNorm2d,
-                     downsample_type=nn.Identity,
-                     **kwargs)
+#     model = MetaArch(img_size=224,
+#                      depths=depths,
+#                      dims=dims,
+#                      stem_type=HaloStem,
+#                      block_type=HaloBlock,
+#                      block_kwargs=dict(num_heads=num_heads, block_size=block_size, halo_size=halo_size),
+#                      norm_layer=nn.BatchNorm2d,
+#                      downsample_type=nn.Identity,
+#                      **kwargs)
 
-    if pretrained:
-        raise NotImplementedError()
+#     if pretrained:
+#         raise NotImplementedError()
 
-    return model
+#     return model

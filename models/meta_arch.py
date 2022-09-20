@@ -13,9 +13,12 @@ class Stem(nn.Module):
 
         # input_shape: B x C x H x W
         self.stem = nn.Sequential(
-            nn.Conv2d(in_channels, int(out_channels * ratio), kernel_size=(3, 3), stride=(2, 2), padding=(1, 1)),
+            nn.Conv2d(in_channels, int(out_channels * ratio),
+                      kernel_size=(3, 3), stride=(2, 2), padding=(1, 1)),
+            norm_layer(int(out_channels * ratio)),
             act_layer(),
-            nn.Conv2d(int(out_channels * ratio), out_channels, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1)),
+            nn.Conv2d(int(out_channels * ratio), out_channels,
+                      kernel_size=(3, 3), stride=(2, 2), padding=(1, 1)),
             norm_layer(out_channels)
         )
 
@@ -24,18 +27,17 @@ class Stem(nn.Module):
 
 
 class DownsampleLayer(nn.Module):
-    def __init__(self, in_channels, out_channels, norm_layer, pre_norm=True, **kwargs):
+    def __init__(self, in_channels, out_channels, norm_layer, **kwargs):
         super().__init__()
 
         # input_shape: B x C x H x W
         self.reduction = nn.Sequential(
-            norm_layer(in_channels) if pre_norm else nn.Identity(),
             nn.Conv2d(in_channels, out_channels,
                       kernel_size=(3, 3),
                       stride=(2, 2),
                       padding=(1, 1),
                       bias=False),
-            nn.Identity() if pre_norm else norm_layer(out_channels),
+            norm_layer(out_channels),
         )
 
     def forward(self, x):
@@ -103,36 +105,6 @@ class PatchMerging(nn.Module):
         return x
 
 
-class PredictionHead(nn.Module):
-    def __init__(self, in_features, num_classes, norm_layer, act_layer,
-                 ratio=1.5, extra_transform=False,
-                 **kwargs):
-        super().__init__()
-
-        # input_shape: B x C x H x W
-        self.conv_head = nn.Sequential(
-            nn.Conv2d(in_features, int(in_features * ratio), 1, 1, 0, bias=False),
-            norm_layer(int(in_features * ratio)),
-            act_layer()
-        ) if extra_transform else nn.Identity()
-
-        mid_features = int(in_features * ratio) if extra_transform else in_features
-
-        self.cls_head = nn.Sequential(
-            nn.AdaptiveAvgPool2d(1),
-            norm_layer(mid_features),
-            nn.Flatten(1),
-            nn.Linear(mid_features, num_classes),
-        )
-
-    def forward(self, x):
-        assert len(x.shape) == 4, 'input shape: BxCxHxW'
-
-        x = self.conv_head(x)
-        x = self.cls_head(x)
-        return x
-
-
 class MetaArch(nn.Module):
     r""" ConvNeXt
         A PyTorch impl of : `A ConvNet for the 2020s`  -
@@ -162,9 +134,8 @@ class MetaArch(nn.Module):
                  block_kwargs={},
                  downsample_type=DownsampleLayer,
                  downsample_kwargs={},
-                 head_type=PredictionHead,
-                 head_norm_first=False,
-                 head_kwargs={},
+                 extra_transform=True,
+                 extra_transform_ratio=1.5,
                  norm_layer=LayerNorm2d,
                  act_layer=nn.GELU,
                  **kwargs,
@@ -188,6 +159,7 @@ class MetaArch(nn.Module):
         cur = 0
         dp_rates = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]
         self.stages = nn.ModuleList()
+        self.stage_norms = nn.ModuleList()
         for i, (depth, dim) in enumerate(zip(depths, dims)):
             stage = nn.Sequential(
                 *[block_type(dim=dim, drop_path=dp_rates[cur + j], stage=i, depth=j,
@@ -197,14 +169,24 @@ class MetaArch(nn.Module):
                   for j in range(depth)]
             )
             self.stages.append(stage)
+            self.stage_norms.append(norm_layer(dim))
             cur += depths[i]
-        self.norm = norm_layer(dims[-1]) if head_norm_first else nn.Identity()
+
+        self.conv_head = nn.Sequential(
+            nn.Conv2d(dims[-1], int(dims[-1] * extra_transform_ratio), 1, 1, 0, bias=False),
+            nn.BatchNorm2d(int(dims[-1] * extra_transform_ratio)),
+            act_layer()
+        ) if extra_transform else nn.Identity()
+
+        self.avg_head = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            # norm_layer(mid_features),
+            nn.Flatten(1),
+        )
 
         if num_classes > 0:
-            self.head = head_type(dims[-1], num_classes,
-                                  norm_layer=nn.Identity if head_norm_first else norm_layer,
-                                  act_layer=act_layer,
-                                  **head_kwargs)
+            features = int(dims[-1] * extra_transform_ratio) if extra_transform else dims[-1]
+            self.head = nn.Linear(features, num_classes)
         else:
             self.head = nn.Identity()
 
@@ -232,13 +214,13 @@ class MetaArch(nn.Module):
         for i in range(4):
             x = self.downsample_layers[i](x)
             x = self.stages[i](x)
-        return self.norm(x)
+            x = self.stage_norms[i](x)
 
-    def forward_head(self, x):
-        # (B, C, H, W) -> (B, num_classes)
-        return self.head(x)
+        x = self.conv_head(x)
+        x = self.avg_head(x)
+        return x
 
     def forward(self, x):
         x = self.forward_features(x)
-        x = self.forward_head(x)
+        x = self.head(x)
         return x

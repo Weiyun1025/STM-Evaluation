@@ -5,5 +5,4 @@ from . import (
     halonet,
     halonet_timm,
     pvt_v2,
-    resnet,
 )
