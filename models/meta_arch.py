@@ -137,6 +137,8 @@ class MetaArch(nn.Module):
                  extra_transform=True,
                  extra_transform_ratio=1.5,
                  norm_layer=LayerNorm2d,
+                 norm_every_stage=True,
+                 norm_after_avg=False,
                  act_layer=nn.GELU,
                  **kwargs,
                  ):
@@ -169,8 +171,9 @@ class MetaArch(nn.Module):
                   for j in range(depth)]
             )
             self.stages.append(stage)
-            self.stage_norms.append(norm_layer(dim))
+            self.stage_norms.append(norm_layer(dim) if norm_every_stage else nn.Identity())
             cur += depths[i]
+        self.stage_end_norm = nn.Identity() if norm_every_stage or norm_after_avg else norm_layer(dims[-1])
 
         self.conv_head = nn.Sequential(
             nn.Conv2d(dims[-1], int(dims[-1] * extra_transform_ratio), 1, 1, 0, bias=False),
@@ -178,14 +181,14 @@ class MetaArch(nn.Module):
             act_layer()
         ) if extra_transform else nn.Identity()
 
+        features = int(dims[-1] * extra_transform_ratio) if extra_transform else dims[-1]
         self.avg_head = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
-            # norm_layer(mid_features),
+            norm_layer(features) if norm_after_avg and not norm_every_stage else nn.Identity(),
             nn.Flatten(1),
         )
 
         if num_classes > 0:
-            features = int(dims[-1] * extra_transform_ratio) if extra_transform else dims[-1]
             self.head = nn.Linear(features, num_classes)
         else:
             self.head = nn.Identity()
@@ -215,6 +218,7 @@ class MetaArch(nn.Module):
             x = self.downsample_layers[i](x)
             x = self.stages[i](x)
             x = self.stage_norms[i](x)
+        x = self.stage_end_norm(x)
 
         x = self.conv_head(x)
         x = self.avg_head(x)

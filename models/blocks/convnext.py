@@ -119,20 +119,21 @@ class ConvNeXtHead(nn.Module):
         return self.head(torch.mean(x, dim=(-2, -1)))
 
 
-# @ register_model
-# def official_convnext_tiny(pretrained=False, **kwargs):
-#     # difference with official implementation: norm before mean, leads to 0.4% dropping
-#     model = MetaArch(img_size=224,
-#                      depths=[3, 3, 9, 3],
-#                      dims=[96, 192, 384, 768],
-#                      stem_type=ConvNeXtStem,
-#                      block_type=ConvNeXtBlock,
-#                      downsample_type=ConvNeXtDownsampleLayer,
-#                      head_type=ConvNeXtHead,
-#                      head_norm_first=True,
-#                      **kwargs)
+@ register_model
+def official_convnext_tiny(pretrained=False, **kwargs):
+    # difference with official implementation: norm before mean, leads to 0.4% dropping
+    model = MetaArch(img_size=224,
+                     depths=[3, 3, 9, 3],
+                     dims=[96, 192, 384, 768],
+                     stem_type=ConvNeXtStem,
+                     block_type=ConvNeXtBlock,
+                     downsample_type=ConvNeXtDownsampleLayer,
+                     extra_transform=False,
+                     norm_every_stage=False,
+                     norm_after_avg=True,
+                     **kwargs)
 
-#     if pretrained:
-#         raise NotImplementedError()
+    if pretrained:
+        raise NotImplementedError()
 
-#     return model
+    return model
