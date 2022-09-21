@@ -1,7 +1,8 @@
 import torch
 from torch import nn
 from timm.models import register_model
-from timm.models.layers import DropPath, LayerNorm2d, Mlp, to_2tuple
+from timm.models.layers import DropPath, LayerNorm2d, Mlp, to_2tuple, make_divisible
+from timm.models.byobnet import _block_registry, num_groups, create_shortcut, LayerFn
 from timm.models.layers.halo_attn import HaloAttn as HaloAttention
 from ..meta_arch import MetaArch
 
@@ -69,7 +70,8 @@ class HaloBlockV2(nn.Module):
         super().__init__()
         self.dim = dim
         self.mlp_ratio = mlp_ratio
-        stride = 2 if stage > 0 and depth == 0 else 1
+        # stride = 2 if stage > 0 and depth == 0 else 1
+        stride = 1
 
         self.shortcut = nn.Sequential(
             nn.Conv2d(dim // 2, dim, kernel_size=1, stride=stride, bias=False),
@@ -131,25 +133,119 @@ class HaloStem(nn.Module):
         return self.stem(x)
 
 
-# @register_model
-# def official_halo_timm_tiny(pretrained=False, **kwargs):
-#     dims = [64 * 2 ** i for i in range(4)]
-#     depths = [3, 3, 10, 3]
-#     num_heads = [8, 8, 8, 8]
-#     block_size = 7
-#     halo_size = 3
+class ModifiedSelfAttnBlock(nn.Module):
+    """ ResNet-like Bottleneck Block - 1x1 - optional kxk - self attn - 1x1
+    """
 
-#     model = MetaArch(img_size=224,
-#                      depths=depths,
-#                      dims=dims,
-#                      stem_type=HaloStem,
-#                      block_type=HaloBlock,
-#                      block_kwargs=dict(num_heads=num_heads, block_size=block_size, halo_size=halo_size),
-#                      norm_layer=nn.BatchNorm2d,
-#                      downsample_type=nn.Identity,
-#                      **kwargs)
+    def __init__(
+            self, in_chs, out_chs, kernel_size=3, stride=1, dilation=(1, 1), bottle_ratio=(1., 1.), group_size=None,
+            downsample='avg', extra_conv=False, linear_out=False, bottle_in=False, post_attn_na=True,
+            feat_size=None, layers: LayerFn = None, drop_block=None, drop_path_rate=0.):
+        super().__init__()
+        assert layers is not None
 
-#     if pretrained:
-#         raise NotImplementedError()
+        if isinstance(bottle_ratio, float):
+            bottle_ratio = (bottle_ratio, bottle_ratio)
 
-#     return model
+        mid_chs_1 = make_divisible(out_chs / bottle_ratio[1])
+        mid_chs_2 = make_divisible(out_chs / bottle_ratio[1] * bottle_ratio[0])
+        groups = num_groups(group_size, mid_chs_1)
+
+        self.shortcut = create_shortcut(
+            downsample, in_chs=in_chs, out_chs=out_chs, stride=stride, dilation=dilation,
+            apply_act=False, layers=layers)
+
+        self.conv1_1x1 = layers.conv_norm_act(in_chs, mid_chs_1, 1)
+        if extra_conv:
+            self.conv2_kxk = layers.conv_norm_act(
+                mid_chs_1, mid_chs_1, kernel_size, stride=stride, dilation=dilation[0],
+                groups=groups, drop_layer=drop_block)
+            stride = 1  # striding done via conv if enabled
+        else:
+            self.conv2_kxk = nn.Identity()
+        opt_kwargs = {} if feat_size is None else dict(feat_size=feat_size)
+        # FIXME need to dilate self attn to have dilated network support, moop moop
+        self.self_attn = layers.self_attn(mid_chs_1, mid_chs_2,
+                                          num_heads=4 if mid_chs_1 == 64 else 8,
+                                          stride=stride, **opt_kwargs)
+        self.post_attn = layers.norm_act(mid_chs_2) if post_attn_na else nn.Identity()
+        self.conv3_1x1 = layers.conv_norm_act(mid_chs_2, out_chs, 1, apply_act=False)
+        self.drop_path = DropPath(drop_path_rate) if drop_path_rate > 0. else nn.Identity()
+        self.act = nn.Identity() if linear_out else layers.act(inplace=True)
+
+    def init_weights(self, zero_init_last: bool = False):
+        if zero_init_last and self.shortcut is not None:
+            nn.init.zeros_(self.conv3_1x1.bn.weight)
+        if hasattr(self.self_attn, 'reset_parameters'):
+            self.self_attn.reset_parameters()
+
+    def forward(self, x):
+        shortcut = x
+        x = self.conv1_1x1(x)
+        x = self.conv2_kxk(x)
+        x = self.self_attn(x)
+        x = self.post_attn(x)
+        x = self.conv3_1x1(x)
+        x = self.drop_path(x)
+        if self.shortcut is not None:
+            x = x + self.shortcut(shortcut)
+        return self.act(x)
+
+
+_block_registry['self_attn'] = ModifiedSelfAttnBlock
+
+
+@register_model
+def halonet_h0(pretrained=False, layer_scale_init_value=0., **kwargs):
+    from timm.models.helpers import build_model_with_cfg
+    from timm.models.byobnet import ByoModelCfg, ByoBlockCfg, ByobNet
+
+    model_cfg = ByoModelCfg(
+        blocks=(
+            ByoBlockCfg(type='self_attn', d=3, c=64 * 0.5, s=1, gs=0, br=(1.0, 0.5)),
+            ByoBlockCfg(type='self_attn', d=3, c=128 * 0.5, s=2, gs=0, br=(1.0, 0.5)),
+            ByoBlockCfg(type='self_attn', d=7, c=256 * 0.5, s=2, gs=0, br=(1.0, 0.5)),
+            ByoBlockCfg(type='self_attn', d=3, c=512 * 0.5, s=2, gs=0, br=(1.0, 0.5)),
+        ),
+        stem_chs=64,
+        stem_type='7x7',
+        stem_pool='maxpool',
+
+        self_attn_layer='halo',
+        self_attn_kwargs=dict(block_size=7, halo_size=3),
+    )
+
+    return build_model_with_cfg(ByobNet, 'halonet_h0', pretrained,
+                                model_cfg=model_cfg,
+                                feature_cfg=dict(flatten_sequential=True),
+                                **kwargs)
+
+
+@register_model
+def halonet_h5(pretrained=False, layer_scale_init_value=0., **kwargs):
+    from timm.models.helpers import build_model_with_cfg
+    from timm.models.byobnet import ByoModelCfg, ByoBlockCfg, ByobNet
+
+    rv = 2.5
+    rb = 2.
+
+    model_cfg = ByoModelCfg(
+        blocks=(
+            ByoBlockCfg(type='self_attn', d=3, c=64 * rb, s=1, gs=0, br=(rv, rb)),
+            ByoBlockCfg(type='self_attn', d=3, c=128 * rb, s=2, gs=0, br=(rv, rb)),
+            ByoBlockCfg(type='self_attn', d=23, c=256 * rb, s=2, gs=0, br=(rv, rb)),
+            ByoBlockCfg(type='self_attn', d=3, c=512 * rb, s=2, gs=0, br=(rv, rb)),
+        ),
+        stem_chs=64,
+        stem_type='7x7',
+        stem_pool='maxpool',
+
+        num_features=1536,
+        self_attn_layer='halo',
+        self_attn_kwargs=dict(block_size=7, halo_size=3),
+    )
+
+    return build_model_with_cfg(ByobNet, 'halonet_h5', pretrained,
+                                model_cfg=model_cfg,
+                                feature_cfg=dict(flatten_sequential=True),
+                                **kwargs)
