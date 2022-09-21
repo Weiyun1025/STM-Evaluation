@@ -89,7 +89,6 @@ def conv_convnext_v2_tiny(pretrained=False, **kwargs):
     return model
 
 
-
 @ register_model
 def conv_convnext_v3_tiny(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
