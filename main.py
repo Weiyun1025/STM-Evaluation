@@ -358,6 +358,7 @@ def main(args):
         print("Assigned values = %s" % str(assigner.values))
 
     if args.distributed:
+        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=False)
         model_without_ddp = model.module
 
