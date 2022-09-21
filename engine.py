@@ -78,10 +78,10 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             loss /= update_freq
             loss.backward()
 
-            if max_norm is not None: # clip grad
+            if max_norm is not None:  # clip grad
                 grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
             else:
-                grad_norm = utils.get_grad_norm(model.parameters())
+                grad_norm = utils.get_grad_norm_(model.parameters())
 
             if (data_iter_step + 1) % update_freq == 0:
                 optimizer.step()
@@ -120,7 +120,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             log_writer.update(lr=max_lr, head="opt")
             log_writer.update(min_lr=min_lr, head="opt")
             log_writer.update(weight_decay=weight_decay_value, head="opt")
-            #if use_amp:
+            # if use_amp:
             #    log_writer.update(grad_norm=grad_norm, head="opt")
             log_writer.update(grad_norm=grad_norm, head="opt")
             log_writer.set_step()
