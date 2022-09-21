@@ -69,4 +69,5 @@ srun -p ${PARTITION} \
     --nb_classes 1000 \
     --use_amp true \
     --save_ckpt true \
+    --name ${PROJECT_NAME} \
     --output_dir "backbone_outputdir/${PROJECT_NAME}"

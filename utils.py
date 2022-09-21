@@ -214,6 +214,7 @@ class WandbLogger(object):
         if self._wandb.run is None:
             self._wandb.init(
                 project=args.project,
+                name=args.name,
                 config=args
             )
 
