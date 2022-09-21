@@ -24,14 +24,14 @@ def speed_test(model, img_size=224):
 
 
 if __name__ == '__main__':
-    model_name_list = ['deit_tiny_patch16_224']
+    model_name_list = ['conv_convnext_v2_tiny', 'conv_convnext_v3_tiny']
     
     for model_name in model_name_list:
         print("********************************************************")
         model = create_model(model_name,
                             pretrained=False,
                             num_classes=1000).cuda()
-        
+    
         flops, params = get_model_complexity_info(model, (3, 224, 224),
                                                 as_strings=False,
                                                 print_per_layer_stat=False)

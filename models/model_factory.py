@@ -1,7 +1,7 @@
 from torch import nn
 from timm.models import register_model
 from .meta_arch import MetaArch, PatchEmbed, PatchMerging
-from .blocks.convnext import ConvNeXtBlock, ConvNeXtV2Block
+from .blocks.convnext import ConvNeXtBlock, ConvNeXtV2Block, ConvNeXtV3Block
 from .blocks.swin import SwinBlock
 from .blocks.dcn_v3 import DCNv3Block
 from .blocks.pvt_v2 import PvtV2Block
@@ -81,6 +81,21 @@ def conv_convnext_v2_tiny(pretrained=False, **kwargs):
                      depths=[3, 3, 9, 3],
                      dims=[96, 192, 384, 768],
                      block_type=ConvNeXtV2Block,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+
+@ register_model
+def conv_convnext_v3_tiny(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[2, 2, 9, 2],
+                     dims=[96, 192, 384, 768],
+                     block_type=ConvNeXtV3Block,
                      **kwargs)
 
     if pretrained:
