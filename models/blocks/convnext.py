@@ -42,7 +42,7 @@ class ConvNeXtBlock(nn.Module):
 class ConvNeXtV2Block(nn.Module):
     def __init__(self, dim, drop_path, layer_scale_init_value, **kwargs):
         super().__init__()
-        self.dw_norm = nn.LayerNorm(dim, eps=1e-6)
+        self.dw_norm = LayerNorm2d(dim, eps=1e-6)
         self.dwconv = nn.Conv2d(dim, dim, kernel_size=7, padding=3, groups=dim)  # depthwise conv
 
         self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((1, dim, 1, 1)),
