@@ -205,6 +205,8 @@ def get_args_parser():
                         help="enable logging to Weights and Biases")
     parser.add_argument('--project', default='convnext', type=str,
                         help="The name of the W&B project where you're sending the new run.")
+    parser.add_argument('--name', default='convnext', type=str,
+                        help="The name of the new run.")
     parser.add_argument('--wandb_ckpt', type=str2bool, default=False,
                         help="Save model checkpoints as W&B Artifacts.")
 

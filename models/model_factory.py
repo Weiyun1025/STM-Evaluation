@@ -413,8 +413,10 @@ def conv_halo_v2_timm_tiny(pretrained=False, **kwargs):
                      depths=depths,
                      dims=dims,
                      block_type=halonet_timm.HaloBlockV2,
-                     block_kwargs=dict(num_heads=num_heads, block_size=block_size, halo_size=halo_size),
-                     downsample_type=nn.Identity,
+                     block_kwargs=dict(num_heads=num_heads,
+                                       block_size=block_size,
+                                       halo_size=halo_size),
+                     #  downsample_type=nn.Identity,
                      **kwargs)
 
     if pretrained:
