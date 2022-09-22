@@ -11,4 +11,13 @@ outputs/*
 backbone_outputdir/*
 batchscript-*
 
+# omit compiled lib
+ops/build/*
+ops/dist/*
+ops/MultiScaleDeformableAttention.egg-info/*
+ops/MultiScaleDeformableAttention.egg-info
+ops/dist
+
+
+
 !.gitignore
