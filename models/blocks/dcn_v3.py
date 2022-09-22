@@ -9,7 +9,7 @@ from torch.autograd.function import once_differentiable
 from torch.cuda.amp import custom_bwd, custom_fwd
 from torch.nn.init import xavier_uniform_, constant_
 from timm.models.layers import DropPath, LayerNorm2d
-from mmcv.ops.multi_scale_deform_attn import MultiScaleDeformableAttention as MSDA
+import MultiScaleDeformableAttention as MSDA
 
 
 class MLP(nn.Module):
@@ -32,15 +32,16 @@ class MLP(nn.Module):
 
 
 class DCNv3Block(nn.Module):
-    def __init__(self, dim, drop_path, layer_scale_init_value, stage, num_heads,
+    def __init__(self, dim, drop_path, layer_scale_init_value, stage, total_depth, num_heads,
                  kernel_size=7, deform_points=25, deform_ratio=1.0,
                  dilation_rates=(1, 2, 3),  deform_padding=True, mlp_ratio=4., drop=0.,
-                 act_layer=nn.GELU, norm_layer=LayerNorm2d, offsets_scaler=1.0,
+                 act_layer=nn.GELU, norm_layer=nn.LayerNorm, offsets_scaler=1.0,
                  **kwargs):
         super().__init__()
         self.dim = dim
         self.num_heads = num_heads[stage]
         self.mlp_ratio = mlp_ratio
+        self.depth = total_depth
 
         self.norm1 = norm_layer(dim)
         self.attn = MSDeformAttnGrid_softmax(
@@ -60,7 +61,7 @@ class DCNv3Block(nn.Module):
             self.gamma2 = nn.Parameter(
                 layer_scale_init_value * torch.ones(dim), requires_grad=True)
 
-    def forward(self, x, deform_inputs):
+    def forward(self, x_deform_inputs):
         def deform_forward(x):
             n, h, w, c = x.shape
             x = self.attn(
@@ -73,6 +74,11 @@ class DCNv3Block(nn.Module):
 
             return x
 
+        x = x_deform_inputs[0]
+        deform_inputs = x_deform_inputs[1][self.depth]
+
+        B, C, H, W = x.shape
+        x = x.permute(0, 2, 3, 1)
         if not self.layer_scale:
             shortcut = x
             x = self.norm1(x)
@@ -80,7 +86,7 @@ class DCNv3Block(nn.Module):
             x = shortcut + self.drop_path(x)
             x = x + self.drop_path(self.mlp(self.norm2(x)))
 
-            return x
+            return x.permute(0, 3, 1, 2)
 
         shortcut = x
         x = self.norm1(x)
@@ -89,7 +95,7 @@ class DCNv3Block(nn.Module):
         x = shortcut + self.drop_path(self.gamma1 * x)
         x = x + self.drop_path(self.gamma2 * self.mlp(self.norm2(x)))
 
-        return x
+        return x.permute(0, 3, 1, 2)
 
 
 def _is_power_of_2(n):
