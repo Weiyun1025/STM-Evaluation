@@ -1,6 +1,8 @@
+import math
 import torch
 from torch import nn
 from timm.models.layers import LayerNorm2d, to_2tuple, trunc_normal_
+from .blocks.dcn_v3 import DCNv3Block
 
 # TODO: 检查所有norm的位置
 
@@ -140,9 +142,15 @@ class MetaArch(nn.Module):
                  norm_every_stage=True,
                  norm_after_avg=False,
                  act_layer=nn.GELU,
+                 deform_points=9,
+                 deform_padding=True,
                  **kwargs,
                  ):
         super().__init__()
+        self.depths = depths
+        self.block_type = block_type
+        self.deform_points = deform_points
+        self.deform_padding = deform_padding
 
         # stem + downsample_layers
         stem = stem_type(in_channels=in_channels, out_channels=dims[0], img_size=img_size,
@@ -164,7 +172,7 @@ class MetaArch(nn.Module):
         self.stage_norms = nn.ModuleList()
         for i, (depth, dim) in enumerate(zip(depths, dims)):
             stage = nn.Sequential(
-                *[block_type(dim=dim, drop_path=dp_rates[cur + j], stage=i, depth=j,
+                *[block_type(dim=dim, drop_path=dp_rates[cur + j], stage=i, depth=j, total_depth=cur+j,
                              input_resolution=(self.patch_grid[0] // (2 ** i), self.patch_grid[1] // (2 ** i)),
                              layer_scale_init_value=layer_scale_init_value,
                              **block_kwargs)
@@ -213,10 +221,14 @@ class MetaArch(nn.Module):
         return no_weight_decay
 
     def forward_features(self, x):
+        deform = self.block_type is DCNv3Block
+        if deform:
+            deform_inputs = self._deform_inputs(x)
+
         # shape: (B, C, H, W)
         for i in range(4):
             x = self.downsample_layers[i](x)
-            x = self.stages[i](x)
+            x = self.stages[i](x if not deform else (x, deform_inputs))
             x = self.stage_norms[i](x)
         x = self.stage_end_norm(x)
 
@@ -228,3 +240,48 @@ class MetaArch(nn.Module):
         x = self.forward_features(x)
         x = self.head(x)
         return x
+
+    def _deform_inputs(self, x):
+        b, c, h, w = x.shape
+        deform_inputs = []
+        if self.deform_padding:
+            padding = int(math.sqrt(self.deform_points) // 2)
+        else:
+            padding = int(0)
+
+        for i in range(sum(self.depths)):
+            spatial_shapes = torch.as_tensor(
+                [(h // pow(2, i + 2) + 2 * padding,
+                    w // pow(2, i + 2) + 2 * padding)],
+                dtype=torch.long, device=x.device)
+            level_start_index = torch.cat(
+                (spatial_shapes.new_zeros((1,)),
+                    spatial_shapes.prod(1).cumsum(0)[:-1]))
+            reference_points = self._get_reference_points(
+                [(h // pow(2, i + 2) + 2 * padding,
+                    w // pow(2, i + 2) + 2 * padding)],
+                device=x.device, padding=padding)
+            deform_inputs.append(
+                [reference_points, spatial_shapes, level_start_index,
+                    (h // pow(2, i + 2), w // pow(2, i + 2))])
+
+        return deform_inputs
+
+    def _get_reference_points(self, spatial_shapes, device, padding=0):
+        reference_points_list = []
+        for lvl, (H_, W_) in enumerate(spatial_shapes):
+            ref_y, ref_x = torch.meshgrid(
+                torch.linspace(padding + 0.5, H_ - padding - 0.5,
+                               int(H_ - 2 * padding),
+                               dtype=torch.float32, device=device),
+                torch.linspace(padding + 0.5, W_ - padding - 0.5,
+                               int(W_ - 2 * padding),
+                               dtype=torch.float32, device=device))
+            ref_y = ref_y.reshape(-1)[None] / H_
+            ref_x = ref_x.reshape(-1)[None] / W_
+            ref = torch.stack((ref_x, ref_y), -1)
+            reference_points_list.append(ref)
+        reference_points = torch.cat(reference_points_list, 1)
+        reference_points = reference_points[:, :, None]
+
+        return reference_points
