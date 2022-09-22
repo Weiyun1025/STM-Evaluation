@@ -12,6 +12,7 @@ import time
 import argparse
 import datetime
 from pathlib import Path
+from xmlrpc.client import boolean
 
 import torch
 import numpy as np
@@ -155,6 +156,8 @@ def get_args_parser():
                         help='dataset path')
     parser.add_argument('--eval_data_path', default=None, type=str,
                         help='dataset path for evaluation')
+    parser.add_argument('--data_on_memory', default=False, type=bool,
+                        help='loading training data to memory')
     parser.add_argument('--nb_classes', default=1000, type=int,
                         help='number of the classification types')
     parser.add_argument('--imagenet_default_mean_and_std', type=str2bool, default=True)

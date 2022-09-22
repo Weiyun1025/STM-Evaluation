@@ -9,6 +9,9 @@
 import os
 import os.path as osp
 from torchvision import datasets, transforms
+import torch
+import math
+import tqdm
 
 from timm.data.constants import \
     IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD, IMAGENET_INCEPTION_MEAN, IMAGENET_INCEPTION_STD
@@ -59,7 +62,7 @@ def build_dataset(is_train, args):
         assert len(dataset.class_to_idx) == nb_classes
     elif args.data_set == "IMNET1k":
         split = 'train' if is_train else 'val'
-        dataset = ImageCephDataset(args.data_path, split, transform=transform)
+        dataset = ImageCephDataset(args.data_path, split, transform=transform, on_memory=args.data_on_memory)
         nb_classes = 1000
     elif args.data_set == "CEPH22k" and is_train:
         dataset = ImageCephDataset(args.data_path, 'train', transform=transform)
@@ -132,6 +135,7 @@ class ImageCephDataset(data.Dataset):
             parser=None,
             transform=None,
             target_transform=None,
+            on_memory=False,
     ):
         if '22k' in root and split == 'train':
             raise NotImplementedError()
@@ -140,7 +144,8 @@ class ImageCephDataset(data.Dataset):
 
         if parser is None or isinstance(parser, str):
             parser = ParserCephImage(root=root, split=split,
-                                     annotation_root=annotation_root)
+                                     annotation_root=annotation_root,
+                                     on_memory=on_memory)
         self.parser = parser
         self.transform = transform
         self.target_transform = target_transform
@@ -181,7 +186,7 @@ class Parser:
     def filenames(self, basename=False, absolute=False):
         return [self._filename(index, basename=basename, absolute=absolute) for index in range(len(self))]
 
-
+'''
 class ParserCephImage(Parser):
     def __init__(
             self,
@@ -245,4 +250,139 @@ class ParserCephImage(Parser):
     def _filename(self, index, basename=False, absolute=False):
         filename, _ = self.samples[index].split(' ')
         filename = osp.join(self.root, filename)
+        return filename
+'''
+
+class ParserCephImage(Parser):
+    def __init__(
+            self,
+            root,
+            split,
+            annotation_root,
+            on_memory=False,
+            **kwargs):
+        super().__init__()
+
+        self.file_client = None
+        self.kwargs = kwargs
+
+        self.root = root  # dataset:s3://imagenet22k
+        if '22k' in root:
+            self.io_backend = 'petrel'
+            with open(osp.join(annotation_root, '22k_class_to_idx.json'), 'r') as f:
+                self.class_to_idx = json.loads(f.read())
+            with open(osp.join(annotation_root, '22k_label.txt'), 'r') as f:
+                self.samples = f.read().splitlines()
+        else:
+            self.io_backend = 'disk'
+            self.class_to_idx = None
+            with open(osp.join(annotation_root, f'{split}.txt'), 'r') as f:
+                self.samples = f.read().splitlines()
+        local_rank = None
+        local_size = None
+        self._consecutive_errors = 0
+        self.on_memory = on_memory
+        if on_memory:
+            self.holder = {}
+            if local_rank is None:
+                local_rank = int(os.environ.get('LOCAL_RANK', 0))
+            if local_size is None:
+                local_size = int(os.environ.get('LOCAL_SIZE', 1))
+            self.local_rank = local_rank
+            self.local_size = local_size
+            self.rank = int(os.environ["RANK"])
+            self.world_size = int(os.environ['WORLD_SIZE'])
+            self.num_replicas = int(os.environ['WORLD_SIZE'])
+            self.num_parts = local_size
+            self.num_samples = int(
+                math.ceil(len(self.samples) * 1.0 / self.num_replicas))
+            self.total_size = self.num_samples * self.num_replicas
+            self.total_size_parts = self.num_samples * self.num_replicas // self.num_parts
+            self.load_onto_memory_v2()
+
+    def load_onto_memory(self):
+        print("Loading images onto memory...",
+              self.local_rank, self.local_size)
+        if self.file_client is None:
+            self.file_client = FileClient(self.io_backend, **self.kwargs)
+        for index in range(len(self.samples)):
+            if index % self.local_size != self.local_rank:
+                continue
+            path, _ = self.samples[index].split(' ')
+            path = osp.join(self.root, path)
+            img_bytes = self.file_client.get(path)
+            self.holder[path] = img_bytes
+
+        print("Loading complete!")
+
+    def load_onto_memory_v2(self):
+        # print("Loading images onto memory...", self.local_rank, self.local_size)
+        t = torch.Generator()
+        t.manual_seed(0)
+        indices = torch.randperm(len(self.samples), generator=t).tolist()
+        # indices = range(len(self.samples))
+        indices = [i for i in indices if i % self.num_parts == self.local_rank]
+        # add extra samples to make it evenly divisible
+        indices += indices[:(self.total_size_parts - len(indices))]
+        assert len(indices) == self.total_size_parts
+
+        # subsample
+        indices = indices[self.rank //
+                          self.num_parts:self.total_size_parts:self.num_replicas // self.num_parts]
+        assert len(indices) == self.num_samples
+
+        if self.file_client is None:
+            self.file_client = FileClient(self.io_backend, **self.kwargs)
+        for index in tqdm(indices):
+            if index % self.local_size != self.local_rank:
+                continue
+            path, _ = self.samples[index].split(' ')
+            path = osp.join(self.root, path)
+            img_bytes = self.file_client.get(path)
+
+            self.holder[path] = img_bytes
+        
+        print("Loading complete!")
+
+    def __getitem__(self, index):
+        if self.file_client is None:
+            self.file_client = FileClient(self.io_backend, **self.kwargs)
+
+        filepath, target = self.samples[index].split(' ')
+        filepath = osp.join(self.root, filepath)
+
+        if cluster == '1424':
+            filepath = filepath.replace('image22k/', 'imagenet22k/')
+        try:
+            if self.on_memory:
+                img_bytes = self.holder[filepath]
+            else:
+                # pass
+                img_bytes = self.file_client.get(filepath)
+            img = mmcv.imfrombytes(img_bytes)[:, :, ::-1]
+        except Exception as e:
+            _logger.warning(
+                f'Skipped sample (index {index}, file {filepath}). {str(e)}')
+            self._consecutive_errors += 1
+            if self._consecutive_errors < _ERROR_RETRY:
+                return self.__getitem__((index + 1) % len(self))
+            else:
+                raise e
+        self._consecutive_errors = 0
+
+        img = Image.fromarray(img)
+        if self.class_to_idx is not None:
+            target = self.class_to_idx[target]
+        else:
+            target = int(target)
+        
+        return img, target
+
+    def __len__(self):
+        return len(self.samples)
+
+    def _filename(self, index, basename=False, absolute=False):
+        filename, _ = self.samples[index].split(' ')
+        filename = osp.join(self.root, filename)
+        
         return filename
