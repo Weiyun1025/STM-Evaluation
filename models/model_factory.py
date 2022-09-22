@@ -102,7 +102,21 @@ def conv_convnext_v3_tiny(pretrained=False, **kwargs):
 
     return model
 
+@ register_model
+def conv_convnext_v3_small(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[2, 2, 24, 2],
+                     dims=[96, 192, 384, 768],
+                     block_type=ConvNeXtV3Block,
+                     **kwargs)
 
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+# *********************************************************
+# Swin
 @register_model
 def pe_swin_tiny(pretrained=False, **kwargs):
     dims = [96 * 2 ** i for i in range(4)]
