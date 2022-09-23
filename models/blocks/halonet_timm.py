@@ -4,6 +4,8 @@ from timm.models import register_model
 from timm.models.layers import DropPath, LayerNorm2d, Mlp, to_2tuple, make_divisible
 from timm.models.byobnet import _block_registry, num_groups, create_shortcut, LayerFn
 from timm.models.layers.halo_attn import HaloAttn as HaloAttention
+from timm.models.helpers import build_model_with_cfg
+from timm.models.byobnet import ByoModelCfg, ByoBlockCfg, ByobNet
 from ..meta_arch import MetaArch
 
 
@@ -198,57 +200,64 @@ class ModifiedSelfAttnBlock(nn.Module):
 _block_registry['self_attn'] = ModifiedSelfAttnBlock
 
 
-@register_model
-def halonet_h0(pretrained=False, layer_scale_init_value=0., **kwargs):
-    from timm.models.helpers import build_model_with_cfg
-    from timm.models.byobnet import ByoModelCfg, ByoBlockCfg, ByobNet
-
-    model_cfg = ByoModelCfg(
-        blocks=(
-            ByoBlockCfg(type='self_attn', d=3, c=64 * 0.5, s=1, gs=0, br=(1.0, 0.5)),
-            ByoBlockCfg(type='self_attn', d=3, c=128 * 0.5, s=2, gs=0, br=(1.0, 0.5)),
-            ByoBlockCfg(type='self_attn', d=7, c=256 * 0.5, s=2, gs=0, br=(1.0, 0.5)),
-            ByoBlockCfg(type='self_attn', d=3, c=512 * 0.5, s=2, gs=0, br=(1.0, 0.5)),
-        ),
-        stem_chs=64,
-        stem_type='7x7',
-        stem_pool='maxpool',
-
-        self_attn_layer='halo',
-        self_attn_kwargs=dict(block_size=7, halo_size=3),
-    )
-
-    return build_model_with_cfg(ByobNet, 'halonet_h0', pretrained,
-                                model_cfg=model_cfg,
-                                feature_cfg=dict(flatten_sequential=True),
-                                **kwargs)
-
-
-@register_model
-def halonet_h5(pretrained=False, layer_scale_init_value=0., **kwargs):
-    from timm.models.helpers import build_model_with_cfg
-    from timm.models.byobnet import ByoModelCfg, ByoBlockCfg, ByobNet
-
-    rv = 2.5
-    rb = 2.
-
+def _create_halonet(b, h, rv, rb, l3, df=None, pretrained=False, **kwargs):
     model_cfg = ByoModelCfg(
         blocks=(
             ByoBlockCfg(type='self_attn', d=3, c=64 * rb, s=1, gs=0, br=(rv, rb)),
             ByoBlockCfg(type='self_attn', d=3, c=128 * rb, s=2, gs=0, br=(rv, rb)),
-            ByoBlockCfg(type='self_attn', d=23, c=256 * rb, s=2, gs=0, br=(rv, rb)),
+            ByoBlockCfg(type='self_attn', d=l3, c=256 * rb, s=2, gs=0, br=(rv, rb)),
             ByoBlockCfg(type='self_attn', d=3, c=512 * rb, s=2, gs=0, br=(rv, rb)),
         ),
         stem_chs=64,
         stem_type='7x7',
         stem_pool='maxpool',
 
-        num_features=1536,
+        num_features=df,
         self_attn_layer='halo',
-        self_attn_kwargs=dict(block_size=7, halo_size=3),
+        self_attn_kwargs=dict(block_size=7, halo_size=h),
     )
 
-    return build_model_with_cfg(ByobNet, 'halonet_h5', pretrained,
+    return build_model_with_cfg(ByobNet, 'halonet', pretrained,
                                 model_cfg=model_cfg,
                                 feature_cfg=dict(flatten_sequential=True),
                                 **kwargs)
+
+
+@register_model
+def halonet_h0(pretrained=False, layer_scale_init_value=0., **kwargs):
+    return _create_halonet(b=8, h=3, rv=1., rb=0.5, l3=7, **kwargs)
+
+
+@register_model
+def halonet_h1(pretrained=False, layer_scale_init_value=0., **kwargs):
+    return _create_halonet(b=8, h=3, rv=1., rb=1., l3=10, **kwargs)
+
+
+@register_model
+def halonet_h2(pretrained=False, layer_scale_init_value=0., **kwargs):
+    return _create_halonet(b=8, h=3, rv=1., rb=1.25, l3=11, **kwargs)
+
+
+@register_model
+def halonet_h3(pretrained=False, layer_scale_init_value=0., **kwargs):
+    return _create_halonet(b=10, h=3, rv=1., rb=1.5, l3=12, df=1024, **kwargs)
+
+
+@register_model
+def halonet_h4(pretrained=False, layer_scale_init_value=0., **kwargs):
+    return _create_halonet(b=12, h=2, rv=1., rb=3., l3=12, df=1280, **kwargs)
+
+
+@register_model
+def halonet_h5(pretrained=False, layer_scale_init_value=0., **kwargs):
+    return _create_halonet(b=14, h=2, rv=2.5, rb=2., l3=23, df=1536, **kwargs)
+
+
+@register_model
+def halonet_h6(pretrained=False, layer_scale_init_value=0., **kwargs):
+    return _create_halonet(b=8, h=4, rv=3., rb=2.75, l3=24, df=1536, **kwargs)
+
+
+@register_model
+def halonet_h7(pretrained=False, layer_scale_init_value=0., **kwargs):
+    return _create_halonet(b=10, h=3, rv=4., rb=3.5, l3=26, df=2048, **kwargs)
