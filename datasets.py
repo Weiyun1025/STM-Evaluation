@@ -293,9 +293,9 @@ class ParserCephImage(Parser):
                 local_size = int(os.environ.get('LOCAL_SIZE', 1))
             self.local_rank = local_rank
             self.local_size = local_size
-            self.rank = int(os.environ["RANK"])
-            self.world_size = int(os.environ['WORLD_SIZE'])
-            self.num_replicas = int(os.environ['WORLD_SIZE'])
+            self.rank = int(os.environ.get('RANK', 0))
+            self.world_size = int(os.environ.get('WORLD_SIZE', 1))
+            self.num_replicas = int(os.environ.get('WORLD_SIZE', 1))
             self.num_parts = local_size
             self.num_samples = int(
                 math.ceil(len(self.samples) * 1.0 / self.num_replicas))
@@ -352,7 +352,7 @@ class ParserCephImage(Parser):
             self.file_client = FileClient(self.io_backend, **self.kwargs)
 
         filepath, target = self.samples[index].split(' ')
-        filepath = osp.join(self.root, filepath)
+        filepath = osp.join(self.root, self.split, filepath)
 
         if cluster == '1424':
             filepath = filepath.replace('image22k/', 'imagenet22k/')
