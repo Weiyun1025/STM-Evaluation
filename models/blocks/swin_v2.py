@@ -29,7 +29,8 @@ class SwinV2Block(nn.Module):
             self, dim, drop_path, layer_scale_init_value,
             input_resolution, stage, depth, num_heads, window_size,
             mlp_ratio=4., qkv_bias=True, drop=0., attn_drop=0.,
-            act_layer=nn.GELU, norm_layer=nn.LayerNorm, pretrained_window_size=0):
+            act_layer=nn.GELU, norm_layer=nn.LayerNorm, pretrained_window_size=0,
+            **kwargs):
         super().__init__()
         num_heads = num_heads[stage]
         shift_size = 0 if (depth % 2 == 0) else window_size // 2

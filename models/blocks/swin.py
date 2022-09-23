@@ -10,7 +10,8 @@ class SwinBlock(nn.Module):
     def __init__(self, dim, drop_path, layer_scale_init_value,
                  input_resolution, stage, depth, num_heads, window_size,
                  mlp_ratio=4., qkv_bias=True, drop=0., attn_drop=0.,
-                 head_dim=None, act_layer=nn.GELU, norm_layer=LayerNorm2d):
+                 head_dim=None, act_layer=nn.GELU, norm_layer=LayerNorm2d,
+                 **kwargs):
         super().__init__()
         self.dim = dim
         self.input_resolution = input_resolution
