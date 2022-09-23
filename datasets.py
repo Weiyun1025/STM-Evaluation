@@ -11,7 +11,7 @@ import os.path as osp
 from torchvision import datasets, transforms
 import torch
 import math
-import tqdm
+from tqdm import tqdm
 
 from timm.data.constants import \
     IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD, IMAGENET_INCEPTION_MEAN, IMAGENET_INCEPTION_STD
@@ -186,6 +186,7 @@ class Parser:
     def filenames(self, basename=False, absolute=False):
         return [self._filename(index, basename=basename, absolute=absolute) for index in range(len(self))]
 
+
 '''
 class ParserCephImage(Parser):
     def __init__(
@@ -253,6 +254,7 @@ class ParserCephImage(Parser):
         return filename
 '''
 
+
 class ParserCephImage(Parser):
     def __init__(
             self,
@@ -266,6 +268,7 @@ class ParserCephImage(Parser):
         self.file_client = None
         self.kwargs = kwargs
 
+        self.split = split
         self.root = root  # dataset:s3://imagenet22k
         if '22k' in root:
             self.io_backend = 'petrel'
@@ -337,11 +340,11 @@ class ParserCephImage(Parser):
             if index % self.local_size != self.local_rank:
                 continue
             path, _ = self.samples[index].split(' ')
-            path = osp.join(self.root, path)
+            path = osp.join(self.root, self.split, path)
             img_bytes = self.file_client.get(path)
 
             self.holder[path] = img_bytes
-        
+
         print("Loading complete!")
 
     def __getitem__(self, index):
@@ -375,7 +378,7 @@ class ParserCephImage(Parser):
             target = self.class_to_idx[target]
         else:
             target = int(target)
-        
+
         return img, target
 
     def __len__(self):
@@ -384,5 +387,5 @@ class ParserCephImage(Parser):
     def _filename(self, index, basename=False, absolute=False):
         filename, _ = self.samples[index].split(' ')
         filename = osp.join(self.root, filename)
-        
+
         return filename

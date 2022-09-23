@@ -156,7 +156,7 @@ def get_args_parser():
                         help='dataset path')
     parser.add_argument('--eval_data_path', default=None, type=str,
                         help='dataset path for evaluation')
-    parser.add_argument('--data_on_memory', default=False, type=bool,
+    parser.add_argument('--data_on_memory', default=False, type=str2bool,
                         help='loading training data to memory')
     parser.add_argument('--nb_classes', default=1000, type=int,
                         help='number of the classification types')
