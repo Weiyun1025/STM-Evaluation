@@ -164,9 +164,12 @@ class ModifiedSelfAttnBlock(nn.Module):
         else:
             self.conv2_kxk = nn.Identity()
         opt_kwargs = {} if feat_size is None else dict(feat_size=feat_size)
-        # FIXME need to dilate self attn to have dilated network support, moop moop
-        self.self_attn = layers.self_attn(mid_chs_1, mid_chs_2,
-                                          num_heads=4 if mid_chs_1 == 64 else 8,
+
+        num_heads = 4 if mid_chs_1 == 64 else 8
+        self.self_attn = layers.self_attn(dim=mid_chs_1,
+                                          dim_out=mid_chs_2,
+                                          dim_head=mid_chs_1 // num_heads,
+                                          num_heads=num_heads,
                                           stride=stride, **opt_kwargs)
         self.post_attn = layers.norm_act(mid_chs_2) if post_attn_na else nn.Identity()
         self.conv3_1x1 = layers.conv_norm_act(mid_chs_2, out_chs, 1, apply_act=False)
