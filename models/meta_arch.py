@@ -229,6 +229,7 @@ class MetaArch(nn.Module):
         for i in range(4):
             x = self.downsample_layers[i](x)
             x = self.stages[i](x if not deform else (x, deform_inputs))
+            x = x[0] if deform else x
             x = self.stage_norms[i](x)
         x = self.stage_end_norm(x)
 
@@ -249,7 +250,8 @@ class MetaArch(nn.Module):
         else:
             padding = int(0)
 
-        for i in range(sum(self.depths)):
+        #for i in range(sum(self.depths)):
+        for i in range(len(self.depths)):
             spatial_shapes = torch.as_tensor(
                 [(h // pow(2, i + 2) + 2 * padding,
                     w // pow(2, i + 2) + 2 * padding)],
