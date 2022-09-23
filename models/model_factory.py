@@ -244,8 +244,32 @@ def conv_swin_base(pretrained=False, **kwargs):
     return model
 #******************************************************************************
 
+#******************************************************************************
+# DCN V3 
+
+# drop path rate should be set to 0.1
 @register_model
-def dcn_v3(pretrained=False, **kwargs):
+def dcn_v3_tiny(pretrained=False, **kwargs):
+    dims = [64 * 2 ** i for i in range(4)]
+    depths = [4, 4, 18, 4]
+    num_heads = [4, 8, 16, 32]
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     num_heads=num_heads,
+                     block_type=DCNv3Block,
+                     block_kwargs=dict(num_heads=num_heads, deform_points=9, kernel_size=3),
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@register_model
+def dcn_v3_small(pretrained=False, **kwargs):
     dims = [192 * 2 ** i for i in range(4)]
     depths = [4, 4, 18, 4]
     num_heads = [12, 24, 48, 96]
@@ -262,6 +286,27 @@ def dcn_v3(pretrained=False, **kwargs):
         raise NotImplementedError()
 
     return model
+
+# drop path rate should be set to 0.5
+@register_model
+def dcn_v3_base(pretrained=False, **kwargs):
+    dims = [112 * 2 ** i for i in range(4)]
+    depths = [4, 4, 21, 4]
+    num_heads = [4, 8, 16, 32]
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     num_heads=num_heads,
+                     block_type=DCNv3Block,
+                     block_kwargs=dict(num_heads=num_heads, deform_points=9, kernel_size=3),
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
 
 # ******************************************************************
 # PVT v2 with conv stem and conv transition
