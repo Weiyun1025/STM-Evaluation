@@ -356,21 +356,21 @@ class ParserCephImage(Parser):
 
         if cluster == '1424':
             filepath = filepath.replace('image22k/', 'imagenet22k/')
-        try:
-            if self.on_memory:
-                img_bytes = self.holder[filepath]
-            else:
-                # pass
-                img_bytes = self.file_client.get(filepath)
-            img = mmcv.imfrombytes(img_bytes)[:, :, ::-1]
-        except Exception as e:
-            _logger.warning(
-                f'Skipped sample (index {index}, file {filepath}). {str(e)}')
-            self._consecutive_errors += 1
-            if self._consecutive_errors < _ERROR_RETRY:
-                return self.__getitem__((index + 1) % len(self))
-            else:
-                raise e
+        # try:
+        if self.on_memory:
+            img_bytes = self.holder[filepath]
+        else:
+            # pass
+            img_bytes = self.file_client.get(filepath)
+        img = mmcv.imfrombytes(img_bytes)[:, :, ::-1]
+        # except Exception as e:
+        #     _logger.warning(
+        #         f'Skipped sample (index {index}, file {filepath}). {str(e)}')
+        #     self._consecutive_errors += 1
+        #     if self._consecutive_errors < _ERROR_RETRY:
+        #         return self.__getitem__((index + 1) % len(self))
+        #     else:
+        #         raise e
         self._consecutive_errors = 0
 
         img = Image.fromarray(img)
