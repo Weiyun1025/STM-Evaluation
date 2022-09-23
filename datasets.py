@@ -327,7 +327,7 @@ class ParserCephImage(Parser):
         indices = [i for i in indices if i % self.num_parts == self.local_rank]
         # add extra samples to make it evenly divisible
         indices += indices[:(self.total_size_parts - len(indices))]
-        assert len(indices) == self.total_size_parts
+        assert len(indices) == self.total_size_parts, f'{len(indices)}, {self.total_size_parts}'
 
         # subsample
         indices = indices[self.rank //
