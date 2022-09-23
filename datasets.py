@@ -268,6 +268,7 @@ class ParserCephImage(Parser):
         self.file_client = None
         self.kwargs = kwargs
 
+        self.split = split
         self.root = root  # dataset:s3://imagenet22k
         if '22k' in root:
             self.io_backend = 'petrel'
@@ -339,7 +340,7 @@ class ParserCephImage(Parser):
             if index % self.local_size != self.local_rank:
                 continue
             path, _ = self.samples[index].split(' ')
-            path = osp.join(self.root, path)
+            path = osp.join(self.root, self.split, path)
             img_bytes = self.file_client.get(path)
 
             self.holder[path] = img_bytes
