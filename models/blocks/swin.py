@@ -68,7 +68,7 @@ class SwinBlock(nn.Module):
         shortcut = x
         x = self.norm1(x)
         # B, H, W, C
-        x = x.permute(0, 2, 3, 1)
+        x = x.permute(0, 2, 3, 1).contiguous()
 
         # cyclic shift
         if self.shift_size > 0:
@@ -97,17 +97,17 @@ class SwinBlock(nn.Module):
             x = self.gamma_1 * x
 
         # B, H, W, C -> B, C, H, W
-        x = x.permute(0, 3, 1, 2)
+        x = x.permute(0, 3, 1, 2).contiguous()
         x = shortcut + self.drop_path(x)
 
         # FFN
         shortcut = x
 
-        x = self.mlp(self.norm2(x).permute(0, 2, 3, 1))
+        x = self.mlp(self.norm2(x).permute(0, 2, 3, 1).contiguous())
         if self.gamma_2 is not None:
             x = self.gamma_2 * x
 
-        x = x.permute(0, 3, 1, 2)
+        x = x.permute(0, 3, 1, 2).contiguous()
         x = shortcut + self.drop_path(x)
 
         return x
@@ -151,7 +151,7 @@ class SwinDownsampleLayer(nn.Module):
         _assert(H % 2 == 0 and W % 2 == 0, f"x size ({H}*{W}) are not even.")
 
         # x = x.view(B, H, W, C)
-        x = x.permute(0, 2, 3, 1)
+        x = x.permute(0, 2, 3, 1).contiguous()
 
         x0 = x[:, 0::2, 0::2, :]  # B H/2 W/2 C
         x1 = x[:, 1::2, 0::2, :]  # B H/2 W/2 C
@@ -164,7 +164,7 @@ class SwinDownsampleLayer(nn.Module):
         x = self.norm(x)
         x = self.reduction(x)
 
-        x = x.permute(0, 3, 1, 2)
+        x = x.permute(0, 3, 1, 2).contiguous()
         return x
 
 

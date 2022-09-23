@@ -21,10 +21,10 @@ class ConvNeXtBlock(nn.Module):
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
 
     def forward(self, x):
-        shortcut = x.permute(0, 2, 3, 1)
+        shortcut = x.permute(0, 2, 3, 1).contiguous()
         x = self.dwconv(x)
         # (N, C, H, W) -> (N, H, W, C)
-        x = x.permute(0, 2, 3, 1)
+        x = x.permute(0, 2, 3, 1).contiguous()
         x = self.norm(x)
         x = self.pwconv1(x)
         x = self.act(x)
@@ -34,7 +34,7 @@ class ConvNeXtBlock(nn.Module):
         x = shortcut + self.drop_path(x)
 
         # (N, H, W, C) -> (N, C, H, W)
-        x = x.permute(0, 3, 1, 2)
+        x = x.permute(0, 3, 1, 2).contiguous()
 
         return x
 
@@ -67,7 +67,7 @@ class ConvNeXtV2Block(nn.Module):
         x = shortcut + self.drop_path(x)
 
         # (N, C, H, W) -> (N, H, W, C)
-        x = x.permute(0, 2, 3, 1)
+        x = x.permute(0, 2, 3, 1).contiguous()
 
         shortcut = x
         x = self.pw_norm(x)
@@ -79,7 +79,7 @@ class ConvNeXtV2Block(nn.Module):
         x = shortcut + self.drop_path(x)
 
         # (N, H, W, C) -> (N, C, H, W)
-        x = x.permute(0, 3, 1, 2)
+        x = x.permute(0, 3, 1, 2).contiguous()
 
         return x
 
@@ -92,8 +92,8 @@ class ConvNeXtV3Block(nn.Module):
         self.dw_norm = LayerNorm2d(dim, eps=1e-6)
         self.dwconv = nn.Conv2d(dim, dim, kernel_size=7, padding=3, groups=dim)  # depthwise conv
         # add an output proj for dw conv in V3
-        self.dw_input_proj = nn.Conv2d(dim, dim, kernel_size=1, stride=1, padding=0) 
-        self.dw_out_proj = nn.Conv2d(dim, dim, kernel_size=1, stride=1, padding=0) 
+        self.dw_input_proj = nn.Conv2d(dim, dim, kernel_size=1, stride=1, padding=0)
+        self.dw_out_proj = nn.Conv2d(dim, dim, kernel_size=1, stride=1, padding=0)
 
         self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((1, dim, 1, 1)),
                                     requires_grad=True) if layer_scale_init_value > 0 else None
@@ -118,7 +118,7 @@ class ConvNeXtV3Block(nn.Module):
         x = shortcut + self.drop_path(x)
 
         # (N, C, H, W) -> (N, H, W, C)
-        x = x.permute(0, 2, 3, 1)
+        x = x.permute(0, 2, 3, 1).contiguous()
 
         shortcut = x
         x = self.pw_norm(x)
@@ -130,7 +130,7 @@ class ConvNeXtV3Block(nn.Module):
         x = shortcut + self.drop_path(x)
 
         # (N, H, W, C) -> (N, C, H, W)
-        x = x.permute(0, 3, 1, 2)
+        x = x.permute(0, 3, 1, 2).contiguous()
 
         return x
 

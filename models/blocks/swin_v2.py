@@ -125,7 +125,7 @@ class SwinV2Block(nn.Module):
 
     def forward(self, x):
         B, C, H, W = x.shape
-        x = x.flatten(2).permute(0, 2, 1)
+        x = x.flatten(2).permute(0, 2, 1).contiguous()
 
         shortcut = x
         x = self.norm1(self._attn(x))
@@ -139,4 +139,4 @@ class SwinV2Block(nn.Module):
             x = self.gamma_2 * x
         x = shortcut + self.drop_path2(x)
 
-        return x.view(B, H, W, -1).permute(0, 3, 1, 2)
+        return x.view(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
