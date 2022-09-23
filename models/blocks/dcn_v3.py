@@ -8,9 +8,9 @@ from torch.autograd import Function
 from torch.autograd.function import once_differentiable
 from torch.cuda.amp import custom_bwd, custom_fwd
 from torch.nn.init import xavier_uniform_, constant_
-from timm.models.layers import DropPath, LayerNorm2d
+from timm.models.layers import DropPath
 import MultiScaleDeformableAttention as MSDA
-#from mmcv.ops.multi_scale_deform_attn import MultiScaleDeformableAttention as MSDA
+# from mmcv.ops.multi_scale_deform_attn import MultiScaleDeformableAttention as MSDA
 
 
 class MLP(nn.Module):
@@ -75,7 +75,7 @@ class DCNv3Block(nn.Module):
                 input_padding_mask=None).reshape(n, h, w, c)
 
             return x
-        #print(len(x_deform_inputs))
+        # print(len(x_deform_inputs))
         x = x_deform_inputs[0]
         #deform_inputs = x_deform_inputs[1][self.depth]
         deform_inputs = x_deform_inputs[1][self.stage]
@@ -98,7 +98,7 @@ class DCNv3Block(nn.Module):
         x = shortcut + self.drop_path(self.gamma1 * x)
         x = x + self.drop_path(self.gamma2 * self.mlp(self.norm2(x)))
 
-        return (x.permute(0, 3, 1, 2), x_deform_inputs[1]) # the returned value will be passed to the next block
+        return (x.permute(0, 3, 1, 2), x_deform_inputs[1])  # the returned value will be passed to the next block
 
 
 def _is_power_of_2(n):
