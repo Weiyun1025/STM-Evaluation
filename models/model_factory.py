@@ -247,6 +247,27 @@ def conv_swin_base(pretrained=False, **kwargs):
 #******************************************************************************
 # DCN V3 
 
+# drop path rate should be set to 0.05
+@register_model
+def dcn_v3_micro(pretrained=False, **kwargs):
+    dims = [64 * 2 ** i for i in range(4)]
+    depths = [2, 2, 9, 2]
+    num_heads = [4, 8, 16, 32]
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     num_heads=num_heads,
+                     block_type=DCNv3Block,
+                     block_kwargs=dict(num_heads=num_heads, deform_points=9, kernel_size=3),
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
 # drop path rate should be set to 0.1
 @register_model
 def dcn_v3_tiny(pretrained=False, **kwargs):
@@ -268,11 +289,12 @@ def dcn_v3_tiny(pretrained=False, **kwargs):
     return model
 
 
+# drop path set to 0.3
 @register_model
 def dcn_v3_small(pretrained=False, **kwargs):
-    dims = [192 * 2 ** i for i in range(4)]
-    depths = [4, 4, 18, 4]
-    num_heads = [12, 24, 48, 96]
+    dims = [96 * 2 ** i for i in range(4)]
+    depths = [3, 3, 18, 3]
+    num_heads = [4, 8, 16, 32]
 
     model = MetaArch(img_size=224,
                      depths=depths,
@@ -349,7 +371,7 @@ def conv_pvt_v2_micro(pretrained=False, **kwargs):
 @register_model
 def conv_pvt_v2_tiny(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
-                     depths=[3, 3, 6, 3],
+                     depths=[3, 3, 9, 3],
                      dims=[64, 128, 320, 512],
                      block_type=PvtV2Block,
                      block_kwargs=dict(num_heads=[1, 2, 5, 8],
@@ -367,7 +389,7 @@ def conv_pvt_v2_tiny(pretrained=False, **kwargs):
 @register_model
 def conv_pvt_v2_small(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
-                     depths=[3, 3, 18, 3],
+                     depths=[3, 3, 21, 3],
                      dims=[64, 128, 320, 512],
                      block_type=PvtV2Block,
                      block_kwargs=dict(num_heads=[1, 2, 5, 8],
@@ -385,11 +407,11 @@ def conv_pvt_v2_small(pretrained=False, **kwargs):
 @register_model
 def conv_pvt_v2_base(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
-                     depths=[3, 6, 40, 3],
+                     depths=[3, 6, 45, 3],
                      dims=[64, 128, 320, 512],
                      block_type=PvtV2Block,
                      block_kwargs=dict(num_heads=[1, 2, 5, 8],
-                                       mlp_ratios=[8, 8, 4, 4],
+                                       mlp_ratios=[4, 4, 4, 4],
                                        qkv_bias=True,
                                        sr_ratios=[8, 4, 2, 1],),
                      **kwargs)
