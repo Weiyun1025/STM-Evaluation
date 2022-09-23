@@ -24,7 +24,7 @@ def speed_test(model, img_size=224):
 
 
 if __name__ == '__main__':
-    model_name_list = ['conv_convnext_v3_small']
+    model_name_list = ['dcn_v3_base', 'dcn_v3_tiny']
     
     for model_name in model_name_list:
         print("********************************************************")
@@ -41,4 +41,4 @@ if __name__ == '__main__':
         speed_test(model)
         print("********************************************************\n")
 
-# srun -p VC -N 1 --gres=gpu:1 --ntasks=1 --cpus-per-task=10 python model_benchmark.py
+# srun -p VC -N 1 --gres=gpu:1 --ntasks=1 --cpus-per-task=10 --quotatype=spot python model_benchmark.py

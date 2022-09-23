@@ -34,7 +34,7 @@ class MLP(nn.Module):
 class DCNv3Block(nn.Module):
     def __init__(self, dim, drop_path, layer_scale_init_value, stage, total_depth, num_heads,
                  kernel_size=7, deform_points=25, deform_ratio=1.0,
-                 dilation_rates=(1, 2, 3),  deform_padding=True, mlp_ratio=4., drop=0.,
+                 dilation_rates=(1,),  deform_padding=True, mlp_ratio=4., drop=0.,
                  act_layer=nn.GELU, norm_layer=nn.LayerNorm, offsets_scaler=1.0,
                  **kwargs):
         super().__init__()
@@ -73,7 +73,7 @@ class DCNv3Block(nn.Module):
                 input_padding_mask=None).reshape(n, h, w, c)
 
             return x
-
+        #print(len(x_deform_inputs))
         x = x_deform_inputs[0]
         deform_inputs = x_deform_inputs[1][self.depth]
 
@@ -95,7 +95,7 @@ class DCNv3Block(nn.Module):
         x = shortcut + self.drop_path(self.gamma1 * x)
         x = x + self.drop_path(self.gamma2 * self.mlp(self.norm2(x)))
 
-        return x.permute(0, 3, 1, 2)
+        return x.permute(0, 3, 1, 2) # the returned value will be passed to the next block
 
 
 def _is_power_of_2(n):
