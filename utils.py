@@ -322,6 +322,9 @@ def init_distributed_mode(args):
         world_size = int(os.environ["SLURM_NTASKS"])
         args.world_size = world_size
 
+        local_size = int(os.environ["SLURM_NTASKS_PER_NODE"])
+        args.local_size = local_size
+
         if "MASTER_PORT" not in os.environ:
             os.environ["MASTER_PORT"] = "22110"
         node_list = os.environ["SLURM_NODELIST"]
@@ -331,6 +334,7 @@ def init_distributed_mode(args):
 
         os.environ['RANK'] = str(args.rank)
         os.environ['LOCAL_RANK'] = str(args.gpu)
+        os.environ['LOCAL_SIZE'] = str(args.local_size)
         os.environ['WORLD_SIZE'] = str(args.world_size)
     else:
         print('Not using distributed mode')
