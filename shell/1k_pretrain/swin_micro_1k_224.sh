@@ -73,7 +73,7 @@ srun -p ${PARTITION} \
     --enable_wandb true \
     --project 'model evaluation' \
     --name ${PROJECT_NAME} \
-    --output_dir "backbone_outputdir/${PROJECT_NAME}"
+    --output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
 
 # sh shell/1k_pretrain/swin_micro_1k_224.sh
 # srun -p VC -N 1 --ntasks=1 --gres=gpu:1 -w SH-IDC1-10-140-24-88 --quotatype=reserved nvidia-smi
