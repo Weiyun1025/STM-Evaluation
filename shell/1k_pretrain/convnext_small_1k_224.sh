@@ -4,7 +4,7 @@ set -x
 mkdir logs
 
 PARTITION=VC
-MODEL="dcn_v3_micro"
+MODEL="conv_convnext_small"
 DESC="unified_config" 
 
 # key hyperparameters
@@ -12,7 +12,7 @@ TOTAL_BATCH_SIZE="4096"
 LR="4e-3"
 INIT_LR="0"
 END_LR="1e-6"
-DROP_PATH="0.0"
+DROP_PATH="0.4"
 
 JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_${DESC}"
@@ -75,4 +75,4 @@ srun -p ${PARTITION} \
     --output_dir backbone_outputdir/${PROJECT_NAME}
     #--output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
     
-# sh shell/1k_pretrain/dcnv3_micro_1k_224.sh
+# sh shell/1k_pretrain/convnext_small_1k_224.sh

@@ -60,12 +60,50 @@ def pe_convnext_v2_tiny(pretrained=False, **kwargs):
 
     return model
 
+@ register_model
+def conv_convnext_micro(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[3, 3, 12, 3],
+                     dims=[32, 64, 128, 256],
+                     block_type=ConvNeXtBlock,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
 
 @ register_model
 def conv_convnext_tiny(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
                      depths=[3, 3, 9, 3],
                      dims=[96, 192, 384, 768],
+                     block_type=ConvNeXtBlock,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+@ register_model
+def conv_convnext_small(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[3, 3, 27, 3],
+                     dims=[96, 192, 384, 768],
+                     block_type=ConvNeXtBlock,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+@ register_model
+def conv_convnext_base(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[3, 3, 27, 3],
+                     dims=[128, 256, 512, 1024],
                      block_type=ConvNeXtBlock,
                      **kwargs)
 
@@ -292,9 +330,9 @@ def dcn_v3_tiny(pretrained=False, **kwargs):
 # drop path set to 0.3
 @register_model
 def dcn_v3_small(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [3, 3, 18, 3]
-    num_heads = [4, 8, 16, 32]
+    dims = [80 * 2 ** i for i in range(4)]
+    depths = [4, 4, 21, 4]
+    num_heads = [5, 10, 20, 40]
 
     model = MetaArch(img_size=224,
                      depths=depths,
@@ -314,7 +352,7 @@ def dcn_v3_small(pretrained=False, **kwargs):
 def dcn_v3_base(pretrained=False, **kwargs):
     dims = [112 * 2 ** i for i in range(4)]
     depths = [4, 4, 21, 4]
-    num_heads = [4, 8, 16, 32]
+    num_heads = [7, 14, 28, 56]
 
     model = MetaArch(img_size=224,
                      depths=depths,
