@@ -66,11 +66,11 @@ srun -p ${PARTITION} \
     --crop_pct 0.875 \
     --data_set IMNET1k \
     --data_path /mnt/cache/share/images/ \
-    --data_on_memory true \
+    --data_on_memory false \
     --nb_classes 1000 \
     --use_amp true \
     --save_ckpt true \
-    --enable_wandb false \
+    --enable_wandb true \
     --project 'model evaluation' \
     --name ${PROJECT_NAME} \
     --output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
