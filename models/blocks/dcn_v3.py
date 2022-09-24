@@ -78,7 +78,7 @@ class DCNv3Block(nn.Module):
         # print(len(x_deform_inputs))
         x = x_deform_inputs[0]
         #deform_inputs = x_deform_inputs[1][self.depth]
-        deform_inputs = x_deform_inputs[1][self.stage]
+        deform_inputs = x_deform_inputs[1]
 
         B, C, H, W = x.shape
         x = x.permute(0, 2, 3, 1)
