@@ -39,7 +39,7 @@ srun -p ${PARTITION} \
     python -u main.py \
     --model ${MODEL} \
     --epochs 300 \
-    --batch_size $((TOTAL_BATCH_SIZE/GPUS_PER_NODE)) \
+    --batch_size $((TOTAL_BATCH_SIZE/GPUS)) \
     --warmup_epochs 20 \
     --lr ${LR} \
     --warmup_init_lr ${INIT_LR} \
@@ -65,7 +65,7 @@ srun -p ${PARTITION} \
     --crop_pct 0.875 \
     --data_set IMNET1k \
     --data_path /mnt/cache/share/images/ \
-    --data_on_memory true \
+    --data_on_memory false \
     --nb_classes 1000 \
     --use_amp true \
     --save_ckpt true \

@@ -24,7 +24,7 @@ def speed_test(model, img_size=224):
 
 
 if __name__ == '__main__':
-    model_name_list = ["dcn_v3_micro", "dcn_v3_small"]
+    model_name_list = ["conv_pvt_v2_micro"]
     
     for model_name in model_name_list:
         print("********************************************************")

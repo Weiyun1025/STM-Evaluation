@@ -65,7 +65,7 @@ srun -p ${PARTITION} \
     --crop_pct 0.875 \
     --data_set IMNET1k \
     --data_path /mnt/cache/share/images/ \
-    --data_on_memory true \
+    --data_on_memory false \
     --nb_classes 1000 \
     --use_amp true \
     --save_ckpt true \

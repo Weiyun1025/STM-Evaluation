@@ -4,7 +4,7 @@ set -x
 mkdir logs
 
 PARTITION=VC
-MODEL="dcn_v3_tiny"
+MODEL="dcn_v3_micro"
 DESC="unified_config" 
 
 # key hyperparameters
@@ -12,14 +12,14 @@ TOTAL_BATCH_SIZE="4096"
 LR="4e-3"
 INIT_LR="0"
 END_LR="1e-6"
-DROP_PATH="0.1"
+DROP_PATH="0.0"
 
 JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_${DESC}"
 
 GPUS=${GPUS:-8}
 GPUS_PER_NODE=${GPUS_PER_NODE:-8}
-QUOTA_TYPE="spot"
+QUOTA_TYPE="reserved"
 
 CPUS_PER_TASK=${CPUS_PER_TASK:-12}
 SRUN_ARGS=${SRUN_ARGS:-""}
@@ -39,7 +39,7 @@ srun -p ${PARTITION} \
     python -u main.py \
     --model ${MODEL} \
     --epochs 300 \
-    --batch_size $((TOTAL_BATCH_SIZE/GPUS_PER_NODE)) \
+    --batch_size $((TOTAL_BATCH_SIZE/GPUS)) \
     --warmup_epochs 20 \
     --lr ${LR} \
     --warmup_init_lr ${INIT_LR} \
@@ -74,4 +74,4 @@ srun -p ${PARTITION} \
     --name ${PROJECT_NAME} \
     --output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
 
-# sh shell/1k_pretrain/dcnv3_tiny_1k_224.sh
+# sh shell/1k_pretrain/dcnv3_micro_1k_224.sh

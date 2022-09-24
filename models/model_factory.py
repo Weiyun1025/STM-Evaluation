@@ -166,9 +166,9 @@ def pm_swin_tiny(pretrained=False, **kwargs):
 #******************* Swin with Conv Stem and Conv transition layer ******************
 @register_model
 def conv_swin_micro(pretrained=False, **kwargs):
-    dims = [ 64 * 2 ** i for i in range(4)]
-    depths = [2, 2, 6, 2]
-    num_heads = [2, 4, 8, 16]
+    dims = [ 32 * 2 ** i for i in range(4)]
+    depths = [2, 2, 9, 2]
+    num_heads = [1, 2, 4, 8]
     window_size = 7
 
     model = MetaArch(img_size=224,
@@ -250,9 +250,9 @@ def conv_swin_base(pretrained=False, **kwargs):
 # drop path rate should be set to 0.05
 @register_model
 def dcn_v3_micro(pretrained=False, **kwargs):
-    dims = [64 * 2 ** i for i in range(4)]
+    dims = [32 * 2 ** i for i in range(4)]
     depths = [2, 2, 9, 2]
-    num_heads = [4, 8, 16, 32]
+    num_heads = [2, 4, 8, 16]
 
     model = MetaArch(img_size=224,
                      depths=depths,
@@ -353,8 +353,8 @@ def conv_pvt_v2_b0(pretrained=False, **kwargs):
 @register_model
 def conv_pvt_v2_micro(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
-                     depths=[2, 2, 2, 2],
-                     dims=[64, 128, 320, 512],
+                     depths=[2, 2, 3, 2],
+                     dims=[32, 64, 160, 256],
                      block_type=PvtV2Block,
                      block_kwargs=dict(num_heads=[1, 2, 5, 8],
                                        mlp_ratios=[8, 8, 4, 4],
