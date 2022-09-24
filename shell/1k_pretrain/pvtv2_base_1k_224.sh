@@ -5,15 +5,15 @@ mkdir logs
 
 PARTITION=VC
 TYPE="conv"  # pe, pm, conv (PatchEmbedding, PatchMerging, Conv)
-MODEL="conv_convnext_v3_small"
-DESC="unified_config_1k_pt" 
+MODEL="${TYPE}_pvt_v2_base"
+DESC="unified_config" 
 
 # key hyperparameters
-TOTAL_BATCH_SIZE="4096"
-LR="4e-3"
-INIT_LR="0"
-END_LR="1e-6"
-DROP_PATH="0.4"
+TOTAL_BATCH_SIZE="1024"
+LR="1e-3"
+INIT_LR="1e-6"
+END_LR="1e-5"
+DROP_PATH="0.5"
 
 JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_${DESC}"
@@ -66,9 +66,11 @@ srun -p ${PARTITION} \
     --crop_pct 0.875 \
     --data_set IMNET1k \
     --data_path /mnt/cache/share/images/ \
+    --data_on_memory true \
     --nb_classes 1000 \
     --use_amp true \
     --save_ckpt true \
-    --output_dir "backbone_outputdir/${PROJECT_NAME}"
-
-# sh ./shell/unified/convnext_v3_small.sh
+    --enable_wandb false \
+    --project 'model evaluation' \
+    --name ${PROJECT_NAME} \
+    --output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
