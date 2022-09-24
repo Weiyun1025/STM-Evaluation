@@ -107,12 +107,12 @@ class HaloBlockV2(nn.Module):
 
         # FFN
         shortcut = x
-        x = self.mlp(self.norm2(x).permute(0, 2, 3, 1))
+        x = self.mlp(self.norm2(x).permute(0, 2, 3, 1).contiguous())
 
         if self.gamma_2 is not None:
             x = self.gamma_2 * x
 
-        x = x.permute(0, 3, 1, 2)
+        x = x.permute(0, 3, 1, 2).contiguous()
         x = shortcut + self.drop_path(x)
 
         return x

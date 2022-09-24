@@ -13,7 +13,7 @@ TOTAL_BATCH_SIZE="1024"
 LR="1e-3"
 INIT_LR="1e-6"
 END_LR="1e-5"
-DROP_PATH="0.05"
+DROP_PATH="0.0"
 
 JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_${DESC}"
@@ -66,14 +66,14 @@ srun -p ${PARTITION} \
     --crop_pct 0.875 \
     --data_set IMNET1k \
     --data_path /mnt/cache/share/images/ \
-    --data_on_memory True \
+    --data_on_memory false \
     --nb_classes 1000 \
     --use_amp true \
     --save_ckpt true \
     --enable_wandb true \
     --project 'model evaluation' \
     --name ${PROJECT_NAME} \
-    --output_dir "backbone_outputdir/${PROJECT_NAME}"
+    --output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
 
 # sh shell/1k_pretrain/swin_micro_1k_224.sh
 # srun -p VC -N 1 --ntasks=1 --gres=gpu:1 -w SH-IDC1-10-140-24-88 --quotatype=reserved nvidia-smi
