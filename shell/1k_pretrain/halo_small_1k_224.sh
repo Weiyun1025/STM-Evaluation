@@ -70,7 +70,7 @@ srun -p ${PARTITION} \
     --nb_classes 1000 \
     --use_amp true \
     --save_ckpt true \
-    --enable_wandb false \
+    --enable_wandb true \
     --project 'model evaluation' \
     --name ${PROJECT_NAME} \
     --output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
