@@ -227,7 +227,7 @@ class MetaArch(nn.Module):
 
         # shape: (B, C, H, W)
         for i in range(4):
-            x = x.to(memory_format=torch.channels_last)
+            # x = x.to(memory_format=torch.channels_last)
             x = self.downsample_layers[i](x)
             x = self.stages[i](x if not deform else (x, deform_inputs[i]))
             x = x[0] if deform else x
