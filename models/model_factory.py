@@ -5,7 +5,7 @@ from .blocks.convnext import ConvNeXtBlock, ConvNeXtV2Block, ConvNeXtV3Block
 from .blocks.swin import SwinBlock
 from .blocks.dcn_v3 import DCNv3Block
 from .blocks.pvt_v2 import PvtV2Block
-from .blocks import halonet, halonet_timm
+from .blocks import halonet, halonet_timm, halonet3_timm
 
 
 @ register_model
@@ -526,6 +526,28 @@ def conv_halo_v2_tiny(pretrained=False, **kwargs):
 
     return model
 
+@register_model
+def conv_halo_v3_timm_tiny(pretrained=False, **kwargs):
+    dims = [96 * 2 ** i for i in range(4)]
+    depths = [2, 2, 6, 2]
+    num_heads = [3, 6, 12, 24]
+    block_size = 7
+    halo_size = 3
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     block_type=halonet3_timm.HaloBlockV3,
+                     block_kwargs=dict(num_heads=num_heads,
+                                       block_size=block_size,
+                                       halo_size=halo_size),
+                     #  downsample_type=nn.Identity,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
 
 @register_model
 def conv_halo_v2_timm_micro(pretrained=False, **kwargs):

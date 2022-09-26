@@ -95,6 +95,7 @@ class HaloBlockV2(nn.Module):
         self.gamma_2 = nn.Parameter(layer_scale_init_value * torch.ones((1, 1, 1, dim)),
                                     requires_grad=True) if layer_scale_init_value > 0 else None
 
+    #@profile
     def forward(self, x):
         # shape: B, C, H, W
         shortcut = self.shortcut(x)

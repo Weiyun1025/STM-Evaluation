@@ -1,0 +1,107 @@
+Timer unit: 1e-06 s
+
+Total time: 0.003985 s
+File: /home/shimin/anaconda3/lib/python3.8/site-packages/timm/models/swin_transformer.py
+Function: _get_rel_pos_bias at line 186
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+   186                                               @profile
+   187                                               def _get_rel_pos_bias(self) -> torch.Tensor:
+   188        36       3314.0     92.1     83.2          relative_position_bias = self.relative_position_bias_table[
+   189        24        126.0      5.2      3.2              self.relative_position_index.view(-1)].view(self.window_area, self.window_area, -1)  # Wh*Ww,Wh*Ww,nH
+   190        12        439.0     36.6     11.0          relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  # nH, Wh*Ww, Wh*Ww
+   191        12        106.0      8.8      2.7          return relative_position_bias.unsqueeze(0)
+
+Total time: 0.052098 s
+File: /home/shimin/anaconda3/lib/python3.8/site-packages/timm/models/swin_transformer.py
+Function: forward at line 193
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+   193                                               @profile
+   194                                               def forward(self, x, mask: Optional[torch.Tensor] = None):
+   195                                                   """
+   196                                                   Args:
+   197                                                       x: input features with shape of (num_windows*B, N, C)
+   198                                                       mask: (0/-inf) mask with shape of (num_windows, Wh*Ww, Wh*Ww) or None
+   199                                                   """
+   200        12         24.0      2.0      0.0          B_, N, C = x.shape
+   201        12      10783.0    898.6     20.7          qkv = self.qkv(x).reshape(B_, N, 3, self.num_heads, -1).permute(2, 0, 3, 1, 4)
+   202        12        177.0     14.8      0.3          q, k, v = qkv.unbind(0)  # make torchscript happy (cannot use tensor as tuple)
+   203                                           
+   204        12       2889.0    240.8      5.5          q = q * self.scale
+   205        12      10974.0    914.5     21.1          attn = (q @ k.transpose(-2, -1))
+   206        12       7853.0    654.4     15.1          attn = attn + self._get_rel_pos_bias()
+   207                                           
+   208        12         17.0      1.4      0.0          if mask is not None:
+   209         5         20.0      4.0      0.0              num_win = mask.shape[0]
+   210         5        481.0     96.2      0.9              attn = attn.view(B_ // num_win, num_win, self.num_heads, N, N) + mask.unsqueeze(1).unsqueeze(0)
+   211         5         42.0      8.4      0.1              attn = attn.view(-1, self.num_heads, N, N)
+   212         5        598.0    119.6      1.1              attn = self.softmax(attn)
+   213                                                   else:
+   214         7        729.0    104.1      1.4              attn = self.softmax(attn)
+   215                                           
+   216        12        515.0     42.9      1.0          attn = self.attn_drop(attn)
+   217                                           
+   218        12      13906.0   1158.8     26.7          x = (attn @ v).transpose(1, 2).reshape(B_, N, -1)
+   219        12       2626.0    218.8      5.0          x = self.proj(x)
+   220        12        455.0     37.9      0.9          x = self.proj_drop(x)
+   221        12          9.0      0.8      0.0          return x
+
+Total time: 0.096665 s
+File: /home/shimin/code/backbone/CVPR-Code/models/blocks/swin.py
+Function: forward at line 66
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    66                                               @profile
+    67                                               def forward(self, x):
+    68        12         49.0      4.1      0.1          B, C, H, W = x.shape
+    69                                           
+    70        12         11.0      0.9      0.0          shortcut = x
+    71        12       3403.0    283.6      3.5          x = self.norm1(x)
+    72                                                   # B, H, W, C
+    73        12         83.0      6.9      0.1          x = x.permute(0, 2, 3, 1).contiguous()
+    74                                           
+    75                                                   # cyclic shift
+    76        12         15.0      1.2      0.0          if self.shift_size > 0:
+    77         5       3248.0    649.6      3.4              shifted_x = torch.roll(x, shifts=(-self.shift_size, -self.shift_size), dims=(1, 2))
+    78                                                   else:
+    79         7          4.0      0.6      0.0              shifted_x = x
+    80                                           
+    81                                                   # partition windows
+    82        12       2101.0    175.1      2.2          x_windows = window_partition(shifted_x, self.window_size)  # num_win*B, window_size, window_size, C
+    83        12         80.0      6.7      0.1          x_windows = x_windows.view(-1, self.window_size * self.window_size, C).contiguous()  # num_win*B, window_size*window_size, C
+    84                                           
+    85                                                   # W-MSA/SW-MSA
+    86        12      52897.0   4408.1     54.7          attn_windows = self.attn(x_windows, mask=self.attn_mask)  # num_win*B, window_size*window_size, C
+    87                                           
+    88                                                   # merge windows
+    89        12        126.0     10.5      0.1          attn_windows = attn_windows.view(-1, self.window_size, self.window_size, C).contiguous()
+    90        12        872.0     72.7      0.9          shifted_x = window_reverse(attn_windows, self.window_size, H, W)  # B H' W' C
+    91                                           
+    92                                                   # reverse cyclic shift
+    93        12         16.0      1.3      0.0          if self.shift_size > 0:
+    94         5        456.0     91.2      0.5              x = torch.roll(shifted_x, shifts=(self.shift_size, self.shift_size), dims=(1, 2))
+    95                                                   else:
+    96         7         19.0      2.7      0.0              x = shifted_x
+    97                                           
+    98        12         55.0      4.6      0.1          if self.gamma_1 is not None:
+    99        12        626.0     52.2      0.6              x = self.gamma_1 * x
+   100                                           
+   101                                                   # B, H, W, C -> B, C, H, W
+   102        12        704.0     58.7      0.7          x = x.permute(0, 3, 1, 2).contiguous()
+   103        12        951.0     79.2      1.0          x = shortcut + self.drop_path(x)
+   104                                           
+   105                                                   # FFN
+   106        12         11.0      0.9      0.0          shortcut = x
+   107                                           
+   108        12      26621.0   2218.4     27.5          x = self.mlp(self.norm2(x).permute(0, 2, 3, 1).contiguous())
+   109        12         73.0      6.1      0.1          if self.gamma_2 is not None:
+   110        12        678.0     56.5      0.7              x = self.gamma_2 * x
+   111                                           
+   112        12       2471.0    205.9      2.6          x = x.permute(0, 3, 1, 2).contiguous()
+   113        12       1083.0     90.2      1.1          x = shortcut + self.drop_path(x)
+   114                                           
+   115        12         12.0      1.0      0.0          return x

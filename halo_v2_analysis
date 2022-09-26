@@ -1,0 +1,102 @@
+Timer unit: 1e-06 s
+
+Total time: 0.015958 s
+File: /home/shimin/anaconda3/lib/python3.8/site-packages/timm/models/layers/halo_attn.py
+Function: forward at line 81
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    81                                               @profile
+    82                                               def forward(self, q):
+    83        12         45.0      3.8      0.3          B, BB, HW, _ = q.shape
+    84                                           
+    85                                                   # relative logits in width dimension.
+    86        12        789.0     65.8      4.9          q = q.reshape(-1, self.block_size, self.block_size, self.dim_head)
+    87        12       4127.0    343.9     25.9          rel_logits_w = rel_logits_1d(q, self.width_rel, permute_mask=(0, 1, 3, 2, 4))
+    88                                           
+    89                                                   # relative logits in height dimension.
+    90        12         72.0      6.0      0.5          q = q.transpose(1, 2)
+    91        12       3719.0    309.9     23.3          rel_logits_h = rel_logits_1d(q, self.height_rel, permute_mask=(0, 3, 1, 4, 2))
+    92                                           
+    93        12       2624.0    218.7     16.4          rel_logits = rel_logits_h + rel_logits_w
+    94        12       4568.0    380.7     28.6          rel_logits = rel_logits.reshape(B, BB, HW, -1)
+    95        12         14.0      1.2      0.1          return rel_logits
+
+Total time: 0.064284 s
+File: /home/shimin/anaconda3/lib/python3.8/site-packages/timm/models/layers/halo_attn.py
+Function: forward at line 170
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+   170                                               @profile
+   171                                               def forward(self, x):
+   172        12         40.0      3.3      0.1          B, C, H, W = x.shape
+   173        12        212.0     17.7      0.3          _assert(H % self.block_size == 0, '')
+   174        12         55.0      4.6      0.1          _assert(W % self.block_size == 0, '')
+   175        12         12.0      1.0      0.0          num_h_blocks = H // self.block_size
+   176        12          6.0      0.5      0.0          num_w_blocks = W // self.block_size
+   177        12         12.0      1.0      0.0          num_blocks = num_h_blocks * num_w_blocks
+   178                                           
+   179        12       4214.0    351.2      6.6          q = self.q(x)
+   180                                                   # unfold
+   181        36       1416.0     39.3      2.2          q = q.reshape(
+   182        12         13.0      1.1      0.0              -1, self.dim_head_qk,
+   183        24         27.0      1.1      0.0              num_h_blocks, self.block_size_ds, num_w_blocks, self.block_size_ds).permute(0, 1, 3, 5, 2, 4)
+   184                                                   # B, num_heads * dim_head * block_size ** 2, num_blocks
+   185        12        676.0     56.3      1.1          q = q.reshape(B * self.num_heads, self.dim_head_qk, -1, num_blocks).transpose(1, 3)
+   186                                                   # B * num_heads, num_blocks, block_size ** 2, dim_head
+   187                                           
+   188        12       4462.0    371.8      6.9          kv = self.kv(x)
+   189                                                   # Generate overlapping windows for kv. This approach is good for GPU and CPU. However, unfold() is not
+   190                                                   # lowered for PyTorch XLA so it will be very slow. See code at bottom of file for XLA friendly approach.
+   191                                                   # FIXME figure out how to switch impl between this and conv2d if XLA being used.
+   192        12       6434.0    536.2     10.0          kv = F.pad(kv, [self.halo_size, self.halo_size, self.halo_size, self.halo_size])
+   193        36       5549.0    154.1      8.6          kv = kv.unfold(2, self.win_size, self.block_size).unfold(3, self.win_size, self.block_size).reshape(
+   194        24         46.0      1.9      0.1              B * self.num_heads, self.dim_head_qk + self.dim_head_v, num_blocks, -1).permute(0, 2, 3, 1)
+   195        12        406.0     33.8      0.6          k, v = torch.split(kv, [self.dim_head_qk, self.dim_head_v], dim=-1)
+   196                                                   # B * num_heads, num_blocks, win_size ** 2, dim_head_qk or dim_head_v
+   197                                           
+   198        12         15.0      1.2      0.0          if self.scale_pos_embed:
+   199                                                       attn = (q @ k.transpose(-1, -2) + self.pos_embed(q)) * self.scale
+   200                                                   else:
+   201        12      32896.0   2741.3     51.2              attn = (q @ k.transpose(-1, -2)) * self.scale + self.pos_embed(q)
+   202                                                   # B * num_heads, num_blocks, block_size ** 2, win_size ** 2
+   203        12       1641.0    136.8      2.6          attn = attn.softmax(dim=-1)
+   204                                           
+   205        12       4353.0    362.8      6.8          out = (attn @ v).transpose(1, 3)  # B * num_heads, dim_head_v, block_size ** 2, num_blocks
+   206                                                   # fold
+   207        12        769.0     64.1      1.2          out = out.reshape(-1, self.block_size_ds, self.block_size_ds, num_h_blocks, num_w_blocks)
+   208        24        617.0     25.7      1.0          out = out.permute(0, 3, 1, 4, 2).contiguous().view(
+   209        12         38.0      3.2      0.1              B, self.dim_out_v, H // self.block_stride, W // self.block_stride)
+   210                                                   # B, dim_out, H // block_stride, W // block_stride
+   211        12        368.0     30.7      0.6          out = self.pool(out)
+   212        12          7.0      0.6      0.0          return out
+
+Total time: 0.087415 s
+File: /home/shimin/code/backbone/CVPR-Code/models/blocks/halonet_timm.py
+Function: forward at line 98
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    98                                               @profile
+    99                                               def forward(self, x):
+   100                                                   # shape: B, C, H, W
+   101        12        286.0     23.8      0.3          shortcut = self.shortcut(x)
+   102        12      67342.0   5611.8     77.0          x = self.attn(self.norm1(x))
+   103                                           
+   104        12         45.0      3.8      0.1          if self.gamma_1 is not None:
+   105        12        661.0     55.1      0.8              x = self.gamma_1 * x
+   106                                           
+   107        12        917.0     76.4      1.0          x = shortcut + self.drop_path(x)
+   108                                           
+   109                                                   # FFN
+   110        12          9.0      0.8      0.0          shortcut = x
+   111        12      14500.0   1208.3     16.6          x = self.mlp(self.norm2(x).permute(0, 2, 3, 1).contiguous())
+   112                                           
+   113        12         67.0      5.6      0.1          if self.gamma_2 is not None:
+   114        12        644.0     53.7      0.7              x = self.gamma_2 * x
+   115                                           
+   116        12       1955.0    162.9      2.2          x = x.permute(0, 3, 1, 2).contiguous()
+   117        12        980.0     81.7      1.1          x = shortcut + self.drop_path(x)
+   118                                           
+   119        12          9.0      0.8      0.0          return x
