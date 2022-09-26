@@ -106,8 +106,11 @@ class HaloAttention(nn.Module):
         # FIXME not clear if this stride behaviour is what the paper intended
         # Also, the paper mentions using a 3D conv for dealing with the blocking/gather, and leaving
         # data in unfolded block form. I haven't wrapped my head around how that'd look.
-        self.q = nn.Conv2d(dim, self.dim_out_qk, 1, stride=self.block_stride, bias=qkv_bias)
-        self.kv = nn.Conv2d(dim, self.dim_out_qk + self.dim_out_v, 1, bias=qkv_bias)
+        # self.q = nn.Conv2d(dim, self.dim_out_qk, 1, stride=self.block_stride, bias=qkv_bias)
+        # self.kv = nn.Conv2d(dim, self.dim_out_qk + self.dim_out_v, 1, bias=qkv_bias)
+
+        self.q = nn.Linear(dim, self.dim_out_qk, bias=qkv_bias)
+        self.kv = nn.Linear(dim, self.dim_out_qk + self.dim_out_v, bias=qkv_bias)
 
         self.pos_embed = PosEmbedRel(
             block_size=self.block_size_ds, win_size=self.win_size, dim_head=self.dim_head_qk, scale=self.scale)
@@ -131,7 +134,9 @@ class HaloAttention(nn.Module):
         num_w_blocks = W // self.block_size
         num_blocks = num_h_blocks * num_w_blocks
 
-        q = self.q(x)
+        x = x.permute(0, 2, 3, 1).contiguous()
+
+        q = self.q(x).permute(0, 3, 1, 2)
         # unfold
         q = q.reshape(
             -1, self.dim_head_qk,
@@ -140,7 +145,7 @@ class HaloAttention(nn.Module):
         q = q.reshape(B * self.num_heads, self.dim_head_qk, -1, num_blocks).transpose(1, 3)
         # B * num_heads, num_blocks, block_size ** 2, dim_head
 
-        kv = self.kv(x)
+        kv = self.kv(x).permute(0, 3, 1, 2)
         # Generate overlapping windows for kv. This approach is good for GPU and CPU. However, unfold() is not
         # lowered for PyTorch XLA so it will be very slow. See code at bottom of file for XLA friendly approach.
         # FIXME figure out how to switch impl between this and conv2d if XLA being used.
