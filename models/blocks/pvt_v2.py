@@ -94,22 +94,22 @@ class Attention(nn.Module):
 
     def forward(self, x, H, W):
         B, N, C = x.shape
-        q = self.q(x).reshape(B, N, self.num_heads, C // self.num_heads).permute(0, 2, 1, 3).contiguous()
+        q = self.q(x).reshape(B, N, self.num_heads, C // self.num_heads).permute(0, 2, 1, 3)
 
         if not self.linear:
             if self.sr_ratio > 1:
-                x_ = x.permute(0, 2, 1).reshape(B, C, H, W).contiguous()
-                x_ = self.sr(x_).reshape(B, C, -1).permute(0, 2, 1).contiguous()
+                x_ = x.permute(0, 2, 1).reshape(B, C, H, W)
+                x_ = self.sr(x_).reshape(B, C, -1).permute(0, 2, 1)
                 x_ = self.norm(x_)
-                kv = self.kv(x_).reshape(B, -1, 2, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4).contiguous()
+                kv = self.kv(x_).reshape(B, -1, 2, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
             else:
-                kv = self.kv(x).reshape(B, -1, 2, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4).contiguous()
+                kv = self.kv(x).reshape(B, -1, 2, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
         else:
-            x_ = x.permute(0, 2, 1).reshape(B, C, H, W).contiguous()
-            x_ = self.sr(self.pool(x_)).reshape(B, C, -1).permute(0, 2, 1).contiguous()
+            x_ = x.permute(0, 2, 1).reshape(B, C, H, W)
+            x_ = self.sr(self.pool(x_)).reshape(B, C, -1).permute(0, 2, 1)
             x_ = self.norm(x_)
             x_ = self.act(x_)
-            kv = self.kv(x_).reshape(B, -1, 2, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4).contiguous()
+            kv = self.kv(x_).reshape(B, -1, 2, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
         k, v = kv[0], kv[1]
 
         attn = (q @ k.transpose(-2, -1)) * self.scale
@@ -170,7 +170,7 @@ class PvtV2Block(nn.Module):
     def forward(self, x):
         B, C, H, W = x.shape
         # (B, C, H, W) -> (B, N, C)
-        x = x.view(B, C, H * W).permute(0, 2, 1).contiguous()
+        x = x.view(B, C, H * W).permute(0, 2, 1)
 
         shortcut = x
         x = self.drop_path(self.attn(self.norm1(x), H, W))
@@ -185,7 +185,7 @@ class PvtV2Block(nn.Module):
         x = shortcut + x
 
         # (B, N, C') -> (B, H, W, C') -> (B, C', H, W)
-        x = x.view(B, H,  W, -1).permute(0, 3, 1, 2).contiguous()
+        x = x.view(B, H,  W, -1).permute(0, 3, 1, 2)
         return x
 
 

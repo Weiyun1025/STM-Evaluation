@@ -52,7 +52,7 @@ class SwinBlock(nn.Module):
                     img_mask[:, h, w, :] = cnt
                     cnt += 1
             mask_windows = window_partition(img_mask, self.window_size)  # num_win, window_size, window_size, 1
-            mask_windows = mask_windows.view(-1, self.window_size * self.window_size).contiguous()
+            mask_windows = mask_windows.view(-1, self.window_size * self.window_size)
             attn_mask = mask_windows.unsqueeze(1) - mask_windows.unsqueeze(2)
             attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
         else:
@@ -79,13 +79,13 @@ class SwinBlock(nn.Module):
 
         # partition windows
         x_windows = window_partition(shifted_x, self.window_size)  # num_win*B, window_size, window_size, C
-        x_windows = x_windows.view(-1, self.window_size * self.window_size, C).contiguous()  # num_win*B, window_size*window_size, C
+        x_windows = x_windows.view(-1, self.window_size * self.window_size, C)  # num_win*B, window_size*window_size, C
 
         # W-MSA/SW-MSA
         attn_windows = self.attn(x_windows, mask=self.attn_mask)  # num_win*B, window_size*window_size, C
 
         # merge windows
-        attn_windows = attn_windows.view(-1, self.window_size, self.window_size, C).contiguous()
+        attn_windows = attn_windows.view(-1, self.window_size, self.window_size, C)
         shifted_x = window_reverse(attn_windows, self.window_size, H, W)  # B H' W' C
 
         # reverse cyclic shift
@@ -159,8 +159,8 @@ class SwinDownsampleLayer(nn.Module):
         x2 = x[:, 0::2, 1::2, :]  # B H/2 W/2 C
         x3 = x[:, 1::2, 1::2, :]  # B H/2 W/2 C
         x = torch.cat([x0, x1, x2, x3], -1)  # B H/2 W/2 4*C
-        x = x.view(B, -1, 4 * C).contiguous()  # B H/2*W/2 4*C
-        x = x.view(B, H//2, W//2, 4 * C).contiguous()
+        x = x.view(B, -1, 4 * C)  # B H/2*W/2 4*C
+        x = x.view(B, H//2, W//2, 4 * C)
 
         x = self.norm(x)
         x = self.reduction(x)
