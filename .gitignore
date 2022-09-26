@@ -4,6 +4,7 @@ test*.sh
 __pycache__
 
 logs/*
+wandb
 object_detection
 semantic_segmentation
 

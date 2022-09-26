@@ -7,6 +7,7 @@ import time
 from timm.models import create_model
 import models
 
+
 def speed_test(model, img_size=224):
     input = torch.rand(16, 3, img_size, img_size).cuda()
     print(f"Input Feature Map: {input.shape}")
@@ -25,16 +26,16 @@ def speed_test(model, img_size=224):
 
 if __name__ == '__main__':
     model_name_list = ["conv_convnext_micro"]
-    
+
     for model_name in model_name_list:
         print("********************************************************")
         model = create_model(model_name,
-                            pretrained=False,
-                            num_classes=1000).cuda()
-    
+                             pretrained=False,
+                             num_classes=1000).cuda()
+
         flops, params = get_model_complexity_info(model, (3, 224, 224),
-                                                as_strings=False,
-                                                print_per_layer_stat=False)
+                                                  as_strings=False,
+                                                  print_per_layer_stat=False)
 
         flops, params = flops_to_string(flops), params_to_string(params)
         print(model_name, ": ", "FLOPs: ", flops, "#Params: ", params)
