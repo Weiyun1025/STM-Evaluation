@@ -83,6 +83,7 @@ class HaloAttention(nn.Module):
                                                halo_size=halo_size,
                                                num_heads=num_heads)
 
+        self.out_proj = nn.Linear(self.dim_head_v, self.dim_head_v)
         self.pool = nn.AvgPool2d(2, 2) if use_avg_pool else nn.Identity()
 
         self.reset_parameters()
@@ -174,7 +175,9 @@ class HaloAttention(nn.Module):
         # B * num_heads, num_blocks, block_size ** 2, win_size ** 2
         attn = attn.softmax(dim=-1)
 
-        out = (attn @ v).transpose(1, 3)  # B * num_heads, dim_head_v, block_size ** 2, num_blocks
+        out = (attn @ v)
+        out = self.out_proj(out)
+        out = out.transpose(1, 3)  # B * num_heads, dim_head_v, block_size ** 2, num_blocks
         # fold
         out = out.reshape(-1, self.block_size_ds, self.block_size_ds, num_h_blocks, num_w_blocks)
         out = out.permute(0, 3, 1, 4, 2).contiguous().view(
@@ -204,7 +207,6 @@ class HaloBlockV2(nn.Module):
         self.attn = HaloAttention(dim=dim // stride, dim_out=dim,
                                   num_heads=num_heads[stage], stride=stride,
                                   block_size=block_size, halo_size=halo_size)
-        self.out_proj = nn.Conv2d(dim, dim, kernel_size=1, stride=1)
 
         self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((1, dim, 1, 1)),
                                     requires_grad=True) if layer_scale_init_value > 0 else None
