@@ -5,7 +5,7 @@ from .blocks.convnext import ConvNeXtBlock, ConvNeXtV2Block, ConvNeXtV3Block
 from .blocks.swin import SwinBlock
 from .blocks.dcn_v3 import DCNv3Block
 from .blocks.pvt_v2 import PvtV2Block
-from .blocks import halonet, halonet_timm
+from .blocks import halonet_github, halonet_timm
 
 
 @ register_model
@@ -593,7 +593,7 @@ def conv_halo_v2_github_micro(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
                      depths=depths,
                      dims=dims,
-                     block_type=halonet.HaloBlockV2,
+                     block_type=halonet_github.HaloBlockV2,
                      block_kwargs=dict(num_heads=num_heads,
                                        block_size=block_size,
                                        halo_size=halo_size),
@@ -617,7 +617,7 @@ def conv_halo_v2_github_tiny(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
                      depths=depths,
                      dims=dims,
-                     block_type=halonet.HaloBlockV2,
+                     block_type=halonet_github.HaloBlockV2,
                      block_kwargs=dict(num_heads=num_heads,
                                        block_size=block_size,
                                        halo_size=halo_size),
@@ -641,7 +641,7 @@ def conv_halo_v2_github_small(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
                      depths=depths,
                      dims=dims,
-                     block_type=halonet.HaloBlockV2,
+                     block_type=halonet_github.HaloBlockV2,
                      block_kwargs=dict(num_heads=num_heads,
                                        block_size=block_size,
                                        halo_size=halo_size),
@@ -665,7 +665,7 @@ def conv_halo_v2_github_base(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
                      depths=depths,
                      dims=dims,
-                     block_type=halonet.HaloBlockV2,
+                     block_type=halonet_github.HaloBlockV2,
                      block_kwargs=dict(num_heads=num_heads,
                                        block_size=block_size,
                                        halo_size=halo_size),
