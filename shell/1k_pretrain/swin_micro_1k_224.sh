@@ -18,11 +18,11 @@ DROP_PATH="0.0"
 JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_${DESC}"
 
-GPUS=${GPUS:-8}
-GPUS_PER_NODE=${GPUS_PER_NODE:-8}
-QUOTA_TYPE="auto"
+GPUS=${GPUS:-4}
+GPUS_PER_NODE=${GPUS_PER_NODE:-4}
+QUOTA_TYPE="spot"
 
-CPUS_PER_TASK=${CPUS_PER_TASK:-12}
+CPUS_PER_TASK=${CPUS_PER_TASK:-10}
 SRUN_ARGS=${SRUN_ARGS:-""}
 
 srun -p ${PARTITION} \
@@ -73,7 +73,7 @@ srun -p ${PARTITION} \
     --enable_wandb true \
     --project 'model evaluation' \
     --name ${PROJECT_NAME} \
-    --output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
+    --output_dir backbone_outputdir/${PROJECT_NAME}
+    #--output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
 
 # sh shell/1k_pretrain/swin_micro_1k_224.sh
-# srun -p VC -N 1 --ntasks=1 --gres=gpu:1 -w SH-IDC1-10-140-24-88 --quotatype=reserved nvidia-smi
