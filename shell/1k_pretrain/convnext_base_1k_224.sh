@@ -4,7 +4,7 @@ set -x
 mkdir logs
 
 PARTITION=VC
-MODEL="conv_convnext_base"
+MODEL="conv_convnext_v2_base"
 DESC="unified_config" 
 
 # key hyperparameters

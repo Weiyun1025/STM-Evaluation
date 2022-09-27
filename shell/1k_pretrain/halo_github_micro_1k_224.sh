@@ -4,22 +4,23 @@ set -x
 mkdir logs
 
 PARTITION=VC
-MODEL="conv_convnext_v2_small"
+TYPE="pe"  # pe, pm, conv (PatchEmbedding, PatchMerging, Conv)
+MODEL="conv_halo_v2_github_micro"
 DESC="unified_config" 
 
 # key hyperparameters
-TOTAL_BATCH_SIZE="4096"
-LR="4e-3"
-INIT_LR="0"
-END_LR="1e-6"
-DROP_PATH="0.4"
+TOTAL_BATCH_SIZE="1024"
+LR="1e-3"
+INIT_LR="1e-6"
+END_LR="1e-5"
+DROP_PATH="0.0"
 
 JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_${DESC}"
 
 GPUS=${GPUS:-8}
 GPUS_PER_NODE=${GPUS_PER_NODE:-8}
-QUOTA_TYPE="spot"
+QUOTA_TYPE="reserved"
 
 CPUS_PER_TASK=${CPUS_PER_TASK:-12}
 SRUN_ARGS=${SRUN_ARGS:-""}
@@ -39,7 +40,7 @@ srun -p ${PARTITION} \
     python -u main.py \
     --model ${MODEL} \
     --epochs 300 \
-    --batch_size $((TOTAL_BATCH_SIZE/GPUS)) \
+    --batch_size $((TOTAL_BATCH_SIZE/GPUS_PER_NODE)) \
     --warmup_epochs 20 \
     --lr ${LR} \
     --warmup_init_lr ${INIT_LR} \
@@ -69,10 +70,7 @@ srun -p ${PARTITION} \
     --nb_classes 1000 \
     --use_amp true \
     --save_ckpt true \
-    --enable_wandb false \
+    --enable_wandb true \
     --project 'model evaluation' \
     --name ${PROJECT_NAME} \
-    --output_dir backbone_outputdir/${PROJECT_NAME}
-    #--output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
-    
-# sh shell/1k_pretrain/convnext_small_1k_224.sh
+    --output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"

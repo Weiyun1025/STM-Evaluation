@@ -21,10 +21,10 @@ class ConvNeXtBlock(nn.Module):
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
 
     def forward(self, x):
-        shortcut = x.permute(0, 2, 3, 1).contiguous()
+        shortcut = x.permute(0, 2, 3, 1)
         x = self.dwconv(x)
         # (N, C, H, W) -> (N, H, W, C)
-        x = x.permute(0, 2, 3, 1).contiguous()
+        x = x.permute(0, 2, 3, 1)
         x = self.norm(x)
         x = self.pwconv1(x)
         x = self.act(x)
@@ -34,7 +34,7 @@ class ConvNeXtBlock(nn.Module):
         x = shortcut + self.drop_path(x)
 
         # (N, H, W, C) -> (N, C, H, W)
-        x = x.permute(0, 3, 1, 2).contiguous()
+        x = x.permute(0, 3, 1, 2)
 
         return x
 
@@ -67,7 +67,7 @@ class ConvNeXtV2Block(nn.Module):
         x = shortcut + self.drop_path(x)
 
         # (N, C, H, W) -> (N, H, W, C)
-        x = x.permute(0, 2, 3, 1).contiguous()
+        x = x.permute(0, 2, 3, 1)
 
         shortcut = x
         x = self.pw_norm(x)
@@ -79,7 +79,7 @@ class ConvNeXtV2Block(nn.Module):
         x = shortcut + self.drop_path(x)
 
         # (N, H, W, C) -> (N, C, H, W)
-        x = x.permute(0, 3, 1, 2).contiguous()
+        x = x.permute(0, 3, 1, 2)
 
         return x
 
@@ -118,7 +118,7 @@ class ConvNeXtV3Block(nn.Module):
         x = shortcut + self.drop_path(x)
 
         # (N, C, H, W) -> (N, H, W, C)
-        x = x.permute(0, 2, 3, 1).contiguous()
+        x = x.permute(0, 2, 3, 1)
 
         shortcut = x
         x = self.pw_norm(x)
@@ -130,7 +130,7 @@ class ConvNeXtV3Block(nn.Module):
         x = shortcut + self.drop_path(x)
 
         # (N, H, W, C) -> (N, C, H, W)
-        x = x.permute(0, 3, 1, 2).contiguous()
+        x = x.permute(0, 3, 1, 2)
 
         return x
 

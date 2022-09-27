@@ -59,7 +59,7 @@ def get_args_parser():
                         help='gradient accumulation steps')
 
     # Model parameters
-    parser.add_argument('--model', default='convnext_tiny', type=str, metavar='MODEL',
+    parser.add_argument('--model', default='conv_convnext_tiny', type=str, metavar='MODEL',
                         help='Name of model to train')
     parser.add_argument('--drop_path', type=float, default=0, metavar='PCT',
                         help='Drop path rate (default: 0.0)')
