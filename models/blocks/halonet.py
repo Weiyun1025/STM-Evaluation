@@ -254,25 +254,25 @@ class HaloBlockV2(nn.Module):
         return x
 
 
-# @register_model
-# def unified_halo_tiny(pretrained=False, **kwargs):
-#     dims = [96 * 2 ** i for i in range(4)]
-#     depths = [2, 2, 6, 2]
-#     num_heads = [3, 6, 12, 24]
-#     block_size = 7
-#     halo_size = 3
+@register_model
+def unified_halo_tiny(pretrained=False, **kwargs):
+    dims = [96 * 2 ** i for i in range(4)]
+    depths = [2, 2, 6, 2]
+    num_heads = [3, 6, 12, 24]
+    block_size = 7
+    halo_size = 3
 
-#     model = MetaArch(img_size=224,
-#                      depths=depths,
-#                      dims=dims,
-#                      block_type=HaloBlock,
-#                      block_kwargs=dict(num_heads=num_heads, block_size=block_size, halo_size=halo_size),
-#                      **kwargs)
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     block_type=HaloBlock,
+                     block_kwargs=dict(num_heads=num_heads, block_size=block_size, halo_size=halo_size),
+                     **kwargs)
 
-#     if pretrained:
-#         raise NotImplementedError()
+    if pretrained:
+        raise NotImplementedError()
 
-#     return model
+    return model
 
 
 # @register_model

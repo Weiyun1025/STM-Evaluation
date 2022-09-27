@@ -8,4 +8,5 @@ from . import (
     halonet3_timm,
     halonet_optim,
     halonet_fix_posembed,
+    halo_with_mask,
 )
