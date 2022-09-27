@@ -62,53 +62,11 @@ def pe_convnext_v2_tiny(pretrained=False, **kwargs):
 
 
 @ register_model
-def conv_convnext_micro(pretrained=False, **kwargs):
+def conv_convnext_v2_micro(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
                      depths=[3, 3, 12, 3],
                      dims=[32, 64, 128, 256],
-                     block_type=ConvNeXtBlock,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@ register_model
-def conv_convnext_tiny(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
-                     depths=[3, 3, 9, 3],
-                     dims=[96, 192, 384, 768],
-                     block_type=ConvNeXtBlock,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@ register_model
-def conv_convnext_small(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
-                     depths=[3, 3, 27, 3],
-                     dims=[96, 192, 384, 768],
-                     block_type=ConvNeXtBlock,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@ register_model
-def conv_convnext_base(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
-                     depths=[3, 3, 27, 3],
-                     dims=[128, 256, 512, 1024],
-                     block_type=ConvNeXtBlock,
+                     block_type=ConvNeXtV2Block,
                      **kwargs)
 
     if pretrained:
@@ -129,6 +87,35 @@ def conv_convnext_v2_tiny(pretrained=False, **kwargs):
         raise NotImplementedError()
 
     return model
+
+
+@ register_model
+def conv_convnext_v2_small(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[3, 3, 27, 3],
+                     dims=[96, 192, 384, 768],
+                     block_type=ConvNeXtV2Block,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@ register_model
+def conv_convnext_v2_base(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[3, 3, 27, 3],
+                     dims=[128, 256, 512, 1024],
+                     block_type=ConvNeXtV2Block,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
 
 
 @ register_model
