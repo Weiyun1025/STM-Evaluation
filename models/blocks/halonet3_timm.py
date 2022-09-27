@@ -72,9 +72,11 @@ class HaloAttentionV3(nn.Module):
         k_size = block_size + 2 * halo_size
         self.pos_size = (block_size + halo_size, block_size + halo_size)
         # define a parameter table of relative position bias
-        self.relative_position_bias_table = nn.Parameter(
-            torch.zeros((2 * self.pos_size[0] - 1) * (2 * self.pos_size[1] - 1),
-                        num_heads))  # 2*(b+h)-1 * 2*(b+h)-1, nH
+        #self.relative_position_bias_table = nn.Parameter(
+        #    torch.zeros((2 * self.pos_size[0] - 1) * (2 * self.pos_size[1] - 1),
+        #                num_heads))  # 2*(b+h)-1 * 2*(b+h)-1, nH
+        self.relative_position_bias_table = torch.zeros((2 * self.pos_size[0] - 1) * (2 * self.pos_size[1] - 1), num_heads)  # 2*(b+h)-1 * 2*(b+h)-1, nH
+
         # get pair-wise relative position index for each token inside the window
         coords_h = torch.arange(k_size)
         coords_w = torch.arange(k_size)
@@ -91,7 +93,17 @@ class HaloAttentionV3(nn.Module):
         relative_coords[:, :, 1] += self.pos_size[1] - 1
         relative_coords[:, :, 0] *= 2 * self.pos_size[1] - 1
         relative_position_index = relative_coords.sum(-1)  # q_size * q_size, k_size * k_size
-        self.register_buffer("relative_position_index", relative_position_index)
+        #self.register_buffer("relative_position_index", relative_position_index)
+
+        # relative position embedding
+        relative_position_bias = self.relative_position_bias_table[relative_position_index.view(-1)].view(
+            self.block_size ** 2, (self.block_size + 2 * self.halo_size) ** 2,
+            self.num_heads)  # q_size * q_size, k_size * k_size, nH
+        relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  # nH, q_size * q_size, k_size * k_size
+        relative_position_bias = relative_position_bias.unsqueeze(1).unsqueeze(0)
+        self.relative_position_bias = nn.Parameter(relative_position_bias)
+        #self.register_buffer("relative_position_bias", relative_position_bias)
+        
 
         # ----- qkv project -----
         self.q = nn.Conv2d(dim, dim, 1, stride=stride, bias=qkv_bias)
@@ -105,6 +117,7 @@ class HaloAttentionV3(nn.Module):
         trunc_normal_(self.kv.weight, std=std)
         trunc_normal_(self.relative_position_bias_table, std=.02)
 
+    #@profile
     def forward(self, x):
         B, C, H, W = x.shape
         assert H % self.block_size == 0 and W % self.block_size == 0
@@ -112,30 +125,50 @@ class HaloAttentionV3(nn.Module):
         num_w_blocks = W // self.block_size
         num_blocks = num_h_blocks * num_w_blocks
 
-        q = self.q(x)
-        q = F.unfold(q, kernel_size=self.block_size // self.stride, stride=self.block_size // self.stride)
+        # unfold
+        q = self.q(x).permute(0, 3, 1, 2)
+        q = q.reshape(
+            -1, self.dim_head,
+            num_h_blocks, self.block_size_ds, num_w_blocks, self.block_size_ds).permute(0, 1, 3, 5, 2, 4)
         # B, num_heads * dim_head * block_size ** 2, num_blocks
         q = q.reshape(B * self.num_heads, self.dim_head, -1, num_blocks).transpose(1, 3)
         # B * num_heads, num_blocks, block_size ** 2, dim_head
 
-        kv = self.kv(x)
-        # FIXME I 'think' this unfold does what I want it to, but I should investigate
-        kv = F.unfold(kv, kernel_size=self.win_size, stride=self.block_size, padding=self.halo_size)
-        kv = kv.reshape(
-            B * self.num_heads, self.dim_head + (self.dim // self.num_heads), -1, num_blocks).transpose(1, 3)
-        k, v = torch.split(kv, [self.dim_head, self.dim // self.num_heads], dim=-1)
+        kv = self.kv(x).permute(0, 3, 1, 2)
+        # Generate overlapping windows for kv. This approach is good for GPU and CPU. However, unfold() is not
+        # lowered for PyTorch XLA so it will be very slow. See code at bottom of file for XLA friendly approach.
+        # FIXME figure out how to switch impl between this and conv2d if XLA being used.
+        kv = F.pad(kv, [self.halo_size, self.halo_size, self.halo_size, self.halo_size])
+        kv = kv.unfold(2, self.win_size, self.block_size).unfold(3, self.win_size, self.block_size).reshape(
+            B * self.num_heads, self.dim_head_qk + self.dim_head_v, num_blocks, -1).permute(0, 2, 3, 1)
+        
+        k, v = torch.split(kv, [self.dim_head_qk, self.dim_head_v], dim=-1)
 
-        attn_logits = (q @ k.transpose(-1, -2)) * self.scale  # FIXME should usual attn scale be applied?
+        
 
         # add relative position
-        relative_position_bias = self.relative_position_bias_table[self.relative_position_index.view(-1)].view(
-            self.block_size ** 2, (self.block_size + 2 * self.halo_size) ** 2,
-            self.num_heads)  # q_size * q_size, k_size * k_size, nH
-        relative_position_bias = relative_position_bias.permute(2, 0,
-                                                                1).contiguous()  # nH, q_size * q_size, k_size * k_size
+        relative_position_bias = self.relative_position_bias.expand(B, -1, num_blocks, -1, -1)
+        if self.scale_pos_embed:
+            attn = (q @ k.transpose(-1, -2) + relative_position_bias) * self.scale
+        else:
+            attn = (q @ k.transpose(-1, -2)) * self.scale
+            #_ = self.pos_embed(q)
+            attn = attn + relative_position_bias
+        
+         # B * num_heads, num_blocks, block_size ** 2, win_size ** 2
+        attn = attn.softmax(dim=-1)
 
+        out = (attn @ v).transpose(1, 3)  # B * num_heads, dim_head_v, block_size ** 2, num_blocks
+        # fold
+        out = out.reshape(-1, self.block_size_ds, self.block_size_ds, num_h_blocks, num_w_blocks)
+        out = out.permute(0, 3, 1, 4, 2).contiguous().view(
+            B, self.dim_out_v, H // self.block_stride, W // self.block_stride)
+        # B, dim_out, H // block_stride, W // block_stride
+        #out = self.pool(out)
+
+        '''
+        attn_logits = (q @ k.transpose(-1, -2)) * self.scale  # FIXME should usual attn scale be applied?
         attn_logits = attn_logits.reshape(B, self.num_heads, num_blocks, self.block_size ** 2, self.win_size ** 2)
-        relative_position_bias = relative_position_bias.unsqueeze(1).unsqueeze(0).expand(B, -1, num_blocks, -1, -1)
         attn_logits = attn_logits + relative_position_bias  # B, num_heads, num_blocks, block_size ** 2, win_size ** 2
         attn_logits = attn_logits.reshape(B * self.num_heads, num_blocks, self.block_size ** 2,
                                           self.win_size ** 2)  # B * num_heads, num_blocks, block_size ** 2, win_size ** 2
@@ -146,5 +179,6 @@ class HaloAttentionV3(nn.Module):
             (H // self.stride, W // self.stride),
             kernel_size=self.block_size // self.stride, stride=self.block_size // self.stride)
         # B, dim_out, H // stride, W // stride
-        return attn_out
+        '''
+        return out
 

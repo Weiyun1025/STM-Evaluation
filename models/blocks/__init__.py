@@ -6,4 +6,6 @@ from . import (
     halonet_timm,
     pvt_v2,
     halonet3_timm,
+    halonet_optim,
+    halonet_fix_posembed,
 )

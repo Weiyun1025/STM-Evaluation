@@ -24,7 +24,7 @@ def speed_test(model, img_size=224):
     print("--------------------------")
 
 
-@profile
+#@profile
 def inference_and_backward(model, criterion, inputs, targets):
     for i in range(100):
         outputs = model(inputs)
@@ -35,8 +35,11 @@ def inference_and_backward(model, criterion, inputs, targets):
 if __name__ == '__main__':
     os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
     #model_name = "conv_halo_v2_timm_tiny"
-    #model_name = "conv_swin_tiny"
-    model_name = "swin_tiny_patch4_window7_224"
+    #model_name = "optim_halo_v2_timm_tiny"
+    model_name = "conv_swin_tiny"
+    #model_name = "swin_tiny_patch4_window7_224"
+    #model_name = "conv_halo_v3_timm_tiny"
+    #model_name = "optim_halo_v2_fixed_posembed_tiny"
 
     model = create_model(model_name,
                         pretrained=False,
