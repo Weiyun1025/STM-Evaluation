@@ -245,12 +245,14 @@ def halonet_h3(pretrained=False, layer_scale_init_value=0., **kwargs):
 
 @register_model
 def halonet_h4(pretrained=False, layer_scale_init_value=0., **kwargs):
-    return _create_halonet(b=12, h=2, rv=1., rb=3., l3=12, df=1280, **kwargs)
+    # return _create_halonet(b=12, h=2, rv=1., rb=3., l3=12, df=1280, **kwargs)
+    return _create_halonet(b=12, h=3, rv=1., rb=3., l3=12, df=1280, **kwargs)
 
 
 @register_model
 def halonet_h5(pretrained=False, layer_scale_init_value=0., **kwargs):
-    return _create_halonet(b=14, h=2, rv=2.5, rb=2., l3=23, df=1536, **kwargs)
+    # return _create_halonet(b=14, h=2, rv=2.5, rb=2., l3=23, df=1536, **kwargs)
+    return _create_halonet(b=14, h=3, rv=2.5, rb=2., l3=23, df=1536, **kwargs)
 
 
 @register_model
