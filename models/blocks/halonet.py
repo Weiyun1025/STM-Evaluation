@@ -145,7 +145,7 @@ class HaloAttention(nn.Module):
         mask = mask.bool()
 
         max_neg_value = -torch.finfo(sim.dtype).max
-        sim.masked_fill_(mask, max_neg_value)
+        sim.masked_fill_(~mask, max_neg_value)
 
         # attention
         attn = sim.softmax(dim=-1)
@@ -252,45 +252,3 @@ class HaloBlockV2(nn.Module):
         x = shortcut + self.drop_path(x)
 
         return x
-
-
-# @register_model
-# def unified_halo_tiny(pretrained=False, **kwargs):
-#     dims = [96 * 2 ** i for i in range(4)]
-#     depths = [2, 2, 6, 2]
-#     num_heads = [3, 6, 12, 24]
-#     block_size = 7
-#     halo_size = 3
-
-#     model = MetaArch(img_size=224,
-#                      depths=depths,
-#                      dims=dims,
-#                      block_type=HaloBlock,
-#                      block_kwargs=dict(num_heads=num_heads, block_size=block_size, halo_size=halo_size),
-#                      **kwargs)
-
-#     if pretrained:
-#         raise NotImplementedError()
-
-#     return model
-
-
-# @register_model
-# def unified_halo_v2_tiny(pretrained=False, **kwargs):
-#     dims = [96 * 2 ** i for i in range(4)]
-#     depths = [2, 2, 6, 2]
-#     num_heads = [3, 6, 12, 24]
-#     block_size = 7
-#     halo_size = 3
-
-#     model = MetaArch(img_size=224,
-#                      depths=depths,
-#                      dims=dims,
-#                      block_type=HaloBlockV2,
-#                      block_kwargs=dict(num_heads=num_heads, block_size=block_size, halo_size=halo_size),
-#                      **kwargs)
-
-#     if pretrained:
-#         raise NotImplementedError()
-
-#     return model
