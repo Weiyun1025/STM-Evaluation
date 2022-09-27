@@ -3,13 +3,13 @@
 set -x
 mkdir logs
 
-PARTITION=VC
+PARTITION=Gvlab2
 TYPE="conv"  # pe, pm, conv (PatchEmbedding, PatchMerging, Conv)
 MODEL="${TYPE}_swin_base"
 DESC="unified_config" 
 
 # key hyperparameters
-TOTAL_BATCH_SIZE="1024"
+TOTAL_BATCH_SIZE="256"
 LR="1e-3"
 INIT_LR="1e-6"
 END_LR="1e-5"
@@ -18,9 +18,9 @@ DROP_PATH="0.5"
 JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_${DESC}"
 
-GPUS=${GPUS:-8}
-GPUS_PER_NODE=${GPUS_PER_NODE:-8}
-QUOTA_TYPE="auto"
+GPUS=${GPUS:-2}
+GPUS_PER_NODE=${GPUS_PER_NODE:-2}
+QUOTA_TYPE="reserved"
 
 CPUS_PER_TASK=${CPUS_PER_TASK:-12}
 SRUN_ARGS=${SRUN_ARGS:-""}
@@ -33,7 +33,6 @@ srun -p ${PARTITION} \
     --cpus-per-task=${CPUS_PER_TASK} \
     --kill-on-bad-exit=1 \
     --quotatype=${QUOTA_TYPE} \
-    --async \
     --output="logs/${PROJECT_NAME}.out" \
     --error="logs/${PROJECT_NAME}.err" \
     ${SRUN_ARGS} \

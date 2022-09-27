@@ -3,13 +3,13 @@
 set -x
 mkdir logs
 
-PARTITION=VC
+PARTITION=Gvlab2
 TYPE="pe"  # pe, pm, conv (PatchEmbedding, PatchMerging, Conv)
 MODEL="conv_halo_v2_timm_micro"
 DESC="unified_config" 
 
 # key hyperparameters
-TOTAL_BATCH_SIZE="1024"
+TOTAL_BATCH_SIZE="512"
 LR="1e-3"
 INIT_LR="1e-6"
 END_LR="1e-5"
@@ -18,8 +18,8 @@ DROP_PATH="0.0"
 JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_${DESC}"
 
-GPUS=${GPUS:-8}
-GPUS_PER_NODE=${GPUS_PER_NODE:-8}
+GPUS=${GPUS:-4}
+GPUS_PER_NODE=${GPUS_PER_NODE:-4}
 QUOTA_TYPE="reserved"
 
 CPUS_PER_TASK=${CPUS_PER_TASK:-12}
@@ -33,7 +33,6 @@ srun -p ${PARTITION} \
     --cpus-per-task=${CPUS_PER_TASK} \
     --kill-on-bad-exit=1 \
     --quotatype=${QUOTA_TYPE} \
-    --async \
     --output="logs/${PROJECT_NAME}.out" \
     --error="logs/${PROJECT_NAME}.err" \
     ${SRUN_ARGS} \
