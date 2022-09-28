@@ -1,13 +1,22 @@
+"""
+HaloNet with pre-generated relative positional embedding.
+"""
 import torch
 import torch.nn.functional as F
 from torch import nn
 from timm.models import register_model
-from timm.models.layers import DropPath, LayerNorm2d, Mlp, make_divisible
-from timm.models.layers.halo_attn import PosEmbedRel, trunc_normal_, _assert
+from timm.models.layers import DropPath, LayerNorm2d, Mlp
+from timm.models.layers.halo_attn import rel_logits_1d
+
+
+from timm.models.layers.helpers import make_divisible
+from timm.models.layers.weight_init import trunc_normal_
+from timm.models.layers.trace_utils import _assert
+
 from ..meta_arch import MetaArch
 
 
-class HaloAttn(nn.Module):
+class HaloAttention(nn.Module):
     """ Halo Attention
 
     Paper: `Scaling Local Self-Attention for Parameter Efficient Visual Backbones`
@@ -63,23 +72,66 @@ class HaloAttn(nn.Module):
         # FIXME not clear if this stride behaviour is what the paper intended
         # Also, the paper mentions using a 3D conv for dealing with the blocking/gather, and leaving
         # data in unfolded block form. I haven't wrapped my head around how that'd look.
-        self.q = nn.Conv2d(dim, self.dim_out_qk, 1, stride=self.block_stride, bias=qkv_bias)
-        self.kv = nn.Conv2d(dim, self.dim_out_qk + self.dim_out_v, 1, bias=qkv_bias)
+        # self.q = nn.Conv2d(dim, self.dim_out_qk, 1, stride=self.block_stride, bias=qkv_bias)
+        # self.kv = nn.Conv2d(dim, self.dim_out_qk + self.dim_out_v, 1, bias=qkv_bias)
 
-        self.pos_embed = PosEmbedRel(
-            block_size=self.block_size_ds, win_size=self.win_size, dim_head=self.dim_head_qk, scale=self.scale)
+        self.q = nn.Linear(dim, self.dim_out_qk, bias=qkv_bias)
+        self.kv = nn.Linear(dim, self.dim_out_qk + self.dim_out_v, bias=qkv_bias)
+
+        # generate positional embedding
+        self.pre_generate_positional_embedding(q_size=block_size,
+                                               k_size=block_size + 2*halo_size,
+                                               halo_size=halo_size,
+                                               num_heads=num_heads)
 
         self.pool = nn.AvgPool2d(2, 2) if use_avg_pool else nn.Identity()
 
         self.reset_parameters()
 
+    def pre_generate_positional_embedding(self, q_size, k_size, halo_size, num_heads):
+        # define a parameter table of relative position bias
+        # self.relative_position_bias_table = nn.Parameter(
+        #    torch.zeros((2 * self.pos_size[0] - 1) * (2 * self.pos_size[1] - 1),
+        #                num_heads))  # 2*(b+h)-1 * 2*(b+h)-1, nH
+        pos_size = (q_size + halo_size, q_size + halo_size)
+        self.relative_position_bias_table = torch.zeros((2 * pos_size[0] - 1) * (2 * pos_size[1] - 1), num_heads)  # 2*(b+h)-1 * 2*(b+h)-1, nH
+        trunc_normal_(self.relative_position_bias_table, std=.02)
+
+        # get pair-wise relative position index for each token inside the window
+        coords_h = torch.arange(k_size)
+        coords_w = torch.arange(k_size)
+        coords = torch.stack(torch.meshgrid([coords_h, coords_w]))  # 2, k_size, k_size
+        coords_flatten = torch.flatten(coords, 1)  # 2, k_size * k_size
+        relative_coords = coords_flatten[:, :, None] - coords_flatten[:, None, :]  # 2, k_size * k_size, k_size * k_size
+        relative_coords = relative_coords.reshape(2, k_size, k_size, k_size,
+                                                  k_size)  # 2, k_size, k_size, k_size, k_size
+        relative_coords = relative_coords[:, halo_size:halo_size + q_size, halo_size:halo_size + q_size, :,
+                                          :]  # 2, q_size, q_size, k_size, k_size
+        relative_coords = relative_coords.reshape(2, q_size ** 2, k_size ** 2)  # 2, q_size * q_size, k_size * k_size
+        relative_coords = relative_coords.permute(1, 2, 0).contiguous()  # q_size * q_size, k_size * k_size, 2
+        relative_coords[:, :, 0] += pos_size[0] - 1  # shift to start from 0
+        relative_coords[:, :, 1] += pos_size[1] - 1
+        relative_coords[:, :, 0] *= 2 * pos_size[1] - 1  # ?
+        relative_position_index = relative_coords.sum(-1)  # q_size * q_size, k_size * k_size
+        #self.register_buffer("relative_position_index", relative_position_index)
+
+        # relative position embedding
+        relative_position_bias = self.relative_position_bias_table[relative_position_index.view(-1)].view(
+            self.block_size ** 2, (self.block_size + 2 * self.halo_size) ** 2,
+            self.num_heads)  # q_size * q_size, k_size * k_size, nH
+        relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  # nH, q_size * q_size, k_size * k_size
+        relative_position_bias = relative_position_bias.unsqueeze(1).unsqueeze(0)
+        self.relative_position_bias = nn.Parameter(relative_position_bias)
+
     def reset_parameters(self):
         std = self.q.weight.shape[1] ** -0.5  # fan-in
         trunc_normal_(self.q.weight, std=std)
         trunc_normal_(self.kv.weight, std=std)
-        trunc_normal_(self.pos_embed.height_rel, std=self.scale)
-        trunc_normal_(self.pos_embed.width_rel, std=self.scale)
+        # shimin: i remove the initalization for pos embedding
+        #trunc_normal_(self.pos_embed.height_rel, std=self.scale)
+        #trunc_normal_(self.pos_embed.width_rel, std=self.scale)
 
+    # @profile
     def forward(self, x):
         B, C, H, W = x.shape
         _assert(H % self.block_size == 0, '')
@@ -88,7 +140,9 @@ class HaloAttn(nn.Module):
         num_w_blocks = W // self.block_size
         num_blocks = num_h_blocks * num_w_blocks
 
-        q = self.q(x)
+        x = x.permute(0, 2, 3, 1).contiguous()
+
+        q = self.q(x).permute(0, 3, 1, 2)
         # unfold
         q = q.reshape(
             -1, self.dim_head_qk,
@@ -97,7 +151,7 @@ class HaloAttn(nn.Module):
         q = q.reshape(B * self.num_heads, self.dim_head_qk, -1, num_blocks).transpose(1, 3)
         # B * num_heads, num_blocks, block_size ** 2, dim_head
 
-        kv = self.kv(x)
+        kv = self.kv(x).permute(0, 3, 1, 2)
         mask = torch.ones((B, 1, H, W), device=kv.device)
 
         # Generate overlapping windows for kv. This approach is good for GPU and CPU. However, unfold() is not
@@ -113,11 +167,18 @@ class HaloAttn(nn.Module):
 
         k, v = torch.split(kv, [self.dim_head_qk, self.dim_head_v], dim=-1)
         # B * num_heads, num_blocks, win_size ** 2, dim_head_qk or dim_head_v
+        #k = v = q
 
+        relative_position_bias = self.relative_position_bias.expand(B, -1, num_blocks, -1, -1).flatten(0, 1)
         if self.scale_pos_embed:
-            attn = (q @ k.transpose(-1, -2) + self.pos_embed(q)) * self.scale
+            attn = (q @ k.transpose(-1, -2) + relative_position_bias) * self.scale
         else:
-            attn = (q @ k.transpose(-1, -2)) * self.scale + self.pos_embed(q)
+            attn = (q @ k.transpose(-1, -2)) * self.scale
+            attn = attn + relative_position_bias
+            #_ = self.pos_embed(q)
+            #attn = attn + self.pos_embed(q)
+            #attn = (q @ k.transpose(-1, -2)) * self.scale + self.pos_embed(q)
+        # B * num_heads, num_blocks, block_size ** 2, win_size ** 2
         mask = mask.bool()
         mask = mask.squeeze(-1).repeat_interleave(self.num_heads, 0)
         mask = mask.unsqueeze(-2).repeat(1, 1, attn.shape[-2], 1)
@@ -125,9 +186,7 @@ class HaloAttn(nn.Module):
         max_neg_value = -torch.finfo(attn.dtype).max
         attn.masked_fill_(~mask, max_neg_value)
 
-        # B * num_heads, num_blocks, block_size ** 2, win_size ** 2
         attn = attn.softmax(dim=-1)
-
         out = (attn @ v).transpose(1, 3)  # B * num_heads, dim_head_v, block_size ** 2, num_blocks
         # fold
         out = out.reshape(-1, self.block_size_ds, self.block_size_ds, num_h_blocks, num_w_blocks)
@@ -155,9 +214,9 @@ class HaloBlockV2(nn.Module):
         ) if stride > 1 else nn.Identity()
 
         self.norm1 = norm_layer(dim // stride)
-        self.attn = HaloAttn(dim=dim // stride, dim_out=dim,
-                             num_heads=num_heads[stage], stride=stride,
-                             block_size=block_size, halo_size=halo_size)
+        self.attn = HaloAttention(dim=dim // stride, dim_out=dim,
+                                  num_heads=num_heads[stage], stride=stride,
+                                  block_size=block_size, halo_size=halo_size)
 
         self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((1, dim, 1, 1)),
                                     requires_grad=True) if layer_scale_init_value > 0 else None
@@ -169,6 +228,7 @@ class HaloBlockV2(nn.Module):
         self.gamma_2 = nn.Parameter(layer_scale_init_value * torch.ones((1, 1, 1, dim)),
                                     requires_grad=True) if layer_scale_init_value > 0 else None
 
+    # @profile
     def forward(self, x):
         # shape: B, C, H, W
         shortcut = self.shortcut(x)
@@ -193,7 +253,7 @@ class HaloBlockV2(nn.Module):
 
 
 @register_model
-def conv_halo_v2_no_train_mask_timm_tiny(pretrained=False, **kwargs):
+def optim_halo_v2_with_mask_tiny(pretrained=False, **kwargs):
     dims = [96 * 2 ** i for i in range(4)]
     depths = [2, 2, 6, 2]
     num_heads = [3, 6, 12, 24]

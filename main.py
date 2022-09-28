@@ -296,9 +296,28 @@ def main(args):
             prob=args.mixup_prob, switch_prob=args.mixup_switch_prob, mode=args.mixup_mode,
             label_smoothing=args.smoothing, num_classes=args.nb_classes)
 
-    # TODO: dropout, head_init_scale
+    # TODO: rm this part
+    if 'halo' in args.model:
+        info = args.model.split('_')
+        args.model = f'conv_halo_v2_{info[-1]}'
+
+        if 'github' in info:
+            args.halo_type = 'github'
+        elif 'mask' in info and 'rpe' in info:
+            args.halo_type = 'with_mask_with_rpe'
+        elif 'mask' in info:
+            args.halo_type = 'with_mask'
+        else:
+            args.halo_type = 'timm'
+
+        import sys
+        print(f'model_type: {args.model}', file=sys.stderr)
+        print(f'halo_type: {args.halo_type}', file=sys.stderr)
+
+    # TODO: rm halo_type option
     model = create_model(
         args.model,
+        halo_type=args.halo_type,
         pretrained=False,
         num_classes=args.nb_classes,
         drop_path_rate=args.drop_path,

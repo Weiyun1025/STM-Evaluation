@@ -4,8 +4,8 @@ set -x
 mkdir logs
 
 PARTITION=VC
-TYPE="pe"  # pe, pm, conv (PatchEmbedding, PatchMerging, Conv)
-MODEL="conv_halo_v2_timm_small"
+TYPE=$1
+MODEL="conv_halo_v2_timm_${TYPE}_small"
 DESC="unified_config" 
 
 # key hyperparameters
