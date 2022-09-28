@@ -1,9 +1,9 @@
 from . import (
     convnext,
+    halonet_timm_no_train_mask,
     swin,
     swin_v2,
     halonet_timm,
     halonet_github,
-    halonet_optim,
     pvt_v2,
 )
