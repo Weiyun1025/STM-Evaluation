@@ -5,7 +5,7 @@ mkdir logs
 
 PARTITION=VC
 TYPE=$1
-MODEL="conv_halo_v2_timm_${TYPE}_micro"
+MODEL="conv_halo_v2_${TYPE}_small"
 DESC="unified_config" 
 
 # key hyperparameters
@@ -13,7 +13,7 @@ TOTAL_BATCH_SIZE="1024"
 LR="1e-3"
 INIT_LR="1e-6"
 END_LR="1e-5"
-DROP_PATH="0.0"
+DROP_PATH="0.3"
 
 JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_${DESC}"
