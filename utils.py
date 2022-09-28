@@ -527,3 +527,11 @@ def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, mode
             if 'scaler' in checkpoint:
                 loss_scaler.load_state_dict(checkpoint['scaler'])
             print("With optim & sched!", file=sys.stderr)
+
+
+def set_seed(seed):
+    import random
+    import torch
+    random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
