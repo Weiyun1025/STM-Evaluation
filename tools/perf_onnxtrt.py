@@ -11,7 +11,7 @@ from utils import set_seed
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-model_name', type=str)
-    parser.add_argument('-root', type=str, default='inference_benchmark')
+    parser.add_argument('-root', type=str, default='logs/inference_benchmark')
     parser.add_argument('-input_shape',
                         nargs='+',
                         type=int,
@@ -95,7 +95,7 @@ def main(args):
     root = os.path.join(args.root, args.model_name)
 
     # load torchscript and comput gt
-    ts_model = '{}/{}.ts'.format(root, args.model_name)
+    ts_model = torch.jit.load('{}/{}.ts'.format(root, args.model_name))
     input_data = torch.randn(*args.input_shape,
                              dtype=torch.float32,
                              device=torch.device('cuda'))

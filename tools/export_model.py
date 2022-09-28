@@ -2,6 +2,7 @@ import os
 import argparse
 
 import torch
+torch.nn.Module.apply = lambda self, f: None
 from timm.models import create_model
 
 import models
@@ -11,7 +12,7 @@ from utils import set_seed
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-model_name', type=str)
-    parser.add_argument('-root', type=str, default='inference_benchmark')
+    parser.add_argument('-root', type=str, default='logs/inference_benchmark')
     parser.add_argument('-input_shape',
                         nargs='+',
                         type=int,
