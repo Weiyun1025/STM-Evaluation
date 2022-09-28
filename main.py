@@ -307,6 +307,8 @@ def main(args):
             args.halo_type = 'with_mask_with_rpe'
         elif 'mask' in info:
             args.halo_type = 'with_mask'
+        elif 'switch' in info:
+            args.halo_type = 'switch'
         else:
             args.halo_type = 'timm'
 

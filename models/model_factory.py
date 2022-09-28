@@ -5,7 +5,7 @@ from .blocks.convnext import ConvNeXtBlock, ConvNeXtV2Block, ConvNeXtV3Block
 from .blocks.swin import SwinBlock
 from .blocks.dcn_v3 import DCNv3Block
 from .blocks.pvt_v2 import PvtV2Block
-from .blocks import halonet_github, halonet_timm, halonet_timm_with_mask, halonet_timm_with_mask_with_rpe
+from .blocks import halonet_github, halonet_timm, halonet_timm_switch, halonet_timm_with_mask, halonet_timm_with_mask_with_rpe
 
 
 @ register_model
@@ -472,6 +472,7 @@ def conv_pvt_v2_base(pretrained=False, **kwargs):
 halo_type_dict = {
     'timm': halonet_timm,
     'github': halonet_github,
+    'switch': halonet_timm_switch,
     'with_mask': halonet_timm_with_mask,
     'with_mask_with_rpe': halonet_timm_with_mask_with_rpe,
 }
