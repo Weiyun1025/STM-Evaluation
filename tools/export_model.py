@@ -2,11 +2,15 @@ import os
 import argparse
 
 import torch
+
 torch.nn.Module.apply = lambda self, f: None
 from timm.models import create_model
+import onnx
+from onnxsim import simplify
 
 import models
 from utils import set_seed
+from deformable_attention import register_defomable_attention
 
 
 def parse_args():
@@ -38,28 +42,33 @@ def export_to_onnx(save_path, model, data):
         },
         opset_version=12,
     )
+    model = onnx.load(save_path)
+    model_simp, check = simplify(model)
+    assert check, "Simplified ONNX model could not be validated"
+    onnx.save(model_simp, save_path)
 
 
 @torch.no_grad()
 def main(args):
     if args.seed:
         set_seed(args.seed)
+    root = os.path.join(args.root, args.model_name)
+    os.makedirs(root, exist_ok=True)
 
     data = torch.randn(*args.input_shape,
                        dtype=torch.float32,
                        device=torch.device('cuda'))
-    model = model = create_model(args.model_name,
-                                 pretrained=False,
-                                 num_classes=1000)
-
+    model = create_model(args.model_name, pretrained=False, num_classes=1000)
     model = model.eval().cuda()
-    with torch.jit.optimized_execution(True):
-        ts_model = torch.jit.trace(model, data)
+    model(data)
 
-    root = os.path.join(args.root, args.model_name)
-    os.makedirs(root, exist_ok=True)
-    torch.jit.save(ts_model, '{}/{}.ts'.format(root, args.model_name))
-    export_to_onnx('{}/{}.onnx'.format(root, args.model_name), ts_model, data)
+    register_defomable_attention(model)
+    export_to_onnx('{}/{}.onnx'.format(root, args.model_name), model, data)
+
+    if 'dcn' not in args.model_name:
+        with torch.jit.optimized_execution(True):
+            ts_model = torch.jit.trace(model, data)
+        torch.jit.save(ts_model, '{}/{}.ts'.format(root, args.model_name))
 
 
 if __name__ == '__main__':

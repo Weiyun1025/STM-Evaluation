@@ -67,7 +67,13 @@ def perf_trt_engine(engine_bytes, logger, input_data, output_gt):
 
     # init input and output buffer
     input_buffer = torch.zeros_like(input_data)
-    output_buffer = torch.zeros_like(output_gt)
+    if output_gt is not None:
+        output_buffer = torch.zeros_like(output_gt)
+    else:
+        output_buffer = torch.zeros(1,
+                                    1000,
+                                    dtype=torch.float32,
+                                    device='cuda')
     input_binding_idx = engine.get_binding_index('input')
     output_binding_idx = engine.get_binding_index('output')
     bindings = [None, None]
@@ -84,7 +90,10 @@ def perf_trt_engine(engine_bytes, logger, input_data, output_gt):
         torch.cuda.current_stream().synchronize()
 
     avg_time = benchmark_time(_run) / input_data.shape[0]
-    max_diff = (output_buffer - output_gt).abs().max().item()
+    if output_gt is not None:
+        max_diff = (output_buffer - output_gt).abs().max().item()
+    else:
+        max_diff = -1
     return 1.0 / avg_time, max_diff
 
 
@@ -95,11 +104,14 @@ def main(args):
     root = os.path.join(args.root, args.model_name)
 
     # load torchscript and comput gt
-    ts_model = torch.jit.load('{}/{}.ts'.format(root, args.model_name))
     input_data = torch.randn(*args.input_shape,
                              dtype=torch.float32,
                              device=torch.device('cuda'))
-    output_gt = ts_model(input_data)
+    if os.path.exists('{}/{}.ts'.format(root, args.model_name)):
+        ts_model = torch.jit.load('{}/{}.ts'.format(root, args.model_name))
+        output_gt = ts_model(input_data)
+    else:
+        output_gt = None
     torch.cuda.synchronize()
 
     # init trt
