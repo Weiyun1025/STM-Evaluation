@@ -315,6 +315,8 @@ def main(args):
         import sys
         print(f'model_type: {args.model}', file=sys.stderr)
         print(f'halo_type: {args.halo_type}', file=sys.stderr)
+    else:
+        args.halo_type = None
 
     # TODO: rm halo_type option
     model = create_model(
