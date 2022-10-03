@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+set -x
+mkdir logs
+
+PARTITION=VC
+MODEL="conv_convnext_v2_base"
+DESC="unified_config" 
+
+# key hyperparameters
+TOTAL_BATCH_SIZE="512"
+JOB_NAME=${MODEL}
+PROJECT_NAME="${MODEL}_1k_${DESC}"
+
+GPUS=${GPUS:-4}
+GPUS_PER_NODE=${GPUS_PER_NODE:-4}
+QUOTA_TYPE="auto"
+
+CPUS_PER_TASK=${CPUS_PER_TASK:-12}
+SRUN_ARGS=${SRUN_ARGS:-""}
+
+srun -p ${PARTITION} \
+    --job-name=${JOB_NAME} \
+    --gres=gpu:${GPUS_PER_NODE} \
+    --ntasks=${GPUS} \
+    --ntasks-per-node=${GPUS_PER_NODE} \
+    --cpus-per-task=${CPUS_PER_TASK} \
+    --kill-on-bad-exit=1 \
+    --quotatype=${QUOTA_TYPE} \
+    --async \
+    --output="logs/${PROJECT_NAME}.out" \
+    --error="logs/${PROJECT_NAME}.err" \
+    ${SRUN_ARGS} \
+    python -u main.py \
+    --model ${MODEL} \
+    --epochs 300 \
+    --batch_size $((TOTAL_BATCH_SIZE/GPUS)) \
+    --input_size 224 \
+    --crop_pct 0.875 \
+    --data_set IMNET1k \
+    --data_path /mnt/cache/share/images/ \
+    --data_on_memory false \
+    --nb_classes 1000 \
+    --use_amp true \
+    --save_ckpt true \
+    --enable_wandb false \
+    --project 'model evaluation' \
+    --name ${PROJECT_NAME} \
+    --output_dir backbone_outputdir/${PROJECT_NAME} \
+    --resume ""
+    #--output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
+    
+# sh shell/1k_pretrain/convnext_base_1k_224.sh
