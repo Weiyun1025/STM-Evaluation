@@ -208,10 +208,10 @@ def main(args):
         num_classes=args.nb_classes,
     )
 
-    #utils.auto_load_model_state_dict(args=args, model=model, model_without_ddp=model_without_ddp)
+    
     model.to(device)
-
     model_without_ddp = model
+    utils.auto_load_model_state_dict(args=args, model=model, model_without_ddp=model_without_ddp)
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
     print("Model = %s" % str(model_without_ddp))

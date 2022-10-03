@@ -104,6 +104,23 @@ def build_transform(args):
 
     t.append(transforms.Normalize(mean, std))
     return transforms.Compose(t)
+    
+    '''
+    else:
+            if args.crop_pct is None:
+                args.crop_pct = 224 / 256
+            size = int(args.input_size / args.crop_pct)
+            t.append(
+                # to maintain same ratio w.r.t. 224 images
+                transforms.Resize(size, interpolation=transforms.InterpolationMode.BICUBIC),
+            )
+            t.append(transforms.CenterCrop(args.input_size))
+
+    t.append(transforms.ToTensor())
+    t.append(transforms.Normalize(mean, std))
+    return transforms.Compose(t)
+    '''
+
 
 
 class ImageCephDataset(data.Dataset):

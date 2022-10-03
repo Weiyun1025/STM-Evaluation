@@ -8,13 +8,13 @@ MODEL="dcn_v3_base"
 DESC="unified_config" 
 
 # key hyperparameters
-TOTAL_BATCH_SIZE="512"
+TOTAL_BATCH_SIZE="256"
 JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_${DESC}"
 
-GPUS=${GPUS:-4}
-GPUS_PER_NODE=${GPUS_PER_NODE:-4}
-QUOTA_TYPE="auto"
+GPUS=${GPUS:-2}
+GPUS_PER_NODE=${GPUS_PER_NODE:-2}
+QUOTA_TYPE="spot"
 
 CPUS_PER_TASK=${CPUS_PER_TASK:-12}
 SRUN_ARGS=${SRUN_ARGS:-""}
@@ -31,7 +31,7 @@ srun -p ${PARTITION} \
     --output="logs/${PROJECT_NAME}.out" \
     --error="logs/${PROJECT_NAME}.err" \
     ${SRUN_ARGS} \
-    python -u main.py \
+    python -u main_debug.py \
     --model ${MODEL} \
     --epochs 300 \
     --batch_size $((TOTAL_BATCH_SIZE/GPUS)) \
@@ -42,12 +42,8 @@ srun -p ${PARTITION} \
     --data_on_memory false \
     --nb_classes 1000 \
     --use_amp true \
-    --save_ckpt true \
-    --enable_wandb false \
-    --project 'model evaluation' \
-    --name ${PROJECT_NAME} \
     --output_dir backbone_outputdir/${PROJECT_NAME} \
-    --resume ""
+    --resume "/mnt/petrelfs/share_data/shimin/share_checkpoint/dcnv3/dcnv3_base/checkpoint-best.pth"
     #--output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
     
-# sh shell/1k_pretrain/convnext_base_1k_224.sh
+# sh ./shell/translation_invariance/dcnv3_base_1k_224.sh
