@@ -38,9 +38,7 @@ srun -p ${PARTITION} \
     --input_size 224 \
     --crop_pct 0.875 \
     --invariance_type translation \
-    --translation_strength \
-    --rotation_strength \
-    --scaling_strength \
+    --translation_strength 12 \
     --data_set IMNET1k \
     --data_path /mnt/cache/share/images/ \
     --data_on_memory false \
