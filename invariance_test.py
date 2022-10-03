@@ -17,17 +17,9 @@ import torch
 import numpy as np
 from torch.backends import cudnn
 
-from timm.data.mixup import Mixup
 from timm.models import create_model
-from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
-from timm.utils import ModelEma
-from optim_factory import create_optimizer, LayerDecayValueAssigner
-
 from datasets import build_dataset
-from engine import train_one_epoch, evaluate
-
-from samplers import RASampler
-from utils import NativeScalerWithGradNormCount as NativeScaler
+from engine import evaluate
 import utils
 
 # timm register while not used
@@ -63,22 +55,15 @@ def get_args_parser():
     parser.add_argument('--input_size', default=224, type=int,
                         help='image input size')
 
-    # EMA related parameters
-
-
-    # Augmentation parameters
-
-
-    # Evaluation parameters
+    # test time transform
     parser.add_argument('--crop_pct', type=float, default=None)
-
-    # * Random Erase params
-
-
-    # * Mixup params
-
+    parser.add_argument('--invariance_type', type=str, default="translation", choices=["none", "translation", "rotation", "scaling"])
+    parser.add_argument('--translation_strength', type=int, default=16, help="the distance of translation")
+    parser.add_argument('--rotation_strength', type=int, default=30, help="the rotation angle (degree)")
+    parser.add_argument('--scaling_strength', type=float, default=0.8, help="the scaling factor")
 
     # * Finetuning params
+    '''
     parser.add_argument('--finetune', default='',
                         help='finetune from checkpoint')
     parser.add_argument('--head_init_scale', default=1.0, type=float,
@@ -86,6 +71,7 @@ def get_args_parser():
     parser.add_argument('--model_key', default='model|module', type=str,
                         help='which key to load from saved state dict, usually model or model_ema')
     parser.add_argument('--model_prefix', default='', type=str)
+    '''
 
     # Dataset parameters
     parser.add_argument('--data_path', default='./minidata', type=str,

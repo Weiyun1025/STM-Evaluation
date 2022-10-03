@@ -31,12 +31,16 @@ srun -p ${PARTITION} \
     --output="logs/${PROJECT_NAME}.out" \
     --error="logs/${PROJECT_NAME}.err" \
     ${SRUN_ARGS} \
-    python -u main_debug.py \
+    python -u invariance_test.py \
     --model ${MODEL} \
     --epochs 300 \
     --batch_size $((TOTAL_BATCH_SIZE/GPUS)) \
     --input_size 224 \
     --crop_pct 0.875 \
+    --invariance_type translation \
+    --translation_strength \
+    --rotation_strength \
+    --scaling_strength \
     --data_set IMNET1k \
     --data_path /mnt/cache/share/images/ \
     --data_on_memory false \

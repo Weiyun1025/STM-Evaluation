@@ -25,7 +25,7 @@ from abc import abstractmethod
 import torch.utils.data as data
 import logging
 
-from currupted_transform import StandardTestTransform
+from currupted_transform import StandardTestTransform, PositionJitterTransform
 
 _logger = logging.getLogger(__name__)
 
@@ -97,10 +97,14 @@ def build_transform(args):
             args.crop_pct = 224 / 256
         size = int(args.input_size / args.crop_pct)
 
-        t.append(
-            # to maintain same ratio w.r.t. 224 images
-            StandardTestTransform(resizing_size=size)
-        )
+        if args.invariance_type == 'none':
+            t.append(StandardTestTransform(resizing_size=size, input_size=args.input_size))
+        elif args.invariance_type == 'translation':
+            t.append(PositionJitterTransform(jitter_strength=args.translation_strength, 
+                                             resizing_size=size,
+                                             input_size=args.input_size))
+        else:
+            raise NotImplementedError("%s not supported"%(args.invariance_type))
 
     t.append(transforms.Normalize(mean, std))
     return transforms.Compose(t)
