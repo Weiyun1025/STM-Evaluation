@@ -1,11 +1,10 @@
-from torch import nn
 from timm.models import register_model
 from .meta_arch import MetaArch, PatchEmbed, PatchMerging
 from .blocks.convnext import ConvNeXtBlock, ConvNeXtV2Block, ConvNeXtV3Block
 from .blocks.swin import SwinBlock
 from .blocks.dcn_v3 import DCNv3Block
 from .blocks.pvt_v2 import PvtV2Block
-from .blocks import halonet_github, halonet_timm, halonet_timm_switch, halonet_timm_with_mask, halonet_timm_with_mask_with_rpe
+from .blocks import halonet_github, halonet_timm
 
 
 @ register_model
@@ -469,17 +468,9 @@ def conv_pvt_v2_base(pretrained=False, **kwargs):
 
 # ******************************************************************
 # HaloNet with swin block design and conv stem & transition
-halo_type_dict = {
-    'timm': halonet_timm,
-    'github': halonet_github,
-    'switch': halonet_timm_switch,
-    'with_mask': halonet_timm_with_mask,
-    'with_mask_with_rpe': halonet_timm_with_mask_with_rpe,
-}
-
 
 @register_model
-def conv_halo_v2_micro(pretrained=False, halo_type='timm', **kwargs):
+def conv_halo_v2_micro(pretrained=False, **kwargs):
     dims = [32 * 2 ** i for i in range(4)]
     depths = [2, 2, 9, 2]
     num_heads = [1, 2, 4, 8]
@@ -489,7 +480,7 @@ def conv_halo_v2_micro(pretrained=False, halo_type='timm', **kwargs):
     model = MetaArch(img_size=224,
                      depths=depths,
                      dims=dims,
-                     block_type=halo_type_dict[halo_type].HaloBlockV2,
+                     block_type=halonet_github.HaloBlockV2,
                      block_kwargs=dict(num_heads=num_heads,
                                        block_size=block_size,
                                        halo_size=halo_size),
@@ -503,7 +494,7 @@ def conv_halo_v2_micro(pretrained=False, halo_type='timm', **kwargs):
 
 
 @register_model
-def conv_halo_v2_tiny(pretrained=False, halo_type='timm', **kwargs):
+def conv_halo_v2_tiny(pretrained=False, **kwargs):
     dims = [96 * 2 ** i for i in range(4)]
     depths = [2, 2, 6, 2]
     num_heads = [3, 6, 12, 24]
@@ -513,7 +504,7 @@ def conv_halo_v2_tiny(pretrained=False, halo_type='timm', **kwargs):
     model = MetaArch(img_size=224,
                      depths=depths,
                      dims=dims,
-                     block_type=halo_type_dict[halo_type].HaloBlockV2,
+                     block_type=halonet_github.HaloBlockV2,
                      block_kwargs=dict(num_heads=num_heads,
                                        block_size=block_size,
                                        halo_size=halo_size),
@@ -527,7 +518,7 @@ def conv_halo_v2_tiny(pretrained=False, halo_type='timm', **kwargs):
 
 
 @register_model
-def conv_halo_v2_small(pretrained=False, halo_type='timm', **kwargs):
+def conv_halo_v2_small(pretrained=False, **kwargs):
     dims = [96 * 2 ** i for i in range(4)]
     depths = [2, 2, 18, 2]
     num_heads = [3, 6, 12, 24]
@@ -537,7 +528,7 @@ def conv_halo_v2_small(pretrained=False, halo_type='timm', **kwargs):
     model = MetaArch(img_size=224,
                      depths=depths,
                      dims=dims,
-                     block_type=halo_type_dict[halo_type].HaloBlockV2,
+                     block_type=halonet_github.HaloBlockV2,
                      block_kwargs=dict(num_heads=num_heads,
                                        block_size=block_size,
                                        halo_size=halo_size),
@@ -551,7 +542,7 @@ def conv_halo_v2_small(pretrained=False, halo_type='timm', **kwargs):
 
 
 @register_model
-def conv_halo_v2_base(pretrained=False, halo_type='timm', **kwargs):
+def conv_halo_v2_base(pretrained=False, **kwargs):
     dims = [128 * 2 ** i for i in range(4)]
     depths = [2, 2, 18, 2]
     num_heads = [4, 8, 16, 32]
@@ -561,7 +552,106 @@ def conv_halo_v2_base(pretrained=False, halo_type='timm', **kwargs):
     model = MetaArch(img_size=224,
                      depths=depths,
                      dims=dims,
-                     block_type=halo_type_dict[halo_type].HaloBlockV2,
+                     block_type=halonet_github.HaloBlockV2,
+                     block_kwargs=dict(num_heads=num_heads,
+                                       block_size=block_size,
+                                       halo_size=halo_size),
+                     #  downsample_type=nn.Identity,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+# ******************************************************************
+# HaloNet with swin block design and switch halo_size and conv stem & transition
+
+
+@register_model
+def conv_halo_v3_micro(pretrained=False, **kwargs):
+    dims = [32 * 2 ** i for i in range(4)]
+    depths = [2, 2, 9, 2]
+    num_heads = [1, 2, 4, 8]
+    block_size = 7
+    halo_size = 3
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     block_type=halonet_github.HaloBlockV3,
+                     block_kwargs=dict(num_heads=num_heads,
+                                       block_size=block_size,
+                                       halo_size=halo_size),
+                     #  downsample_type=nn.Identity,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@register_model
+def conv_halo_v3_tiny(pretrained=False, **kwargs):
+    dims = [96 * 2 ** i for i in range(4)]
+    depths = [2, 2, 6, 2]
+    num_heads = [3, 6, 12, 24]
+    block_size = 7
+    halo_size = 3
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     block_type=halonet_github.HaloBlockV3,
+                     block_kwargs=dict(num_heads=num_heads,
+                                       block_size=block_size,
+                                       halo_size=halo_size),
+                     #  downsample_type=nn.Identity,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@register_model
+def conv_halo_v3_small(pretrained=False, **kwargs):
+    dims = [96 * 2 ** i for i in range(4)]
+    depths = [2, 2, 18, 2]
+    num_heads = [3, 6, 12, 24]
+    block_size = 7
+    halo_size = 3
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     block_type=halonet_github.HaloBlockV3,
+                     block_kwargs=dict(num_heads=num_heads,
+                                       block_size=block_size,
+                                       halo_size=halo_size),
+                     #  downsample_type=nn.Identity,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@register_model
+def conv_halo_v3_base(pretrained=False, **kwargs):
+    dims = [128 * 2 ** i for i in range(4)]
+    depths = [2, 2, 18, 2]
+    num_heads = [4, 8, 16, 32]
+    block_size = 7
+    halo_size = 3
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     block_type=halonet_github.HaloBlockV3,
                      block_kwargs=dict(num_heads=num_heads,
                                        block_size=block_size,
                                        halo_size=halo_size),
