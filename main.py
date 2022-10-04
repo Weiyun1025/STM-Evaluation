@@ -43,14 +43,13 @@ def str2bool(v):
         return v
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
         return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+    if v.lower() in ('no', 'false', 'f', 'n', '0'):
         return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
+    raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
 def get_args_parser():
-    parser = argparse.ArgumentParser('ConvNeXt training and evaluation script for image classification', add_help=False)
+    parser = argparse.ArgumentParser('training and evaluation script for image classification', add_help=False)
     parser.add_argument('--batch_size', default=2, type=int,
                         help='Per GPU batch size')
     parser.add_argument('--epochs', default=300, type=int)

@@ -37,10 +37,8 @@ srun -p ${PARTITION} \
     --eval true \
     --resume "/mnt/petrelfs/wangweiyun/model_evaluation/conv_halo_v2_timm_tiny_1k_unified_config/checkpoint-best.pth" \
     --batch_size $((TOTAL_BATCH_SIZE/GPUS_PER_NODE)) \
-    --model_ema true \
-    --model_ema_decay 0.9999 \
-    --model_ema_eval true \
     --input_size 224 \
+    
     --data_set IMNET1k \
     --data_path /mnt/cache/share/images/ \
     --data_on_memory false \
