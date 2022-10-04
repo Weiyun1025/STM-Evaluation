@@ -1,4 +1,5 @@
 import os
+import argparse
 from PIL import Image
 
 import torch
@@ -7,7 +8,7 @@ from tqdm import tqdm
 from torchvision import transforms
 from timm.models import create_model
 from timm.data import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
-from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam import GradCAM, EigenCAM, EigenGradCAM
 from pytorch_grad_cam.utils.image import show_cam_on_image
 from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 
@@ -36,7 +37,7 @@ def build_transform(input_size, crop_pct, norm):
     return transforms.Compose(t)
 
 
-def cam_img(model, target_layers, img_path, output_dir,
+def cam_img(cam, img_path, output_dir,
             desc='', img_label=None, save=True, save_raw=False):
     transform, norm = build_transform(input_size=224, crop_pct=0.875, norm=False)
 
@@ -45,8 +46,6 @@ def cam_img(model, target_layers, img_path, output_dir,
     input_tensor = norm(img_rgb)
     input_tensor = torch.stack([input_tensor], dim=0)
     targets = [ClassifierOutputTarget(img_label)] if img_label is not None else None
-
-    cam = GradCAM(model=model, target_layers=target_layers, use_cuda=False)
 
     grayscale_cam = cam(input_tensor=input_tensor, targets=targets)
     grayscale_cam = grayscale_cam[0, :]
@@ -107,32 +106,51 @@ def concat_images(cam_dir):
     target.save(os.path.join(cam_dir, 'all.pdf'), 'PDF')
 
 
-def main(model_type):
-    if model_type == 'halo':
-        ckpt = torch.load('/Users/weiyun/Downloads/模型算子评测日志备份/conv_halo_v2_timm_tiny_1k_unified_config/checkpoint-best.pth',
-                          map_location='cpu')['model']
-        model = create_model('conv_halo_v2_tiny')
-    else:
-        ckpt = torch.load('/Users/weiyun/Downloads/模型算子评测日志备份/conv_swin_tiny_1k_unified_config/checkpoint-best.pth',
-                          map_location='cpu')['model']
-        model = create_model('conv_swin_tiny')
+def cam_main(args):
+    model = create_model(args.model)
+    ckpt = torch.load(args.ckpt_path, map_location='cpu')['model']
 
     model.load_state_dict(ckpt)
     target_layers = model.target_layers()
 
-    base_dir = './minidata/val'
-    with open('./minidata/meta/val.txt', 'r', encoding='utf-8') as file:
+    cam = EigenGradCAM(model=model, target_layers=target_layers,
+                       use_cuda=torch.cuda.is_available())
+
+    base_dir = os.path.join(args.data_dir, 'val')
+    with open(os.path.join(args.data_dir, 'meta', 'val.txt'), 'r', encoding='utf-8') as file:
         for line in tqdm(file):
             img_path, img_label = line.strip().split()
-            cam_img(model, target_layers,
+            cam_img(cam=cam,
                     img_path=os.path.join(base_dir, img_path),
                     img_label=int(img_label),
-                    output_dir='./outputs/cam',
-                    desc=model_type,
-                    save=True, save_raw=True)
+                    output_dir=args.output_dir,
+                    desc=args.model,
+                    save=True,
+                    save_raw=args.save_raw)
+
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model', type=str,
+                        default='conv_halo_v2_tiny')
+    parser.add_argument('--ckpt_path', type=str,
+                        default='/Users/weiyun/Downloads/模型算子评测日志备份/conv_halo_v2_timm_tiny_1k_unified_config/checkpoint-best.pth')
+    parser.add_argument('--data_dir', type=str, default='./minidata')
+    parser.add_argument('--output_dir', type=str, default='./outputs/cam')
+    parser.add_argument('--cam', action='store_true', default=True)
+    parser.add_argument('--cat', action='store_true', default=False)
+    parser.add_argument('--save_raw', action='store_true', default=False)
+
+    return parser.parse_args()
+
+
+def main():
+    args = get_args()
+    if args.cam:
+        cam_main(args)
+    if args.cat:
+        concat_images(cam_dir=args.output_dir)
 
 
 if __name__ == '__main__':
-    main('halo')
-    main('swin')
-    concat_images(cam_dir='./outputs/cam')
+    main()
