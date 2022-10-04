@@ -3,6 +3,7 @@ from .meta_arch import MetaArch, PatchEmbed, PatchMerging
 from .blocks.convnext import ConvNeXtBlock, ConvNeXtV2Block, ConvNeXtV3Block
 from .blocks.swin import SwinBlock
 from .blocks.dcn_v3 import DCNv3Block
+from .blocks.pvt import PvtBlock
 from .blocks.pvt_v2 import PvtV2Block
 from .blocks import halonet_github, halonet_timm
 
@@ -358,6 +359,85 @@ def dcn_v3_base(pretrained=False, **kwargs):
                      num_heads=num_heads,
                      block_type=DCNv3Block,
                      block_kwargs=dict(num_heads=num_heads, deform_points=9, kernel_size=3),
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+# ******************************************************************
+# PVT v2 with conv stem and conv transition
+
+
+@register_model
+def conv_pvt_micro(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[2, 2, 3, 2],
+                     dims=[32, 64, 160, 256],
+                     block_type=PvtBlock,
+                     block_kwargs=dict(num_heads=[1, 2, 5, 8],
+                                       mlp_ratios=[8, 8, 4, 4],
+                                       qkv_bias=True,
+                                       sr_ratios=[8, 4, 2, 1],),
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+# B2 config
+
+
+@register_model
+def conv_pvt_tiny(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[3, 4, 9, 3],
+                     dims=[64, 128, 320, 512],
+                     block_type=PvtBlock,
+                     block_kwargs=dict(num_heads=[1, 2, 5, 8],
+                                       mlp_ratios=[8, 8, 4, 4],
+                                       qkv_bias=True,
+                                       sr_ratios=[8, 4, 2, 1],),
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+# b3 config
+
+
+@register_model
+def conv_pvt_small(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[3, 4, 21, 3],
+                     dims=[64, 128, 320, 512],
+                     block_type=PvtBlock,
+                     block_kwargs=dict(num_heads=[1, 2, 5, 8],
+                                       mlp_ratios=[8, 8, 4, 4],
+                                       qkv_bias=True,
+                                       sr_ratios=[8, 4, 2, 1],),
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@register_model
+def conv_pvt_base(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[3, 8, 45, 3],
+                     dims=[64, 128, 320, 512],
+                     block_type=PvtBlock,
+                     block_kwargs=dict(num_heads=[1, 2, 5, 8],
+                                       mlp_ratios=[4, 4, 4, 4],
+                                       qkv_bias=True,
+                                       sr_ratios=[8, 4, 2, 1],),
                      **kwargs)
 
     if pretrained:
