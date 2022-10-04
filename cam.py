@@ -104,6 +104,7 @@ def concat_images(cam_dir):
                          (width * j + delta * (j-1), height * i + delta*(i-1)))
 
     target.save(os.path.join(cam_dir, 'all.pdf'), 'PDF')
+    print(cam_dir_name)
 
 
 def cam_main(args):
@@ -132,9 +133,9 @@ def cam_main(args):
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str,
-                        default='conv_halo_v2_tiny')
+                        default='conv_pvt_v2_tiny')
     parser.add_argument('--ckpt_path', type=str,
-                        default='/Users/weiyun/Downloads/模型算子评测日志备份/conv_halo_v2_timm_tiny_1k_unified_config/checkpoint-best.pth')
+                        default='./outputs/pvt_v2.pth')
     parser.add_argument('--data_dir', type=str, default='./minidata')
     parser.add_argument('--output_dir', type=str, default='./outputs/cam')
     parser.add_argument('--cam', action='store_true', default=True)
