@@ -89,7 +89,7 @@ class HaloAttention(nn.Module):
         dim_head=None,
     ):
         super().__init__()
-        assert halo_size > 0, 'halo size must be greater than 0'
+        # assert halo_size > 0, 'halo size must be greater than 0'
 
         self.dim = dim
         self.heads = heads
