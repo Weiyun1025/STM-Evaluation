@@ -237,7 +237,11 @@ def evaluate_invariance(data_loader, model, device, use_amp=False):
                 output = model(transformed_images)
                 loss = criterion(output, pred_target)
 
-            metric_logger.meters[f'{variance_name}_loss'].update(loss.item(), n=batch_size)
+            metric_logger.meters[f'{variance_name} loss'].update(loss.item(), n=batch_size)
+
+            acc1, acc5 = accuracy(output, gold_target, topk=(1, 5))
+            metric_logger.meters[f'{variance_name} acc1'].update(acc1.item(), n=batch_size)
+            metric_logger.meters[f'{variance_name} acc5'].update(acc5.item(), n=batch_size)
 
         acc1, acc5 = accuracy(pred_target, gold_target, topk=(1, 5))
         metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
