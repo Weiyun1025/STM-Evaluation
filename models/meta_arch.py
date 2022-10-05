@@ -243,6 +243,9 @@ class MetaArch(nn.Module):
         x = self.head(x)
         return x
 
+    def target_layers(self):
+        return [self.stages[-1][-1]]
+
     def _deform_inputs(self, x):
         b, c, h, w = x.shape
         deform_inputs = []

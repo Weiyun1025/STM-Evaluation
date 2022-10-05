@@ -180,3 +180,37 @@ def evaluate(data_loader, model, device, use_amp=False):
           .format(top1=metric_logger.acc1, top5=metric_logger.acc5, losses=metric_logger.loss))
 
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
+
+
+@torch.no_grad()
+def evaluate_invariance(data_loader, model, device, transforms: dict, use_amp=False):
+    criterion = torch.nn.CrossEntropyLoss()
+
+    metric_logger = utils.MetricLogger(delimiter="  ")
+    header = 'Invariance Test:'
+
+    # switch to evaluation mode
+    model.eval()
+    for batch in metric_logger.log_every(data_loader, 10, header):
+        images = batch[0]
+        images = images.to(device, non_blocking=True)
+        target = model(images)
+
+        batch_size = images.shape[0]
+        for n, t in transforms.items():
+            transformed_images = t(images)
+            if use_amp:
+                with torch.cuda.amp.autocast():
+                    output = model(transformed_images)
+                    loss = criterion(output, target)
+            else:
+                output = model(transformed_images)
+                loss = criterion(output, target)
+
+            metric_logger.meters[f'{n}_loss'].update(loss.item(), n=batch_size)
+
+    # gather the stats from all processes
+    metric_logger.synchronize_between_processes()
+    print(f'* loss {metric_logger.loss:.3f}')
+
+    return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
