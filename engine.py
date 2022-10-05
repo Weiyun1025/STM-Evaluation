@@ -9,6 +9,7 @@
 import math
 from typing import Iterable, Optional
 import torch
+import torch.nn.functional as F
 from timm.data import Mixup
 from timm.utils import accuracy, ModelEma
 
@@ -225,7 +226,7 @@ def evaluate_invariance(data_loader, model, device, use_amp=False):
         images = batch['standard_img']
         images = images.to(device, non_blocking=True)
         gold_target = batch['gold'].to(device, non_blocking=True)
-        pred_target = model(images)
+        pred_target = F.softmax(model(images), dim=-1)
 
         batch_size = images.shape[0]
         for variance_name, transformed_images in batch['variance_img'].items():
