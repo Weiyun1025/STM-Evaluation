@@ -513,7 +513,7 @@ def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, mode
             checkpoint = torch.load(args.resume, map_location='cpu')
         model_without_ddp.load_state_dict(checkpoint['model'])
         print("Resume checkpoint %s" % args.resume, file=sys.stderr)
-        if 'optimizer' in checkpoint and 'epoch' in checkpoint:
+        if 'optimizer' in checkpoint and 'epoch' in checkpoint and optimizer is not None:
             optimizer.load_state_dict(checkpoint['optimizer'])
             if not isinstance(checkpoint['epoch'], str):  # does not support resuming with 'best', 'best-ema'
                 args.start_epoch = checkpoint['epoch'] + 1
@@ -524,7 +524,7 @@ def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, mode
                     model_ema.ema.load_state_dict(checkpoint['model_ema'])
                 else:
                     model_ema.ema.load_state_dict(checkpoint['model'])
-            if 'scaler' in checkpoint:
+            if 'scaler' in checkpoint and loss_scaler is not None:
                 loss_scaler.load_state_dict(checkpoint['scaler'])
             print("With optim & sched!", file=sys.stderr)
 
