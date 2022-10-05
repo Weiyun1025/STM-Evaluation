@@ -141,19 +141,15 @@ class HaloAttention(nn.Module):
         # add relative positional bias
         sim += self.rel_pos_emb(q)
 
-        # mask out padding (in the paper, they claim to not need masks, but what about padding?)
-        mask = torch.ones(1, 1, h, w, device=device)
-
-        if halo == 0:
-            mask = rearrange(mask, 'b c (h p1) (w p2) -> (b h w) (p1 p2) c', p1=block, p2=block)
-        else:
+        if halo != 0:
+            # mask out padding (in the paper, they claim to not need masks, but what about padding?)
+            mask = torch.ones(1, 1, h, w, device=device)
             mask = F.unfold(mask, kernel_size=block + (halo * 2), stride=block, padding=halo)
+            mask = repeat(mask, '() j i -> (b i h) () j', b=b, h=heads)
+            mask = mask.bool()
 
-        mask = repeat(mask, '() j i -> (b i h) () j', b=b, h=heads)
-        mask = mask.bool()
-
-        max_neg_value = -torch.finfo(sim.dtype).max
-        sim.masked_fill_(~mask, max_neg_value)
+            max_neg_value = -torch.finfo(sim.dtype).max
+            sim.masked_fill_(~mask, max_neg_value)
 
         # attention
         attn = sim.softmax(dim=-1)
