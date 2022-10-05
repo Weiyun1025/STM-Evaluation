@@ -31,6 +31,7 @@ def parse_args():
     parser.add_argument('--weights', default="/data1/shimin/model_parameters/backbone/swin_tiny/checkpoint-best.pth", type=str)
     parser.add_argument('--data_path', default='minidata/', type=str, help='dataset path')
     parser.add_argument('--num_data', default=50, type=int, help='dataset path')
+    parser.add_argument('--input_size', default=224, type=int, help='dataset path')
     args = parser.parse_args()
     return args
 
@@ -47,8 +48,8 @@ def main(args):
     #   ================================= transform: standard test transform
     # NOTE: this is different from RepLKNet ERF code, where they resize the input images to 1000x1000
     t = [
-        transforms.Resize((256, 256), interpolation=Image.BICUBIC),
-        transforms.CenterCrop((224, 224)),
+        transforms.Resize((args.input_size, args.input_size), interpolation=Image.BICUBIC),
+        #transforms.CenterCrop((224, 224)),
         transforms.ToTensor(),
         transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)
     ]
@@ -113,7 +114,7 @@ def main(args):
     meter = AverageMeter()
     optimizer.zero_grad()
 
-    mean_erf = [np.zeros((224, 224)) for i in range(4)]
+    mean_erf = [np.zeros((args.input_size, args.input_size)) for i in range(4)]
 
     counter = 0
     for idx, (samples, label) in enumerate(data_loader_val):
