@@ -12,5 +12,6 @@ kernprof -l test_speed.py
 
 srun -p ${PARTITION} \
     --gres=gpu:${GPUS_PER_NODE} \
+    --quotatype=spot \
     python -m line_profiler test_speed.py.lprof
     
