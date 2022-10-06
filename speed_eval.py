@@ -43,7 +43,6 @@ class HaloBlock(nn.Module):
         self.gamma_2 = nn.Parameter(layer_scale_init_value * torch.ones((1, 1, 1, dim)),
                                     requires_grad=True) if layer_scale_init_value > 0 else None
 
-    @profile
     def forward(self, x):
         # shape: B, C, H, W
         shortcut = x
@@ -101,7 +100,7 @@ def test(halo_type, x_input, y_gold):
 
 
 if __name__ == '__main__':
-    x = torch.randn(16, 128, 224, 224)
+    x = torch.randn(16, 3, 224, 224)
     y = torch.nn.functional.softmax(torch.randn(16, 1000), dim=-1)
     test('github', x, y)
     test('timm', x, y)
