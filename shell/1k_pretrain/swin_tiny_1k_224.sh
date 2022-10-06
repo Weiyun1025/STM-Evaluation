@@ -69,6 +69,6 @@ srun -p ${PARTITION} \
     --nb_classes 1000 \
     --use_amp true \
     --save_ckpt true \
-    --output_dir "backbone_outputdir/${PROJECT_NAME}"
+    --output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
 
 # sh shell/1k_pretrain/swin_base_1k_224.sh
