@@ -111,6 +111,7 @@ class HaloAttention(nn.Module):
         self.to_kv = nn.Linear(dim, inner_dim * 2, bias=False)
         self.to_out = nn.Linear(inner_dim, dim)
 
+    @profile
     def forward(self, x):
         b, c, h, w, block, halo, heads, device = *x.shape, self.block_size, self.halo_size, self.heads, x.device
         assert h % block == 0 and w % block == 0, 'fmap dimensions must be divisible by the block size'
