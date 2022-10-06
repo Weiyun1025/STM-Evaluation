@@ -32,6 +32,15 @@ def timm_halo_attn_posemb(module, input, output):
     module.total_ops += output.numel()
 
 
+def haloblock(module, input, output):
+    if module.gamma_1 is not None:
+        module.total_ops += output.numel()
+    if module.gamma_2 is not None:
+        module.total_ops += output.numel()
+    module.total_ops += output.numel() * 2
+    module.total_ops += sum_submodule_ops(module)
+
+
 def timm_halo_attn_haloatnn(module, input, output):
     B, C, H, W = input[0].shape
     num_h_blocks = H // module.block_size
@@ -77,14 +86,13 @@ def swinblock(module, input, output):
 def swin_window_attention(module, input, output):
     num_heads = module.num_heads
     B, N, C = input[0].shape
-    attn_dim = module.qkv.out_features / 3
+    attn_dim = module.qkv.out_features / 3 / num_heads
     # q,k,v shape: B, num_heads, N, attn_dim
     module.total_ops += B * num_heads * N * attn_dim  # scale
     module.total_ops += B * num_heads * N * (attn_dim * N
                                              )  # q @ k.transpose(-2, -1)
     module.total_ops += B * num_heads * N * N  # attn + self._get_rel_pos_bias()
-    if len(input) > 1 and input[1] is not None:
-        module.total_ops += B * num_heads * N * N
+    module.total_ops += B * num_heads * N * (2 * N)  # softmax
     module.total_ops += B * num_heads * N * (N * attn_dim)  # (attn @ v)
     module.total_ops += sum_submodule_ops(module)
 
@@ -152,7 +160,8 @@ def convnext_block(module, input, output):
 
 custom_modules_hooks = {
     timm.models.layers.halo_attn.PosEmbedRel: timm_halo_attn_posemb,
-    timm.models.layers.halo_attn.HaloAttn: timm_halo_attn_haloatnn,
+    models.blocks.halonet_timm.HaloAttention: timm_halo_attn_haloatnn,
+    models.blocks.halonet_timm.HaloBlockV2: haloblock,
     torch.nn.LayerNorm: layernorm,
     timm.models.layers.LayerNorm2d: layernorm,
     models.blocks.swin.SwinBlock: swinblock,
