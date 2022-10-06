@@ -16,17 +16,20 @@ class HaloBlock(nn.Module):
         self.mlp_ratio = mlp_ratio
 
         if halo_type == 'timm':
-            HaloAttention = halonet_timm.HaloAttention
+            self.attn = halonet_timm.HaloAttention(dim=dim,
+                                                   dim_head=head_dim,
+                                                   num_heads=num_heads[stage],
+                                                   block_size=block_size,
+                                                   halo_size=halo_size)
+
         else:
-            HaloAttention = halonet_github.HaloAttention
+            self.attn = halonet_github.HaloAttention(dim=dim,
+                                                     dim_head=head_dim,
+                                                     heads=num_heads[stage],
+                                                     block_size=block_size,
+                                                     halo_size=halo_size)
 
         self.norm1 = norm_layer(dim)
-        self.attn = HaloAttention(dim=dim,
-                                  dim_head=head_dim,
-                                  num_heads=num_heads[stage],
-                                  block_size=block_size,
-                                  halo_size=halo_size)
-
         self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((1, dim, 1, 1)),
                                     requires_grad=True) if layer_scale_init_value > 0 else None
 
