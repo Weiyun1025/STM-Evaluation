@@ -1,24 +1,29 @@
 #!/usr/bin/env bash
-# training script for DeiT-Tiny. DEIT-T-1K-PT-224-BS1024
 
 set -x
 mkdir logs
 
 PARTITION=VC
-MODEL="deit_tiny_patch16_224"
-DESC="pt_bs1024"  # shimin: better describe the experiment setting briefly here. 
+MODEL="conv_pvt_tiny"
+DESC="unified_config" 
+
+# key hyperparameters
+TOTAL_BATCH_SIZE="1024"
+LR="1e-3"
+INIT_LR="1e-6"
+END_LR="1e-5"
+DROP_PATH="0.1"
 
 JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_${DESC}"
 
-GPUS=${GPUS:-4}
-GPUS_PER_NODE=${GPUS_PER_NODE:-4}
+GPUS=${GPUS:-8}
+GPUS_PER_NODE=${GPUS_PER_NODE:-8}
 QUOTA_TYPE="auto"
 
 CPUS_PER_TASK=${CPUS_PER_TASK:-12}
 SRUN_ARGS=${SRUN_ARGS:-""}
 
-# todo: dropout
 srun -p ${PARTITION} \
     --job-name=${JOB_NAME} \
     --gres=gpu:${GPUS_PER_NODE} \
@@ -34,15 +39,16 @@ srun -p ${PARTITION} \
     python -u main.py \
     --model ${MODEL} \
     --epochs 300 \
-    --batch_size 256 \
-    --warmup_epochs 5 \
-    --lr 1e-3 \
-    --warmup_init_lr 1e-6 \
-    --min_lr 1e-5 \
+    --batch_size $((TOTAL_BATCH_SIZE/GPUS)) \
+    --warmup_epochs 20 \
+    --lr ${LR} \
+    --warmup_init_lr ${INIT_LR} \
+    --min_lr ${END_LR} \
     --opt adamw \
-    --drop_path 0.1 \
+    --clip_grad 5.0 \
+    --drop_path ${DROP_PATH} \
     --weight_decay 0.05 \
-    --layerscale_opt false \
+    --layer_scale_init_value 1e-6 \
     --smoothing 0.1 \
     --model_ema true \
     --model_ema_decay 0.9999 \
@@ -50,18 +56,20 @@ srun -p ${PARTITION} \
     --input_size 224 \
     --mixup 0.8 \
     --cutmix 1.0 \
-    --repeated_aug true \
     --mixup_prob 1.0 \
     --mixup_switch_prob 0.5 \
     --aa rand-m9-mstd0.5-inc1 \
+    --repeated_aug false \
     --reprob 0.25 \
-    --color_jitter 0.3 \
+    --color_jitter 0.4 \
     --crop_pct 0.875 \
     --data_set IMNET1k \
     --data_path /mnt/cache/share/images/ \
+    --data_on_memory false \
     --nb_classes 1000 \
-    --use_amp false \
+    --use_amp true \
     --save_ckpt true \
-    --output_dir "backbone_outputdir/${PROJECT_NAME}"
-
-# sh train.sh
+    --enable_wandb false \
+    --project 'model evaluation' \
+    --name ${PROJECT_NAME} \
+    --output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"

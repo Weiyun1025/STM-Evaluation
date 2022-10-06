@@ -1,24 +1,30 @@
 #!/usr/bin/env bash
-# swin_[ tiny | small | base | large ]
 
 set -x
 mkdir logs
 
 PARTITION=VC
-MODEL="swinv2_base"
-DESC="pt_224_bs1024_v3config" 
+TYPE="conv"  # pe, pm, conv (PatchEmbedding, PatchMerging, Conv)
+MODEL="${TYPE}_swin_tiny"
+DESC="unified_config" 
+
+# key hyperparameters
+TOTAL_BATCH_SIZE="1024"
+LR="1e-3"
+INIT_LR="1e-6"
+END_LR="1e-5"
+DROP_PATH="0.2"
 
 JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_${DESC}"
 
 GPUS=${GPUS:-8}
 GPUS_PER_NODE=${GPUS_PER_NODE:-8}
-QUOTA_TYPE="spot"
+QUOTA_TYPE="reserved"
 
 CPUS_PER_TASK=${CPUS_PER_TASK:-12}
 SRUN_ARGS=${SRUN_ARGS:-""}
 
-# todo: dropout
 srun -p ${PARTITION} \
     --job-name=${JOB_NAME} \
     --gres=gpu:${GPUS_PER_NODE} \
@@ -34,17 +40,16 @@ srun -p ${PARTITION} \
     python -u main.py \
     --model ${MODEL} \
     --epochs 300 \
-    --batch_size 128 \
+    --batch_size $((TOTAL_BATCH_SIZE/GPUS)) \
     --warmup_epochs 20 \
-    --lr 1e-3\
-    --warmup_init_lr 1e-6\
-    --min_lr 1e-5\
+    --lr ${LR} \
+    --warmup_init_lr ${INIT_LR} \
+    --min_lr ${END_LR} \
     --opt adamw \
     --clip_grad 5.0 \
-    --drop_path 0.5 \
+    --drop_path ${DROP_PATH} \
     --weight_decay 0.05 \
-    --layerscale_opt True \
-    --layerscale_init_values 1e-6 \
+    --layer_scale_init_value 1e-6 \
     --smoothing 0.1 \
     --model_ema true \
     --model_ema_decay 0.9999 \
@@ -62,8 +67,8 @@ srun -p ${PARTITION} \
     --data_set IMNET1k \
     --data_path /mnt/cache/share/images/ \
     --nb_classes 1000 \
-    --use_amp false \
+    --use_amp true \
     --save_ckpt true \
-    --output_dir "backbone_outputdir/${PROJECT_NAME}"
+    --output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
 
-# sh shell/v3config/swinv2_b_1k_pt_v3config.sh
+# sh shell/1k_pretrain/swin_base_1k_224.sh

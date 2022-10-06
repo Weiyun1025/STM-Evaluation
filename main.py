@@ -43,14 +43,13 @@ def str2bool(v):
         return v
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
         return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+    if v.lower() in ('no', 'false', 'f', 'n', '0'):
         return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
+    raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
 def get_args_parser():
-    parser = argparse.ArgumentParser('ConvNeXt training and evaluation script for image classification', add_help=False)
+    parser = argparse.ArgumentParser('training and evaluation script for image classification', add_help=False)
     parser.add_argument('--batch_size', default=2, type=int,
                         help='Per GPU batch size')
     parser.add_argument('--epochs', default=300, type=int)
@@ -58,7 +57,7 @@ def get_args_parser():
                         help='gradient accumulation steps')
 
     # Model parameters
-    parser.add_argument('--model', default='conv_convnext_tiny', type=str, metavar='MODEL',
+    parser.add_argument('--model', default='conv_convnext_v2_tiny', type=str, metavar='MODEL',
                         help='Name of model to train')
     parser.add_argument('--drop_path', type=float, default=0, metavar='PCT',
                         help='Drop path rate (default: 0.0)')
@@ -295,32 +294,8 @@ def main(args):
             prob=args.mixup_prob, switch_prob=args.mixup_switch_prob, mode=args.mixup_mode,
             label_smoothing=args.smoothing, num_classes=args.nb_classes)
 
-    # TODO: rm this part
-    if 'halo' in args.model:
-        info = args.model.split('_')
-        args.model = f'conv_halo_v2_{info[-1]}'
-
-        if 'github' in info:
-            args.halo_type = 'github'
-        elif 'mask' in info and 'rpe' in info:
-            args.halo_type = 'with_mask_with_rpe'
-        elif 'mask' in info:
-            args.halo_type = 'with_mask'
-        elif 'switch' in info:
-            args.halo_type = 'switch'
-        else:
-            args.halo_type = 'timm'
-
-        import sys
-        print(f'model_type: {args.model}', file=sys.stderr)
-        print(f'halo_type: {args.halo_type}', file=sys.stderr)
-    else:
-        args.halo_type = None
-
-    # TODO: rm halo_type option
     model = create_model(
         args.model,
-        halo_type=args.halo_type,
         pretrained=False,
         num_classes=args.nb_classes,
         drop_path_rate=args.drop_path,
