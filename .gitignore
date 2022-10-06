@@ -1,6 +1,7 @@
 .*
 test*.py
 test*.sh
+*.lprof
 __pycache__
 
 logs/*

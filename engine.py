@@ -9,6 +9,7 @@
 import math
 from typing import Iterable, Optional
 import torch
+import torch.nn.functional as F
 from timm.data import Mixup
 from timm.utils import accuracy, ModelEma
 
@@ -182,8 +183,38 @@ def evaluate(data_loader, model, device, use_amp=False):
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 
 
+class VarianceCollateFN:
+    def __init__(self, standard_transform, variance_transforms: dict):
+        self.standard_transform = standard_transform
+        self.variance_transforms = variance_transforms
+
+    def __call__(self, data_list):
+        standard_img = []
+        variance_img = {}
+        gold = []
+
+        for img, target in data_list:
+            standard_img.append(self.standard_transform(img))
+            gold.append(target)
+
+            for n, t in self.variance_transforms.items():
+                if n not in variance_img:
+                    variance_img[n] = []
+
+                variance_img[n].append(t(img))
+
+        for key in variance_img:
+            variance_img[key] = torch.stack(variance_img[key], dim=0)
+
+        return {
+            'standard_img': torch.stack(standard_img, dim=0),
+            'variance_img': variance_img,
+            'gold': torch.LongTensor(gold),
+        }
+
+
 @torch.no_grad()
-def evaluate_invariance(data_loader, model, device, transforms: dict, use_amp=False):
+def evaluate_invariance(data_loader, model, device, use_amp=False):
     criterion = torch.nn.CrossEntropyLoss()
 
     metric_logger = utils.MetricLogger(delimiter="  ")
@@ -192,25 +223,35 @@ def evaluate_invariance(data_loader, model, device, transforms: dict, use_amp=Fa
     # switch to evaluation mode
     model.eval()
     for batch in metric_logger.log_every(data_loader, 10, header):
-        images = batch[0]
+        images = batch['standard_img']
         images = images.to(device, non_blocking=True)
-        target = model(images)
+        gold_target = batch['gold'].to(device, non_blocking=True)
+        pred_target = F.softmax(model(images), dim=-1)
 
         batch_size = images.shape[0]
-        for n, t in transforms.items():
-            transformed_images = t(images)
+        for variance_name, transformed_images in batch['variance_img'].items():
             if use_amp:
                 with torch.cuda.amp.autocast():
                     output = model(transformed_images)
-                    loss = criterion(output, target)
+                    loss = criterion(output, pred_target)
             else:
                 output = model(transformed_images)
-                loss = criterion(output, target)
+                loss = criterion(output, pred_target)
 
-            metric_logger.meters[f'{n}_loss'].update(loss.item(), n=batch_size)
+            metric_logger.meters[f'{variance_name} loss'].update(loss.item(), n=batch_size)
+
+            acc1, acc5 = accuracy(output, gold_target, topk=(1, 5))
+            metric_logger.meters[f'{variance_name} acc1'].update(acc1.item(), n=batch_size)
+            metric_logger.meters[f'{variance_name} acc5'].update(acc5.item(), n=batch_size)
+
+        acc1, acc5 = accuracy(pred_target, gold_target, topk=(1, 5))
+        metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
+        metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
 
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
-    print(f'* loss {metric_logger.loss:.3f}')
+    print('* Eval Results')
+    for key, value in metric_logger.meters.items():
+        print(f'\t{key}: {value}')
 
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
