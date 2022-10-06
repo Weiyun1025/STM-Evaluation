@@ -8,10 +8,10 @@ GPUS_PER_NODE=${GPUS_PER_NODE:-1}
 
 export CUDA_LAUNCH_BLOCKING=1
 
-kernprof -l test_speed.py
+kernprof -l speed_eval.py
 
 srun -p ${PARTITION} \
     --gres=gpu:${GPUS_PER_NODE} \
     --quotatype=spot \
-    python -m line_profiler test_speed.py.lprof
+    python -m line_profiler speed_eval.py.lprof
     
