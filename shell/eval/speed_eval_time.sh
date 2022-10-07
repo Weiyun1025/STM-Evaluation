@@ -14,6 +14,6 @@ do
     srun -p ${PARTITION} \
         --gres=gpu:${GPUS_PER_NODE} \
         --quotatype=spot \
-        python speed_eval_time.py --model_type ${model} --epochs ${EPOCHS} \
+        kernprof -l speed_eval_time.py --model_type ${model} --epochs ${EPOCHS} \
         1>"logs/speed_eval/${model}.out"
 done
