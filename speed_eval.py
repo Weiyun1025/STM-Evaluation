@@ -24,13 +24,14 @@ def test(model, criterion, x_input, y_gold, epochs):
         epoch_time = time.time() - epoch_start_time
         epoch_time_list.append(int(epoch_time))
 
-    print(f'Epoch time mean: {datetime.timedelta(seconds=np.mean(epoch_time_list))}')
+    print(f'\tEpoch time mean: {datetime.timedelta(seconds=np.mean(epoch_time_list))}')
 
 
 def main():
     args = _get_args()
     model = create_model(args.model_type)
     criterion = nn.CrossEntropyLoss()
+    print(f'{args.model_type}:')
 
     x = torch.randn(args.bsz, 3, 224, 224)
     y = torch.nn.functional.softmax(torch.randn(args.bsz, 1000), dim=-1)
@@ -40,7 +41,7 @@ def main():
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
 
-    print(f'Total time {total_time_str}')
+    print(f'\tTotal time {total_time_str}')
 
 
 def _get_args():
