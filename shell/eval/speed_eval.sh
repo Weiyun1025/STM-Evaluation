@@ -7,7 +7,7 @@ PARTITION=VC
 GPUS_PER_NODE=${GPUS_PER_NODE:-1}
 MODEL=$1
 
-export CUDA_LAUNCH_BLOCKING=1
+#export CUDA_LAUNCH_BLOCKING=1
 
 kernprof -l speed_eval.py --model_type ${MODEL}
 
