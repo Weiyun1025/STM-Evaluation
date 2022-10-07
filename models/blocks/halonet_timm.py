@@ -112,9 +112,12 @@ class HaloAttention(nn.Module):
         # B * num_heads, num_blocks, win_size ** 2, dim_head_qk or dim_head_v
 
         if self.scale_pos_embed:
-            attn = (q @ k.transpose(-1, -2) + self.pos_embed(q)) * self.scale
+            attn = q @ k.transpose(-1, -2)
+            attn = attn + self.pos_embed(q)
+            attn = attn * self.scale
         else:
-            attn = (q @ k.transpose(-1, -2)) * self.scale + self.pos_embed(q)
+            attn = (q @ k.transpose(-1, -2)) * self.scale
+            attn = attn + self.pos_embed(q)
         # B * num_heads, num_blocks, block_size ** 2, win_size ** 2
         attn = attn.softmax(dim=-1)
 
