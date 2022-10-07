@@ -36,7 +36,7 @@ class HaloAttn(nn.Module):
 
     def __init__(
             self, dim, dim_out=None, feat_size=None, stride=1, num_heads=8, dim_head=None, block_size=8, halo_size=3,
-            qk_ratio=1.0, qkv_bias=False, avg_down=False, scale_pos_embed=False):
+            qk_ratio=1.0, qkv_bias=False, avg_down=False, scale_pos_embed=False, out_proj=True):
         super().__init__()
         dim_out = dim_out or dim
         assert dim_out % num_heads == 0
@@ -70,7 +70,7 @@ class HaloAttn(nn.Module):
                                      scale=self.scale)
 
         self.pool = nn.AvgPool2d(2, 2) if use_avg_pool else nn.Identity()
-        self.to_out = nn.Conv2d(dim, self.dim_out_v, 1)
+        self.to_out = nn.Conv2d(dim, self.dim_out_v, 1) if out_proj else nn.Identity()
 
         self.reset_parameters()
 
