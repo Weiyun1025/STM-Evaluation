@@ -2,7 +2,7 @@
 
 set -x
 mkdir logs
-mkdir logs/profile
+mkdir logs/profile_single
 
 PARTITION=VC
 GPUS_PER_NODE=${GPUS_PER_NODE:-1}
