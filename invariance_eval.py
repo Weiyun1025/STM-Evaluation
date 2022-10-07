@@ -49,7 +49,7 @@ def get_args_parser():
                         help='loading training data to memory')
     parser.add_argument('--nb_classes', default=1000, type=int,
                         help='number of the classification types')
-    parser.add_argument('--jitter_strength', default=16, type=int)
+    parser.add_argument('--jitter_strength', default=24, type=int)
 
     parser.add_argument('--imagenet_default_mean_and_std', type=str2bool, default=True)
     parser.add_argument('--data_set', default='IMNET1k',

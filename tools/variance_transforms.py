@@ -40,6 +40,7 @@ class PositionJitterTransform:
         resized_image = self.resize(image)
         resized_image = self.to_tensor(resized_image)
         resized_image = self.positon_jitter_crop(resized_image)
+
         resized_image = self.norm(resized_image)
 
         return resized_image
@@ -71,7 +72,13 @@ class PositionJitterTransform:
             center[0] = center[0] + self.jitter_strength
             center[1] = center[1] - self.jitter_strength
 
-        cropped_image = image[:, center[0]-h:center[0]+h, center[1]-w:center[1]+w]
+        top = min(center[0]+h, image.shape[-2])
+        bottom = max(center[0]-h, 0)
+        right = min(center[0]+w, image.shape[-1])
+        left = max(center[0]-w, 0)
+
+        cropped_image = image[:, bottom:top, left:right]
+
         image_height, image_width = cropped_image.shape[-2:]
         crop_height, crop_width = self.input_size, self.input_size
         if image.shape[1] < self.input_size or image.shape[0] < self.input_size:
