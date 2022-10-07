@@ -2,7 +2,77 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 from timm.models.layers import DropPath, LayerNorm2d, Mlp, make_divisible
-from timm.models.layers.halo_attn import PosEmbedRel, trunc_normal_, _assert
+from timm.models.layers.halo_attn import trunc_normal_, _assert
+
+
+@profile
+def rel_logits_1d(q, rel_k, permute_mask):
+    """ Compute relative logits along one dimension
+
+    As per: https://gist.github.com/aravindsrinivas/56359b79f0ce4449bcb04ab4b56a57a2
+    Originally from: `Attention Augmented Convolutional Networks` - https://arxiv.org/abs/1904.09925
+
+    Args:
+        q: (batch, height, width, dim)
+        rel_k: (2 * window - 1, dim)
+        permute_mask: permute output dim according to this
+    """
+    B, H, W, dim = q.shape
+    rel_size = rel_k.shape[0]
+    win_size = (rel_size + 1) // 2
+
+    x = (q @ rel_k.transpose(-1, -2))
+    x = x.reshape(-1, W, rel_size)
+
+    # pad to shift from relative to absolute indexing
+    x_pad = F.pad(x, [0, 1]).flatten(1)
+    x_pad = F.pad(x_pad, [0, rel_size - W])
+
+    # reshape and slice out the padded elements
+    x_pad = x_pad.reshape(-1, W + 1, rel_size)
+    x = x_pad[:, :W, win_size - 1:]
+
+    # reshape and tile
+    x = x.reshape(B, H, 1, W, win_size).expand(-1, -1, win_size, -1, -1)
+    return x.permute(permute_mask)
+
+
+class PosEmbedRel(nn.Module):
+    """ Relative Position Embedding
+    As per: https://gist.github.com/aravindsrinivas/56359b79f0ce4449bcb04ab4b56a57a2
+    Originally from: `Attention Augmented Convolutional Networks` - https://arxiv.org/abs/1904.09925
+
+    """
+
+    def __init__(self, block_size, win_size, dim_head, scale):
+        """
+        Args:
+            block_size (int): block size
+            win_size (int): neighbourhood window size
+            dim_head (int): attention head dim
+            scale (float): scale factor (for init)
+        """
+        super().__init__()
+        self.block_size = block_size
+        self.dim_head = dim_head
+        self.height_rel = nn.Parameter(torch.randn(win_size * 2 - 1, dim_head) * scale)
+        self.width_rel = nn.Parameter(torch.randn(win_size * 2 - 1, dim_head) * scale)
+
+    @profile
+    def forward(self, q):
+        B, BB, HW, _ = q.shape
+
+        # relative logits in width dimension.
+        q = q.reshape(-1, self.block_size, self.block_size, self.dim_head)
+        rel_logits_w = rel_logits_1d(q, self.width_rel, permute_mask=(0, 1, 3, 2, 4))
+
+        # relative logits in height dimension.
+        q = q.transpose(1, 2)
+        rel_logits_h = rel_logits_1d(q, self.height_rel, permute_mask=(0, 3, 1, 4, 2))
+
+        rel_logits = rel_logits_h + rel_logits_w
+        rel_logits = rel_logits.reshape(B, BB, HW, -1)
+        return rel_logits
 
 
 class HaloAttn(nn.Module):

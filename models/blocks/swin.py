@@ -140,6 +140,7 @@ class SwinBlock(nn.Module):
         self.gamma_2 = nn.Parameter(layer_scale_init_value * torch.ones((dim)),
                                     requires_grad=True) if layer_scale_init_value > 0 else None
 
+    @profile
     def forward(self, x):
         B, C, H, W = x.shape
 
