@@ -1,10 +1,8 @@
 import torch
 import torch.nn.functional as F
 from torch import nn
-from timm.models import register_model
 from timm.models.layers import DropPath, LayerNorm2d, Mlp, make_divisible
 from timm.models.layers.halo_attn import PosEmbedRel, trunc_normal_, _assert
-from ..meta_arch import MetaArch
 
 
 class HaloAttn(nn.Module):
@@ -66,10 +64,13 @@ class HaloAttn(nn.Module):
         self.q = nn.Conv2d(dim, self.dim_out_qk, 1, stride=self.block_stride, bias=qkv_bias)
         self.kv = nn.Conv2d(dim, self.dim_out_qk + self.dim_out_v, 1, bias=qkv_bias)
 
-        self.pos_embed = PosEmbedRel(
-            block_size=self.block_size_ds, win_size=self.win_size, dim_head=self.dim_head_qk, scale=self.scale)
+        self.pos_embed = PosEmbedRel(block_size=self.block_size_ds,
+                                     win_size=self.win_size,
+                                     dim_head=self.dim_head_qk,
+                                     scale=self.scale)
 
         self.pool = nn.AvgPool2d(2, 2) if use_avg_pool else nn.Identity()
+        self.to_out = nn.Conv2d(dim, self.dim_out_v, 1)
 
         self.reset_parameters()
 
@@ -135,6 +136,7 @@ class HaloAttn(nn.Module):
         out = out.permute(0, 3, 1, 4, 2).contiguous().view(
             B, self.dim_out_v, H // self.block_stride, W // self.block_stride)
         # B, dim_out, H // block_stride, W // block_stride
+        out = self.to_out(out)
         out = self.pool(out)
         return out
 
@@ -191,27 +193,3 @@ class HaloBlockV2(nn.Module):
         x = shortcut + self.drop_path(x)
 
         return x
-
-
-@register_model
-def conv_halo_v2_no_train_mask_timm_tiny(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [2, 2, 6, 2]
-    num_heads = [3, 6, 12, 24]
-    block_size = 7
-    halo_size = 3
-
-    model = MetaArch(img_size=224,
-                     depths=depths,
-                     dims=dims,
-                     block_type=HaloBlockV2,
-                     block_kwargs=dict(num_heads=num_heads,
-                                       block_size=block_size,
-                                       halo_size=halo_size),
-                     #  downsample_type=nn.Identity,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
