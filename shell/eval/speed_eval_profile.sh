@@ -16,7 +16,7 @@ function run() {
     srun -p ${PARTITION} \
         --gres=gpu:${GPUS_PER_NODE} \
         --quotatype=spot \
-        kernprof -l speed_eval.py --model_type ${name} --halo_size ${size}
+        kernprof -l speed_eval_profile.py --model_type ${name} --halo_size ${size}
     
     srun -p ${PARTITION} \
         --gres=gpu:${GPUS_PER_NODE} \
