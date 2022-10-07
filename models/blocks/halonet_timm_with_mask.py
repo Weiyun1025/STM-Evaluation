@@ -80,6 +80,7 @@ class HaloAttn(nn.Module):
         trunc_normal_(self.pos_embed.height_rel, std=self.scale)
         trunc_normal_(self.pos_embed.width_rel, std=self.scale)
 
+    @profile
     def forward(self, x):
         B, C, H, W = x.shape
         _assert(H % self.block_size == 0, '')

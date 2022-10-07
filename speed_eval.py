@@ -1,15 +1,14 @@
 import argparse
 import torch
 from torch import nn
+from tqdm import tqdm
 from timm.models import create_model
 import models
 
 
-def test(model_type, x_input, y_gold, epochs):
-    model = create_model(model_type)
-    criterion = nn.CrossEntropyLoss()
-
-    for _ in range(epochs):
+@profile
+def test(model, criterion, x_input, y_gold, epochs):
+    for _ in tqdm(range(epochs)):
         y_pred = model(x_input)
         loss = criterion(y_pred, y_gold)
         loss.backward()
@@ -17,10 +16,13 @@ def test(model_type, x_input, y_gold, epochs):
 
 def main():
     args = _get_args()
+    model = create_model(args.model_type)
+    criterion = nn.CrossEntropyLoss()
 
     x = torch.randn(args.bsz, 3, 224, 224)
     y = torch.nn.functional.softmax(torch.randn(args.bsz, 1000), dim=-1)
-    test(args.model_type, x, y, args.epochs)
+
+    test(model, criterion, x, y, args.epochs)
 
 
 def _get_args():
