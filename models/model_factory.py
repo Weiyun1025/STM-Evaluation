@@ -646,7 +646,7 @@ def conv_halo_v2_timm_base(pretrained=False, **kwargs):
 
 
 @register_model
-def conv_halo_v2_micro(pretrained=False, **kwargs):
+def conv_halo_v2_github_micro(pretrained=False, **kwargs):
     dims = [32 * 2 ** i for i in range(4)]
     depths = [2, 2, 9, 2]
     num_heads = [1, 2, 4, 8]
@@ -670,7 +670,7 @@ def conv_halo_v2_micro(pretrained=False, **kwargs):
 
 
 @register_model
-def conv_halo_v2_tiny(pretrained=False, **kwargs):
+def conv_halo_v2_github_tiny(pretrained=False, **kwargs):
     dims = [96 * 2 ** i for i in range(4)]
     depths = [2, 2, 6, 2]
     num_heads = [3, 6, 12, 24]
@@ -694,7 +694,7 @@ def conv_halo_v2_tiny(pretrained=False, **kwargs):
 
 
 @register_model
-def conv_halo_v2_small(pretrained=False, **kwargs):
+def conv_halo_v2_github_small(pretrained=False, **kwargs):
     dims = [96 * 2 ** i for i in range(4)]
     depths = [2, 2, 18, 2]
     num_heads = [3, 6, 12, 24]
@@ -718,7 +718,7 @@ def conv_halo_v2_small(pretrained=False, **kwargs):
 
 
 @register_model
-def conv_halo_v2_base(pretrained=False, **kwargs):
+def conv_halo_v2_github_base(pretrained=False, **kwargs):
     dims = [128 * 2 ** i for i in range(4)]
     depths = [2, 2, 18, 2]
     num_heads = [4, 8, 16, 32]
