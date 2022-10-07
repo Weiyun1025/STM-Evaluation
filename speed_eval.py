@@ -47,7 +47,7 @@ def main():
 def _get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_type', type=str, required=True)
-    parser.add_argument('--bsz', type=int, default=64)
+    parser.add_argument('--bsz', type=int, default=128)
     parser.add_argument('--epochs', type=int, default=10)
     parser.add_argument('--device', type=str,
                         default='cuda' if torch.cuda.is_available() else 'cpu')
