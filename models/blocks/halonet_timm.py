@@ -196,7 +196,7 @@ class HaloBlock(nn.Module):
 
 class HaloBlockV2(nn.Module):
     def __init__(self, dim, drop_path, layer_scale_init_value, padding_value,
-                 block_size, halo_size, stage, depth, num_heads,
+                 block_size, halo_size, stage, depth, num_heads, out_proj,
                  mlp_ratio=4., drop=0., act_layer=nn.GELU, norm_layer=LayerNorm2d,
                  **kwargs):
         super().__init__()
@@ -214,7 +214,7 @@ class HaloBlockV2(nn.Module):
         self.attn = HaloAttention(dim=dim // stride, dim_out=dim,
                                   num_heads=num_heads[stage], stride=stride,
                                   block_size=block_size, halo_size=halo_size,
-                                  padding_value=padding_value)
+                                  padding_value=padding_value, out_proj=out_proj)
 
         self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((1, dim, 1, 1)),
                                     requires_grad=True) if layer_scale_init_value > 0 else None

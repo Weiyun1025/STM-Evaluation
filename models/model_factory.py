@@ -587,6 +587,7 @@ def conv_halo_v2_timm_tiny(pretrained=False, halo_size=3, **kwargs):
                      block_type=halonet_timm.HaloBlockV2,
                      block_kwargs=dict(num_heads=num_heads,
                                        block_size=block_size,
+                                       padding_value=0,
                                        halo_size=halo_size),
                      #  downsample_type=nn.Identity,
                      **kwargs)
@@ -777,7 +778,8 @@ def conv_halo_v2_mask_out_tiny(pretrained=False, halo_size=3, **kwargs):
                      block_type=halonet_timm_with_mask.HaloBlockV2,
                      block_kwargs=dict(num_heads=num_heads,
                                        block_size=block_size,
-                                       halo_size=halo_size),
+                                       halo_size=halo_size,
+                                       out_proj=True),
                      #  downsample_type=nn.Identity,
                      **kwargs)
 
