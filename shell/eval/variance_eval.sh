@@ -5,22 +5,23 @@ mkdir logs
 
 PARTITION=VC
 
-MODEL="conv_halo_v2_timm_tiny" 
-CKPT="/mnt/petrelfs/share_data/shimin/share_checkpoint/halonet/halonet_v2_tiny/checkpoint-best.pth"
+#MODEL="conv_halo_v2_timm_tiny" 
+#CKPT="/mnt/petrelfs/share_data/shimin/share_checkpoint/halonet/halonet_v2_tiny/checkpoint-best.pth"
 
-# MODEL="conv_swin_tiny" 
-# CKPT="/mnt/petrelfs/share_data/shimin/share_checkpoint/swin/swin_tiny/checkpoint-best.pth"
+MODEL="conv_swin_tiny" 
+CKPT="/mnt/petrelfs/share_data/shimin/share_checkpoint/swin/swin_tiny/checkpoint-best.pth"
 
 # MODEL="conv_convnext_v2_tiny" 
 # CKPT="/mnt/petrelfs/share_data/shimin/share_checkpoint/convnext/convnext_tiny/checkpoint-best.pth"
 
 DESC="eval" 
+JITTER=17
 
 # key hyperparameters
 TOTAL_BATCH_SIZE="1024"
 
 JOB_NAME=${MODEL}
-PROJECT_NAME="${MODEL}_1k_${DESC}"
+PROJECT_NAME="${MODEL}_1k_${DESC}_invariance_${JITTER}"
 
 GPUS=${GPUS:-2}
 GPUS_PER_NODE=${GPUS_PER_NODE:-2}
@@ -47,9 +48,12 @@ srun -p ${PARTITION} \
     --batch_size $((TOTAL_BATCH_SIZE/GPUS_PER_NODE)) \
     --input_size 224 \
     --crop_pct 0.875 \
+    --jitter_strength ${JITTER} \
     --data_set IMNET1k \
     --data_path /mnt/cache/share/images/ \
     --data_on_memory false \
     --nb_classes 1000 \
     --use_amp false \
     --output_dir "/mnt/petrelfs/${USER}/model_evaluation/invariance/${PROJECT_NAME}"
+
+# sh shell/eval/variance_eval.sh
