@@ -1,3 +1,4 @@
+import math
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -41,7 +42,8 @@ class HaloAttention(nn.Module):
 
     def __init__(
             self, dim, dim_out=None, feat_size=None, stride=1, num_heads=8, dim_head=None, block_size=8, halo_size=3,
-            qk_ratio=1.0, qkv_bias=False, avg_down=False, scale_pos_embed=False):
+            qk_ratio=1.0, qkv_bias=False, avg_down=False, scale_pos_embed=False, padding_value=0,
+            out_proj=False):
         super().__init__()
         dim_out = dim_out or dim
         assert dim_out % num_heads == 0
@@ -57,6 +59,7 @@ class HaloAttention(nn.Module):
         self.halo_size = halo_size
         self.win_size = block_size + halo_size * 2  # neighbourhood window size
         self.block_stride = 1
+        self.padding_value = padding_value
         use_avg_pool = False
         if stride > 1:
             use_avg_pool = avg_down or block_size % stride != 0
@@ -73,6 +76,7 @@ class HaloAttention(nn.Module):
             block_size=self.block_size_ds, win_size=self.win_size, dim_head=self.dim_head_qk, scale=self.scale)
 
         self.pool = nn.AvgPool2d(2, 2) if use_avg_pool else nn.Identity()
+        self.to_out = nn.Conv2d(dim, self.dim_out_v, 1) if out_proj else nn.Identity()
 
         self.reset_parameters()
 
@@ -105,7 +109,8 @@ class HaloAttention(nn.Module):
         # Generate overlapping windows for kv. This approach is good for GPU and CPU. However, unfold() is not
         # lowered for PyTorch XLA so it will be very slow. See code at bottom of file for XLA friendly approach.
         # FIXME figure out how to switch impl between this and conv2d if XLA being used.
-        kv = F.pad(kv, [self.halo_size, self.halo_size, self.halo_size, self.halo_size])
+        kv = F.pad(kv, [self.halo_size, self.halo_size, self.halo_size, self.halo_size],
+                   value=self.padding_value)
         kv = kv.unfold(2, self.win_size, self.block_size).unfold(3, self.win_size, self.block_size).reshape(
             B * self.num_heads, self.dim_head_qk + self.dim_head_v, num_blocks, -1).permute(0, 2, 3, 1)
         k, v = torch.split(kv, [self.dim_head_qk, self.dim_head_v], dim=-1)
@@ -119,6 +124,8 @@ class HaloAttention(nn.Module):
             attn = (q @ k.transpose(-1, -2)) * self.scale
             attn = attn + self.pos_embed(q)
         # B * num_heads, num_blocks, block_size ** 2, win_size ** 2
+        if math.isnan(self.padding_value):
+            attn = torch.where(torch.isnan(attn), -torch.inf, attn)
         attn = attn.softmax(dim=-1)
 
         out = (attn @ v).transpose(1, 3)  # B * num_heads, dim_head_v, block_size ** 2, num_blocks
@@ -127,6 +134,7 @@ class HaloAttention(nn.Module):
         out = out.permute(0, 3, 1, 4, 2).contiguous().view(
             B, self.dim_out_v, H // self.block_stride, W // self.block_stride)
         # B, dim_out, H // block_stride, W // block_stride
+        out = self.to_out(out)
         out = self.pool(out)
         return out
 

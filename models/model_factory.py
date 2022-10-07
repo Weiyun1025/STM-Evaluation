@@ -1,3 +1,4 @@
+import torch
 from timm.models import register_model
 from .meta_arch import MetaArch, PatchEmbed, PatchMerging
 from .blocks.convnext import ConvNeXtBlock, ConvNeXtV2Block, ConvNeXtV3Block
@@ -777,6 +778,31 @@ def conv_halo_v2_mask_out_tiny(pretrained=False, halo_size=3, **kwargs):
                      block_kwargs=dict(num_heads=num_heads,
                                        block_size=block_size,
                                        halo_size=halo_size),
+                     #  downsample_type=nn.Identity,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@register_model
+def conv_halo_v2_padding_out_tiny(pretrained=False, halo_size=3, **kwargs):
+    dims = [96 * 2 ** i for i in range(4)]
+    depths = [2, 2, 6, 2]
+    num_heads = [3, 6, 12, 24]
+    block_size = 7
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     block_type=halonet_timm.HaloBlockV2,
+                     block_kwargs=dict(num_heads=num_heads,
+                                       block_size=block_size,
+                                       halo_size=halo_size,
+                                       out_proj=True,
+                                       padding_value=torch.nan),
                      #  downsample_type=nn.Identity,
                      **kwargs)
 
