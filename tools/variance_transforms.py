@@ -2,6 +2,7 @@
 data transform modules for invariance analysis
 """
 
+import torch
 from torchvision import transforms
 import numpy as np
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
@@ -70,4 +71,16 @@ class PositionJitterTransform:
             center[0] = center[0] + self.jitter_strength
             center[1] = center[1] - self.jitter_strength
 
-        return image[:, center[0]-h:center[0]+h, center[1]-w:center[1]+w]
+        cropped_image = image[:, center[0]-h:center[0]+h, center[1]-w:center[1]+w]
+        image_height, image_width = cropped_image.shape[-2:]
+        crop_height, crop_width = self.input_size, self.input_size
+        if image.shape[1] < self.input_size or image.shape[0] < self.input_size:
+            padding_lrtb = [
+                (crop_width - image_width) // 2 if crop_width > image_width else 0,
+                (crop_width - image_width + 1) // 2 if crop_width > image_width else 0,
+                (crop_height - image_height) // 2 if crop_height > image_height else 0,
+                (crop_height - image_height + 1) // 2 if crop_height > image_height else 0,
+            ]
+            cropped_image = torch.nn.functional.pad(cropped_image, padding_lrtb) 
+
+        return cropped_image

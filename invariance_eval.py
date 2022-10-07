@@ -32,7 +32,7 @@ def get_args_parser():
                         help='Per GPU batch size')
 
     # Model parameters
-    parser.add_argument('--model', default='conv_convnext_v2_tiny', type=str, metavar='MODEL',
+    parser.add_argument('--model', default='conv_swin_tiny', type=str, metavar='MODEL',
                         help='Name of model to train')
     parser.add_argument('--input_size', default=224, type=int,
                         help='image input size')
@@ -49,6 +49,8 @@ def get_args_parser():
                         help='loading training data to memory')
     parser.add_argument('--nb_classes', default=1000, type=int,
                         help='number of the classification types')
+    parser.add_argument('--jitter_strength', default=16, type=int)
+
     parser.add_argument('--imagenet_default_mean_and_std', type=str2bool, default=True)
     parser.add_argument('--data_set', default='IMNET1k',
                         # choices=['CIFAR', 'IMNET', 'image_folder'],
@@ -62,7 +64,7 @@ def get_args_parser():
                         help='device to use for training / testing')
     parser.add_argument('--seed', default=0, type=int)
 
-    parser.add_argument('--resume', default='',
+    parser.add_argument('--resume', default='/data1/shimin/model_parameters/backbone/swin_tiny/checkpoint-best.pth',
                         help='resume from checkpoint')
 
     parser.add_argument('--dist_eval', type=str2bool, default=True,
@@ -132,7 +134,7 @@ def main(args):
     variance_transforms = {
         'position jitter': position_jitter_transform(img_size=args.input_size,
                                                      crop_ratio=args.crop_pct,
-                                                     jitter_strength=1)
+                                                     jitter_strength=args.jitter_strength)
     }
     collate_fn = VarianceCollateFN(standard_transform=transform,
                                    variance_transforms=variance_transforms)
@@ -165,6 +167,9 @@ def main(args):
                                                           device_ids=[args.gpu],
                                                           find_unused_parameters=False)
         model_without_ddp = model.module
+    else:
+        model = model.cuda()
+        model_without_ddp = model
 
     args.auto_resume = None
     utils.auto_load_model(args=args,

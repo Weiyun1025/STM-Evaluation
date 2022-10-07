@@ -6,12 +6,15 @@
 # LICENSE file in the root directory of this source tree.
 
 
+from logging import critical
 import math
 from typing import Iterable, Optional
 import torch
 import torch.nn.functional as F
 from timm.data import Mixup
 from timm.utils import accuracy, ModelEma
+from timm.loss import SoftTargetCrossEntropy
+
 
 import utils
 
@@ -146,7 +149,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
 @torch.no_grad()
 def evaluate(data_loader, model, device, use_amp=False):
-    criterion = torch.nn.CrossEntropyLoss()
+    criterion = torch.nn.CrossEntropyLoss() 
 
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'
@@ -215,7 +218,8 @@ class VarianceCollateFN:
 
 @torch.no_grad()
 def evaluate_invariance(data_loader, model, device, use_amp=False):
-    criterion = torch.nn.CrossEntropyLoss()
+    #criterion = torch.nn.CrossEntropyLoss()
+    criterion = SoftTargetCrossEntropy()
 
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Invariance Test:'
@@ -227,9 +231,12 @@ def evaluate_invariance(data_loader, model, device, use_amp=False):
         images = images.to(device, non_blocking=True)
         gold_target = batch['gold'].to(device, non_blocking=True)
         pred_target = F.softmax(model(images), dim=-1)
+        # generate predicted labels to calculate consistency
+        pred_label = pred_target.max(dim=1)[1]
 
         batch_size = images.shape[0]
         for variance_name, transformed_images in batch['variance_img'].items():
+            transformed_images = transformed_images.to(device)
             if use_amp:
                 with torch.cuda.amp.autocast():
                     output = model(transformed_images)
@@ -241,8 +248,10 @@ def evaluate_invariance(data_loader, model, device, use_amp=False):
             metric_logger.meters[f'{variance_name} loss'].update(loss.item(), n=batch_size)
 
             acc1, acc5 = accuracy(output, gold_target, topk=(1, 5))
+            consistency = accuracy(output, pred_label)[0]
             metric_logger.meters[f'{variance_name} acc1'].update(acc1.item(), n=batch_size)
             metric_logger.meters[f'{variance_name} acc5'].update(acc5.item(), n=batch_size)
+            metric_logger.meters[f'{variance_name} consistency'].update(consistency.item(), n=batch_size)
 
         acc1, acc5 = accuracy(pred_target, gold_target, topk=(1, 5))
         metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
