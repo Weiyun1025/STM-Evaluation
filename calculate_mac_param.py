@@ -184,12 +184,11 @@ def main(args):
 
     macs = str(round(macs / 10.**9, 2))
     params = str(round(params / 10**6, 2))
-    print("model_name: MACs {}G, Params {}M".format(macs, params))
+    print(f"{args.model_name}: MACs {macs}G, Params {params}M")
 
 
 if __name__ == '__main__':
     main(parse_args())
 
-# srun -p VC -N 1 --gres=gpu:1 --ntasks=1 \
-#      --cpus-per-task=10 --quotatype=spot \
-#      python tools/calulate_flops_param.py
+# salloc -p VC --gres=gpu:1 --quotatype=spot
+# srun -p VC --gres=gpu:1 --quotatype=spot python calulate_mac_param.py --model_name xxx
