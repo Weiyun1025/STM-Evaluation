@@ -19,7 +19,7 @@ PROJECT_NAME="${MODEL}_1k_${DESC}"
 
 GPUS=${GPUS:-16}
 GPUS_PER_NODE=${GPUS_PER_NODE:-8}
-QUOTA_TYPE="auto"
+QUOTA_TYPE="spot"
 
 CPUS_PER_TASK=${CPUS_PER_TASK:-12}
 SRUN_ARGS=${SRUN_ARGS:-""}
@@ -72,7 +72,6 @@ srun -p ${PARTITION} \
     --enable_wandb false \
     --project 'model evaluation' \
     --name ${PROJECT_NAME} \
-    --output_dir backbone_outputdir/${PROJECT_NAME}
-    #--output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
+    --output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
     
 # sh shell/1k_pretrain/convnext_base_1k_224.sh

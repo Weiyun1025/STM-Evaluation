@@ -13,6 +13,7 @@ semantic_segmentation
 outputs/*
 backbone_outputdir/*
 batchscript-*
+visualizations/*
 
 # omit compiled lib
 ops/build/*
