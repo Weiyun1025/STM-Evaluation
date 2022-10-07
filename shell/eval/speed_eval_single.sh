@@ -12,7 +12,11 @@ export CUDA_LAUNCH_BLOCKING=1
 function run() {
     name=$1
 
-    kernprof -l speed_eval.py --model_type ${name}
+    srun -p ${PARTITION} \
+        --gres=gpu:${GPUS_PER_NODE} \
+        --quotatype=spot \
+        kernprof -l speed_eval.py --model_type ${name}
+    
     srun -p ${PARTITION} \
         --gres=gpu:${GPUS_PER_NODE} \
         --quotatype=spot \
