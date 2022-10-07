@@ -38,7 +38,7 @@ class HaloAttn(nn.Module):
 
     def __init__(
             self, dim, dim_out=None, feat_size=None, stride=1, num_heads=8, dim_head=None, block_size=8, halo_size=3,
-            qk_ratio=1.0, qkv_bias=False, avg_down=False, scale_pos_embed=False):
+            qk_ratio=1.0, qkv_bias=False, avg_down=False, scale_pos_embed=False, out_proj=True):
         super().__init__()
         dim_out = dim_out or dim
         assert dim_out % num_heads == 0
@@ -70,7 +70,7 @@ class HaloAttn(nn.Module):
             block_size=self.block_size_ds, win_size=self.win_size, dim_head=self.dim_head_qk, scale=self.scale)
 
         self.pool = nn.AvgPool2d(2, 2) if use_avg_pool else nn.Identity()
-
+        self.to_out = nn.Conv2d(self.dim_out_v, self.dim_out_v, 1) if out_proj else nn.Identity()
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -134,13 +134,14 @@ class HaloAttn(nn.Module):
         out = out.permute(0, 3, 1, 4, 2).contiguous().view(
             B, self.dim_out_v, H // self.block_stride, W // self.block_stride)
         # B, dim_out, H // block_stride, W // block_stride
+        out = self.to_out(out)
         out = self.pool(out)
         return out
 
 
 class HaloBlockV2(nn.Module):
     def __init__(self, dim, drop_path, layer_scale_init_value,
-                 block_size, halo_size, stage, depth, num_heads,
+                 block_size, halo_size, stage, depth, num_heads, out_proj,
                  mlp_ratio=4., drop=0., act_layer=nn.GELU, norm_layer=LayerNorm2d,
                  **kwargs):
         super().__init__()
@@ -157,7 +158,7 @@ class HaloBlockV2(nn.Module):
         self.norm1 = norm_layer(dim // stride)
         self.attn = HaloAttn(dim=dim // stride, dim_out=dim,
                              num_heads=num_heads[stage], stride=stride,
-                             block_size=block_size, halo_size=halo_size)
+                             block_size=block_size, halo_size=halo_size, out_proj=out_proj)
 
         self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((1, dim, 1, 1)),
                                     requires_grad=True) if layer_scale_init_value > 0 else None

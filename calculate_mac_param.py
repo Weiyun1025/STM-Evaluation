@@ -92,7 +92,6 @@ def swin_window_attention(module, input, output):
     module.total_ops += B * num_heads * N * (attn_dim * N
                                              )  # q @ k.transpose(-2, -1)
     module.total_ops += B * num_heads * N * N  # attn + self._get_rel_pos_bias()
-    module.total_ops += B * num_heads * N * (2 * N)  # softmax
     module.total_ops += B * num_heads * N * (N * attn_dim)  # (attn @ v)
     module.total_ops += sum_submodule_ops(module)
 

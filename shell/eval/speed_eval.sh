@@ -6,14 +6,14 @@ mkdir logs/speed_eval
 
 PARTITION=VC
 GPUS_PER_NODE=${GPUS_PER_NODE:-1}
-MODEL=$1
+EPOCHS=$1
 
-#export CUDA_LAUNCH_BLOCKING=1
-
-kernprof -l speed_eval.py --model_type ${MODEL}
-
-srun -p ${PARTITION} \
-    --gres=gpu:${GPUS_PER_NODE} \
-    --quotatype=spot \
-    python -m line_profiler speed_eval.py.lprof 1>"logs/speed_eval/${MODEL}.out"
-    
+model_list=('conv_swin_tiny' 'conv_halo_v2_mask_out_tiny' 'conv_halo_v2_github_tiny')
+for model in ${model_list[@]}
+do
+    srun -p ${PARTITION} \
+        --gres=gpu:${GPUS_PER_NODE} \
+        --quotatype=spot \
+        python speed_eval.py --model_type ${model} --epochs ${EPOCHS} \
+        1>"logs/speed_eval/${model}.out"
+done

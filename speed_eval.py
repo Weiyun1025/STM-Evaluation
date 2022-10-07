@@ -29,12 +29,12 @@ def test(model, criterion, x_input, y_gold, epochs):
 
 def main():
     args = _get_args()
-    model = create_model(args.model_type)
+    model = create_model(args.model_type).to(args.device)
     criterion = nn.CrossEntropyLoss()
     print(f'{args.model_type}:')
 
-    x = torch.randn(args.bsz, 3, 224, 224)
-    y = torch.nn.functional.softmax(torch.randn(args.bsz, 1000), dim=-1)
+    x = torch.randn(args.bsz, 3, 224, 224).to(args.device)
+    y = torch.nn.functional.softmax(torch.randn(args.bsz, 1000).to(args.device), dim=-1)
 
     start_time = time.time()
     test(model, criterion, x, y, args.epochs)
@@ -47,8 +47,10 @@ def main():
 def _get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_type', type=str, required=True)
-    parser.add_argument('--bsz', type=int, default=64)
+    parser.add_argument('--bsz', type=int, default=128)
     parser.add_argument('--epochs', type=int, default=10)
+    parser.add_argument('--device', type=str,
+                        default='cuda' if torch.cuda.is_available() else 'cpu')
 
     args = parser.parse_args()
     return args

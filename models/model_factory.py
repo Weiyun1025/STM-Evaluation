@@ -5,7 +5,7 @@ from .blocks.swin import SwinBlock
 from .blocks.dcn_v3 import DCNv3Block
 from .blocks.pvt import PvtBlock
 from .blocks.pvt_v2 import PvtV2Block
-from .blocks import halonet_github, halonet_timm
+from .blocks import halonet_github, halonet_timm, halonet_timm_with_mask
 
 
 @ register_model
@@ -548,6 +548,55 @@ def conv_pvt_v2_base(pretrained=False, **kwargs):
 
 # ******************************************************************
 # HaloNet with swin block design and conv stem & transition
+@register_model
+def conv_halo_v2_mask_tiny(pretrained=False, **kwargs):
+    dims = [96 * 2 ** i for i in range(4)]
+    depths = [2, 2, 6, 2]
+    num_heads = [3, 6, 12, 24]
+    block_size = 7
+    halo_size = 3
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     block_type=halonet_timm_with_mask.HaloBlockV2,
+                     block_kwargs=dict(num_heads=num_heads,
+                                       block_size=block_size,
+                                       halo_size=halo_size,
+                                       out_proj=False),
+                     #  downsample_type=nn.Identity,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@register_model
+def conv_halo_v2_mask_out_tiny(pretrained=False, **kwargs):
+    dims = [96 * 2 ** i for i in range(4)]
+    depths = [2, 2, 6, 2]
+    num_heads = [3, 6, 12, 24]
+    block_size = 7
+    halo_size = 3
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     block_type=halonet_timm_with_mask.HaloBlockV2,
+                     block_kwargs=dict(num_heads=num_heads,
+                                       block_size=block_size,
+                                       halo_size=halo_size,
+                                       out_proj=True),
+                     #  downsample_type=nn.Identity,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
 
 @register_model
 def conv_halo_v2_timm_micro(pretrained=False, **kwargs):
@@ -646,7 +695,7 @@ def conv_halo_v2_timm_base(pretrained=False, **kwargs):
 
 
 @register_model
-def conv_halo_v2_micro(pretrained=False, **kwargs):
+def conv_halo_v2_github_micro(pretrained=False, **kwargs):
     dims = [32 * 2 ** i for i in range(4)]
     depths = [2, 2, 9, 2]
     num_heads = [1, 2, 4, 8]
@@ -670,7 +719,7 @@ def conv_halo_v2_micro(pretrained=False, **kwargs):
 
 
 @register_model
-def conv_halo_v2_tiny(pretrained=False, **kwargs):
+def conv_halo_v2_github_tiny(pretrained=False, **kwargs):
     dims = [96 * 2 ** i for i in range(4)]
     depths = [2, 2, 6, 2]
     num_heads = [3, 6, 12, 24]
@@ -694,7 +743,7 @@ def conv_halo_v2_tiny(pretrained=False, **kwargs):
 
 
 @register_model
-def conv_halo_v2_small(pretrained=False, **kwargs):
+def conv_halo_v2_github_small(pretrained=False, **kwargs):
     dims = [96 * 2 ** i for i in range(4)]
     depths = [2, 2, 18, 2]
     num_heads = [3, 6, 12, 24]
@@ -718,7 +767,7 @@ def conv_halo_v2_small(pretrained=False, **kwargs):
 
 
 @register_model
-def conv_halo_v2_base(pretrained=False, **kwargs):
+def conv_halo_v2_github_base(pretrained=False, **kwargs):
     dims = [128 * 2 ** i for i in range(4)]
     depths = [2, 2, 18, 2]
     num_heads = [4, 8, 16, 32]
