@@ -185,7 +185,7 @@ def main(args):
 
     macs = str(round(macs / 10.**9, 2))
     params = str(round(params / 10**6, 2))
-    print("model_name: MACs {}G, Params {}M".format(macs, params))
+    print(f"{args.model_name}: MACs {macs}G, Params {params}M")
 
 
 if __name__ == '__main__':
