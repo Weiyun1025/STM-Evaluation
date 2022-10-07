@@ -574,12 +574,11 @@ def conv_halo_v2_timm_micro(pretrained=False, **kwargs):
 
 
 @register_model
-def conv_halo_v2_timm_tiny(pretrained=False, **kwargs):
+def conv_halo_v2_timm_tiny(pretrained=False, halo_size=3, **kwargs):
     dims = [96 * 2 ** i for i in range(4)]
     depths = [2, 2, 6, 2]
     num_heads = [3, 6, 12, 24]
     block_size = 7
-    halo_size = 3
 
     model = MetaArch(img_size=224,
                      depths=depths,
@@ -670,12 +669,11 @@ def conv_halo_v2_github_micro(pretrained=False, **kwargs):
 
 
 @register_model
-def conv_halo_v2_github_tiny(pretrained=False, **kwargs):
+def conv_halo_v2_github_tiny(pretrained=False, halo_size=3, **kwargs):
     dims = [96 * 2 ** i for i in range(4)]
     depths = [2, 2, 6, 2]
     num_heads = [3, 6, 12, 24]
     block_size = 7
-    halo_size = 3
 
     model = MetaArch(img_size=224,
                      depths=depths,
@@ -742,12 +740,11 @@ def conv_halo_v2_github_base(pretrained=False, **kwargs):
 
 
 @register_model
-def conv_halo_v2_mask_tiny(pretrained=False, **kwargs):
+def conv_halo_v2_mask_tiny(pretrained=False, halo_size=3, **kwargs):
     dims = [96 * 2 ** i for i in range(4)]
     depths = [2, 2, 6, 2]
     num_heads = [3, 6, 12, 24]
     block_size = 7
-    halo_size = 3
 
     model = MetaArch(img_size=224,
                      depths=depths,
@@ -767,12 +764,11 @@ def conv_halo_v2_mask_tiny(pretrained=False, **kwargs):
 
 
 @register_model
-def conv_halo_v2_mask_out_tiny(pretrained=False, **kwargs):
+def conv_halo_v2_mask_out_tiny(pretrained=False, halo_size=3, **kwargs):
     dims = [96 * 2 ** i for i in range(4)]
     depths = [2, 2, 6, 2]
     num_heads = [3, 6, 12, 24]
     block_size = 7
-    halo_size = 3
 
     model = MetaArch(img_size=224,
                      depths=depths,

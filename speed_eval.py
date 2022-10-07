@@ -16,7 +16,7 @@ def test(model, criterion, x_input, y_gold, epochs):
 
 def main():
     args = _get_args()
-    model = create_model(args.model_type)
+    model = create_model(args.model_type, halo_size=args.halo_size)
     criterion = nn.CrossEntropyLoss()
 
     x = torch.randn(args.bsz, 3, 224, 224)
@@ -30,6 +30,7 @@ def _get_args():
     parser.add_argument('--model_type', type=str, required=True)
     parser.add_argument('--bsz', type=int, default=64)
     parser.add_argument('--epochs', type=int, default=10)
+    parser.add_argument('--halo_size', type=int, default=3)
 
     args = parser.parse_args()
     return args
