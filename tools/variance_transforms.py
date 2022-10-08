@@ -6,6 +6,7 @@ import torch
 from torchvision import transforms
 import numpy as np
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
+from PIL import Image
 
 
 def standard_transform(img_size=224, crop_ratio=0.875):
@@ -33,7 +34,7 @@ class PositionJitterTransform:
                                         interpolation=transforms.InterpolationMode.BICUBIC)
         self.to_tensor = transforms.ToTensor()
         self.norm = transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)
-
+        
     def __call__(self, image):
         resized_image = self.resize(image)
         resized_image = self.to_tensor(resized_image)
@@ -72,14 +73,14 @@ class PositionJitterTransform:
 
         top = min(center[0]+h, image.shape[-2])
         bottom = max(center[0]-h, 0)
-        right = min(center[0]+w, image.shape[-1])
-        left = max(center[0]-w, 0)
+        right = min(center[1]+w, image.shape[-1])
+        left = max(center[1]-w, 0)
 
         cropped_image = image[:, bottom:top, left:right]
 
         image_height, image_width = cropped_image.shape[-2:]
         crop_height, crop_width = self.input_size, self.input_size
-        if image.shape[1] < self.input_size or image.shape[0] < self.input_size:
+        if cropped_image.shape[1] < self.input_size or cropped_image.shape[0] < self.input_size:
             padding_lrtb = [
                 (crop_width - image_width) // 2 if crop_width > image_width else 0,
                 (crop_width - image_width + 1) // 2 if crop_width > image_width else 0,
