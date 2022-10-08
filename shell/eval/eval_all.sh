@@ -6,7 +6,7 @@ mkdir logs
 PARTITION=VC
 TOTAL_BATCH_SIZE="1024"
 
-JOB_NAME=${MODEL}
+JOB_NAME="check_ckpt"
 PROJECT_NAME="check_ckpt"
 
 GPUS=${GPUS:-2}
