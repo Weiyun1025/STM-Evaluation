@@ -13,11 +13,16 @@ PROJECT_NAME="check_ckpt"
 
 GPUS=${GPUS:-2}
 GPUS_PER_NODE=${GPUS_PER_NODE:-2}
+CPUS_PER_TASK=${CPUS_PER_TASK:-12}
 QUOTA_TYPE="spot"
 
 srun -p ${PARTITION} \
     --job-name=${JOB_NAME} \
     --gres=gpu:${GPUS_PER_NODE} \
+    --ntasks=${GPUS} \
+    --ntasks-per-node=${GPUS_PER_NODE} \
+    --cpus-per-task=${CPUS_PER_TASK} \
+    --kill-on-bad-exit=1 \
     --quotatype=${QUOTA_TYPE} \
     --async \
     --output="logs/${PROJECT_NAME}.out" \
