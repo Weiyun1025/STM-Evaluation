@@ -4,6 +4,7 @@ data transform modules for invariance analysis
 
 import torch
 from torchvision import transforms
+from torchvision.transforms.functional import rotate
 import numpy as np
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from PIL import Image
@@ -25,6 +26,12 @@ def position_jitter_transform(img_size=224, crop_ratio=0.875, jitter_strength=0)
                                    jitter_strength=jitter_strength)
 
 
+def rotate_transform(img_size=224, crop_ratio=0.875, angle=0):
+    return RotateTransform(input_size=img_size,
+                           resizing_size=int(img_size / crop_ratio),
+                           angle=angle)
+
+
 class PositionJitterTransform:
     def __init__(self, jitter_strength=0, resizing_size=256, input_size=224):
         self.resizing_size = resizing_size
@@ -34,7 +41,7 @@ class PositionJitterTransform:
                                         interpolation=transforms.InterpolationMode.BICUBIC)
         self.to_tensor = transforms.ToTensor()
         self.norm = transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)
-        
+
     def __call__(self, image):
         resized_image = self.resize(image)
         resized_image = self.to_tensor(resized_image)
@@ -87,6 +94,32 @@ class PositionJitterTransform:
                 (crop_height - image_height) // 2 if crop_height > image_height else 0,
                 (crop_height - image_height + 1) // 2 if crop_height > image_height else 0,
             ]
-            cropped_image = torch.nn.functional.pad(cropped_image, padding_lrtb) 
+            cropped_image = torch.nn.functional.pad(cropped_image, padding_lrtb)
 
         return cropped_image
+
+
+class RotateTransform:
+    def __init__(self, angle=0, resizing_size=256, input_size=224):
+        self.resizing_size = resizing_size
+        self.input_size = input_size
+        self.angle = angle
+        self.resize = transforms.Resize(self.resizing_size,
+                                        interpolation=transforms.InterpolationMode.BICUBIC)
+        self.crop = transforms.CenterCrop(input_size)
+        self.to_tensor = transforms.ToTensor()
+        self.norm = transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)
+
+    def __call__(self, image):
+        resized_image = self.resize(image)
+        resized_image = self.crop(resized_image)
+        resized_image = self.rotate(resized_image)
+        resized_image = self.to_tensor(resized_image)
+        resized_image = self.norm(resized_image)
+
+        return resized_image
+
+    def rotate(self, image):
+        return rotate(image,
+                      angle=self.angle,
+                      interpolation=transforms.InterpolationMode.BICUBIC)

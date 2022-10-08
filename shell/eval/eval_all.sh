@@ -4,15 +4,10 @@ set -x
 mkdir logs
 
 PARTITION=VC
-MODEL="conv_halo_v2_tiny"
-CKPT="/mnt/petrelfs/wangweiyun/model_evaluation/conv_halo_v2_github_tiny_1k_unified_config/checkpoint-best.pth"
-DESC="eval" 
-
-# key hyperparameters
 TOTAL_BATCH_SIZE="1024"
 
-JOB_NAME=${MODEL}
-PROJECT_NAME="${MODEL}_1k_${DESC}"
+JOB_NAME="check_ckpt"
+PROJECT_NAME="check_ckpt"
 
 GPUS=${GPUS:-2}
 GPUS_PER_NODE=${GPUS_PER_NODE:-2}
@@ -33,10 +28,8 @@ srun -p ${PARTITION} \
     --output="logs/${PROJECT_NAME}.out" \
     --error="logs/${PROJECT_NAME}.err" \
     ${SRUN_ARGS} \
-    python -u main.py \
-    --model ${MODEL} \
+    python -u eval_all_ckpt.py \
     --eval true \
-    --resume ${CKPT} \
     --batch_size $((TOTAL_BATCH_SIZE/GPUS_PER_NODE)) \
     --input_size 224 \
     --data_set IMNET1k \
