@@ -23,26 +23,14 @@ def get_scale(name):
     return None
 
 
-def test(model_type, ckpt_path, init_dist):
+def main():
     parser = argparse.ArgumentParser('training and evaluation script', parents=[get_args_parser()])
     args = parser.parse_args()
     if args.output_dir:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
+    utils.init_distributed_mode(args)
 
-    args.model = model_type
-    args.resume = ckpt_path
-
-    if init_dist:
-        utils.init_distributed_mode(args)
-
-    acc = eval_main(args)
-
-    return acc
-
-
-def main():
     res = {}
-    init_dist = True
     for model_type in os.listdir(BASE_DIR):
         if model_type not in MODEL_TYPE_DICT:
             continue
@@ -58,9 +46,13 @@ def main():
                 continue
 
             model_type = f'{model_type}_{model_scale}'
-            res[model_type] = test(model_type, ckpt_path, init_dist)
-            init_dist = False
-            res[f'{model_type}_ema'] = test(model_type, ckpt_ema_path, init_dist)
+
+            args.model = model_type
+            args.resume = ckpt_path
+            res[model_type] = eval_main(args)
+
+            args.resume = ckpt_ema_path
+            res[f'{model_type}_ema'] = eval_main(args)
 
     for key, value in res.items():
         print(f'{key}: {value}')
