@@ -4,8 +4,6 @@ set -x
 mkdir logs
 
 PARTITION=VC
-
-# key hyperparameters
 TOTAL_BATCH_SIZE="1024"
 
 JOB_NAME=${MODEL}
@@ -13,8 +11,10 @@ PROJECT_NAME="check_ckpt"
 
 GPUS=${GPUS:-2}
 GPUS_PER_NODE=${GPUS_PER_NODE:-2}
-CPUS_PER_TASK=${CPUS_PER_TASK:-12}
 QUOTA_TYPE="spot"
+
+CPUS_PER_TASK=${CPUS_PER_TASK:-12}
+SRUN_ARGS=${SRUN_ARGS:-""}
 
 srun -p ${PARTITION} \
     --job-name=${JOB_NAME} \
