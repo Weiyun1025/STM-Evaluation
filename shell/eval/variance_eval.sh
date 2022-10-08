@@ -11,11 +11,11 @@ PARTITION=VC
 MODEL="conv_swin_tiny" 
 CKPT="/mnt/petrelfs/share_data/shimin/share_checkpoint/swin/swin_tiny/checkpoint-best.pth"
 
-# MODEL="conv_convnext_v2_tiny" 
-# CKPT="/mnt/petrelfs/share_data/shimin/share_checkpoint/convnext/convnext_tiny/checkpoint-best.pth"
+#MODEL="conv_convnext_v2_tiny" 
+#CKPT="/mnt/petrelfs/share_data/shimin/share_checkpoint/convnext/convnext_tiny/checkpoint-best.pth"
 
 DESC="eval" 
-JITTER=17
+JITTER=0
 
 # key hyperparameters
 TOTAL_BATCH_SIZE="1024"

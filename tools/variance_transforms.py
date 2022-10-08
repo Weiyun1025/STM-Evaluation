@@ -26,11 +26,9 @@ def position_jitter_transform(img_size=224, crop_ratio=0.875, jitter_strength=0)
 
 class PositionJitterTransform:
     def __init__(self, jitter_strength=0, resizing_size=256, input_size=224):
-
-        self.jitter_strength = jitter_strength
         self.resizing_size = resizing_size
         self.input_size = input_size
-        self.jitter_strength = max(self.jitter_strength - self.input_size, jitter_strength)
+        self.jitter_strength = jitter_strength
         self.resize = transforms.Resize(self.resizing_size,
                                         interpolation=transforms.InterpolationMode.BICUBIC)
         self.to_tensor = transforms.ToTensor()
