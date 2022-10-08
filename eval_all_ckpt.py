@@ -45,14 +45,12 @@ def main():
             if model_scale is None:
                 continue
 
-            model_type = f'{model_type}_{model_scale}'
-
-            args.model = model_type
+            args.model = f'{model_type}_{model_scale}'
             args.resume = ckpt_path
-            res[model_type] = eval_main(args)
+            res[args.model] = eval_main(args)
 
             args.resume = ckpt_ema_path
-            res[f'{model_type}_ema'] = eval_main(args)
+            res[f'{args.model}_ema'] = eval_main(args)
 
     for key, value in res.items():
         print(f'{key}: {value}')
