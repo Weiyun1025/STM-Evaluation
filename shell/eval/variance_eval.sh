@@ -12,22 +12,22 @@ MODEL="conv_swin_tiny"
 CKPT="/mnt/petrelfs/share_data/shimin/share_checkpoint/swin/swin_tiny/checkpoint-best.pth"
 
 #MODEL="conv_convnext_v2_tiny" 
-#CKPT="/mnt/petrelfs/share_data/shimin/share_checkpoint/convnext/convnext_tiny/checkpoint-best.pth"
+#CKPT="/mnt/petrelfs/share_data/shimin/share_checkpoint/convnext/convnext_tiny/checkpoint-best-ema.pth"
 
 DESC="eval" 
-JITTER=0
+JITTER=32
 
 # key hyperparameters
 TOTAL_BATCH_SIZE="1024"
 
 JOB_NAME=${MODEL}
-PROJECT_NAME="${MODEL}_1k_${DESC}_invariance_${JITTER}"
+PROJECT_NAME="${MODEL}_1k_${DESC}_invariance_circular_${JITTER}"
 
 GPUS=${GPUS:-1}
 GPUS_PER_NODE=${GPUS_PER_NODE:-1}
 QUOTA_TYPE="spot"
 
-CPUS_PER_TASK=${CPUS_PER_TASK:-12}
+CPUS_PER_TASK=${CPUS_PER_TASK:-8}
 SRUN_ARGS=${SRUN_ARGS:-""}
 
 srun -p ${PARTITION} \
