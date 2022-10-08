@@ -1,6 +1,8 @@
 import os
 import argparse
 from pathlib import Path
+
+import utils
 from main import get_args_parser, main as eval_main
 
 BASE_DIR = '/mnt/petrelfs/share_data/shimin/share_checkpoint'
@@ -21,7 +23,7 @@ def get_scale(name):
     return None
 
 
-def test(model_type, ckpt_path):
+def test(model_type, ckpt_path, init_dist):
     parser = argparse.ArgumentParser('training and evaluation script', parents=[get_args_parser()])
     args = parser.parse_args()
     if args.output_dir:
@@ -29,6 +31,10 @@ def test(model_type, ckpt_path):
 
     args.model = model_type
     args.resume = ckpt_path
+
+    if init_dist:
+        utils.init_distributed_mode(args)
+
     acc = eval_main(args)
 
     return acc
@@ -36,6 +42,7 @@ def test(model_type, ckpt_path):
 
 def main():
     res = {}
+    init_dist = True
     for model_type in os.listdir(BASE_DIR):
         if model_type not in MODEL_TYPE_DICT:
             continue
@@ -51,8 +58,9 @@ def main():
                 continue
 
             model_type = f'{model_type}_{model_scale}'
-            res[model_type] = test(model_type, ckpt_path)
-            res[f'{model_type}_ema'] = test(model_type, ckpt_ema_path)
+            res[model_type] = test(model_type, ckpt_path, init_dist)
+            init_dist = False
+            res[f'{model_type}_ema'] = test(model_type, ckpt_ema_path, init_dist)
 
     for key, value in res.items():
         print(f'{key}: {value}')
