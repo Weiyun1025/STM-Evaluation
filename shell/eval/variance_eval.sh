@@ -15,7 +15,7 @@ CKPT="/mnt/petrelfs/share_data/shimin/share_checkpoint/swin/swin_tiny/checkpoint
 #CKPT="/mnt/petrelfs/share_data/shimin/share_checkpoint/convnext/convnext_tiny/checkpoint-best-ema.pth"
 
 DESC="eval" 
-JITTER=48
+JITTER=32
 
 # key hyperparameters
 TOTAL_BATCH_SIZE="1024"
