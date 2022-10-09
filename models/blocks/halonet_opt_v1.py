@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from timm.models.layers import DropPath, Mlp
+from timm.models.layers.halo_attn import rel_logits_1d
 
 
 def make_divisible(v, divisor=8, min_value=None, round_limit=.9):
@@ -13,7 +14,7 @@ def make_divisible(v, divisor=8, min_value=None, round_limit=.9):
     return new_v
 
 
-class RelPosEmbedRel(nn.Module):
+class QueryFreePosEmbedRel(nn.Module):
 
     def __init__(self, block_size, win_size, num_heads) -> None:
         super().__init__()
@@ -68,8 +69,51 @@ class RelPosEmbedRel(nn.Module):
                                                   win_h * win_w)
         return relative_coords.contiguous()
 
-    def forward(self, ):
+    def forward(self, _):
+        # 1, 4, 1, 49, 169
+        # 1, num_heads, 1, block_size ** 2, win_size ** 2
         return self._get_rel_pos_bias()
+
+
+class QueryRelatedPosEmbedRel(nn.Module):
+    """ Relative Position Embedding
+    As per: https://gist.github.com/aravindsrinivas/56359b79f0ce4449bcb04ab4b56a57a2
+    Originally from: `Attention Augmented Convolutional Networks` - https://arxiv.org/abs/1904.09925
+
+    """
+
+    def __init__(self, block_size, win_size, dim_head, scale):
+        """
+        Args:
+            block_size (int): block size
+            win_size (int): neighbourhood window size
+            dim_head (int): attention head dim
+            scale (float): scale factor (for init)
+        """
+        super().__init__()
+        self.block_size = block_size
+        self.dim_head = dim_head
+        self.height_rel = nn.Parameter(torch.randn(win_size * 2 - 1, dim_head) * scale)
+        self.width_rel = nn.Parameter(torch.randn(win_size * 2 - 1, dim_head) * scale)
+
+    def forward(self, q):
+        B, NH, BB, HW, C = q.shape
+
+        q = q.flatten(0, 1)
+        B = B * NH
+
+        # relative logits in width dimension.
+        q = q.reshape(-1, self.block_size, self.block_size, self.dim_head)
+        rel_logits_w = rel_logits_1d(q, self.width_rel, permute_mask=(0, 1, 3, 2, 4))
+
+        # relative logits in height dimension.
+        q = q.transpose(1, 2)
+        rel_logits_h = rel_logits_1d(q, self.height_rel, permute_mask=(0, 3, 1, 4, 2))
+
+        rel_logits = rel_logits_h + rel_logits_w
+        rel_logits = rel_logits.reshape(B, BB, HW, -1)
+        # bsz, num_heads, num_blocks ** 2, block_size ** 2, win_size ** 2
+        return rel_logits.reshape(B // NH, NH, BB, HW, -1)
 
 
 class HaloAttn(nn.Module):
@@ -113,6 +157,7 @@ class HaloAttn(nn.Module):
                  qk_ratio=1.0,
                  qkv_bias=False,
                  avg_down=False,
+                 pos_embed_type='query_free',
                  scale_pos_embed=False):
         super().__init__()
         dim_out = dim_out or dim
@@ -141,9 +186,17 @@ class HaloAttn(nn.Module):
                             bias=qkv_bias)
         self.q = nn.Linear(dim, self.dim_out_qk, bias=qkv_bias)
 
-        self.pos_embed = RelPosEmbedRel(block_size=self.block_size_ds,
-                                        win_size=self.win_size,
-                                        num_heads=num_heads)
+        if pos_embed_type == 'query_free':
+            self.pos_embed = QueryFreePosEmbedRel(block_size=self.block_size_ds,
+                                                  win_size=self.win_size,
+                                                  num_heads=num_heads)
+        elif pos_embed_type == 'query_related':
+            self.pos_embed = QueryRelatedPosEmbedRel(block_size=self.block_size,
+                                                     win_size=self.win_size,
+                                                     dim_head=self.dim_head_qk,
+                                                     scale=self.scale)
+        else:
+            raise NotImplementedError(pos_embed_type)
 
         self.pool = nn.AvgPool2d(2, 2) if use_avg_pool else nn.Identity()
         self.proj = nn.Linear(self.dim_out_v, self.dim_out_v)
@@ -196,7 +249,7 @@ class HaloAttn(nn.Module):
         if self.scale_pos_embed:
             attn = (q @ k.transpose(-1, -2) + self.pos_embed()) * self.scale
         else:
-            attn = (q * self.scale) @ k.transpose(-1, -2) + self.pos_embed()
+            attn = (q * self.scale) @ k.transpose(-1, -2) + self.pos_embed(q)
 
         max_neg_value = -torch.finfo(attn.dtype).max
         attn.masked_fill_(self.get_mask(H, W, attn.device), max_neg_value)
@@ -252,6 +305,7 @@ class HaloBlockV2(nn.Module):
                  mlp_ratio=4.,
                  drop=0.,
                  act_layer=nn.GELU,
+                 pos_embed_type='query_free',
                  **kwargs):
         super().__init__()
         self.dim = dim
@@ -262,7 +316,8 @@ class HaloBlockV2(nn.Module):
                              dim_out=dim,
                              num_heads=num_heads[stage],
                              block_size=block_size,
-                             halo_size=halo_size)
+                             halo_size=halo_size,
+                             pos_embed_type=pos_embed_type)
 
         self.gamma_1 = nn.Parameter(
             layer_scale_init_value * torch.ones((1, 1, 1, dim)),
