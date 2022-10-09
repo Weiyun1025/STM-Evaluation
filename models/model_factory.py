@@ -5,7 +5,7 @@ from .blocks.swin import SwinBlock
 from .blocks.dcn_v3 import DCNv3Block
 from .blocks.pvt import PvtBlock
 from .blocks.pvt_v2 import PvtV2Block
-from .blocks import halonet_github, halonet_timm, halonet_timm_with_mask, halonet
+from .blocks import halonet_github, halonet_timm
 from .blocks import halonet_opt_v1
 
 
