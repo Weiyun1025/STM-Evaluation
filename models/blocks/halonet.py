@@ -137,8 +137,9 @@ class HaloAttn(nn.Module):
 
         attn = ((q * self.scale) @ k.transpose(-1, -2)) + self.pos_embed(q)
 
-        max_neg_value = -torch.finfo(attn.dtype).max
-        attn.masked_fill_(self.get_mask(H, W, attn.device), max_neg_value)
+        # max_neg_value = -torch.finfo(attn.dtype).max
+        # attn.masked_fill_(self.get_mask(H, W, attn.device), max_neg_value)
+        attn = attn - self.get_mask_v2(H, W, attn.device)
 
         # B * num_heads, num_blocks, block_size ** 2, win_size ** 2
         attn = attn.softmax(dim=-1)
@@ -173,6 +174,28 @@ class HaloAttn(nn.Module):
         self.H = H
         self.W = W
         self.mask = ~mask
+        return self.mask
+
+    def get_mask_v2(self, H, W, device):
+        if self.H == H and self.W == W and self.mask is not None:
+            return self.mask
+
+        num_h_blocks = H // self.block_size
+        num_w_blocks = W // self.block_size
+        num_blocks = num_h_blocks * num_w_blocks
+
+        mask = torch.zeros((1, 1, H, W), device=device)
+        mask = F.pad(mask, [self.halo_size, self.halo_size, self.halo_size, self.halo_size],
+                     value=torch.inf)
+        mask = mask.unfold(2, self.win_size, self.block_size)
+        mask = mask.unfold(3, self.win_size, self.block_size)
+        mask = mask.reshape(1, num_blocks, self.win_size * self.win_size)
+        mask = mask.unsqueeze(-2)
+        # 1, num_blocks, 1, win_size * win_size
+
+        self.H = H
+        self.W = W
+        self.mask = mask
         return self.mask
 
 
