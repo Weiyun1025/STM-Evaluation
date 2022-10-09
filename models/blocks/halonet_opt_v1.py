@@ -178,8 +178,6 @@ class HaloAttn(nn.Module):
                 self.halo_size,
                 self.halo_size,
             ],
-            mode='constant',
-            value=-torch.inf,
         )
         kv = kv.unfold(2, self.win_size, self.block_size).unfold(
             3, self.win_size,
