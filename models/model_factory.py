@@ -6,7 +6,7 @@ from .blocks.dcn_v3 import DCNv3Block
 from .blocks.pvt import PvtBlock
 from .blocks.pvt_v2 import PvtV2Block
 from .blocks import halonet_github, halonet_timm
-from .blocks import halonet_opt_v1
+from .blocks import halonet_opt_v1, halo_opt_abs_pe
 
 
 @ register_model
@@ -906,6 +906,52 @@ def conv_halo_opt_v2_base(pretrained=False, **kwargs):
                                        block_size=block_size,
                                        halo_size=halo_size,
                                        pos_embed_type='query_related'),
+                     #  downsample_type=nn.Identity,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+@register_model
+def conv_halo_opt_v1_tiny(pretrained=False, **kwargs):
+    dims = [96 * 2 ** i for i in range(4)]
+    depths = [2, 2, 6, 2]
+    num_heads = [3, 6, 12, 24]
+    block_size = 7
+    halo_size = 3
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     block_type=halonet_opt_v1.HaloBlockV2,
+                     block_kwargs=dict(num_heads=num_heads,
+                                       block_size=block_size,
+                                       halo_size=halo_size),
+                     #  downsample_type=nn.Identity,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+@register_model
+def conv_halo_opt_abs_pe_tiny(pretrained=False, **kwargs):
+    dims = [96 * 2 ** i for i in range(4)]
+    depths = [2, 2, 6, 2]
+    num_heads = [3, 6, 12, 24]
+    block_size = 7
+    halo_size = 3
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     block_type=halo_opt_abs_pe.HaloBlockV2,
+                     block_kwargs=dict(num_heads=num_heads,
+                                       block_size=block_size,
+                                       halo_size=halo_size),
                      #  downsample_type=nn.Identity,
                      **kwargs)
 

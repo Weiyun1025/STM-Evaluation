@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from timm.models.layers import DropPath, Mlp
-from timm.models.layers.halo_attn import rel_logits_1d
+import math
 
 
 def make_divisible(v, divisor=8, min_value=None, round_limit=.9):
@@ -12,108 +12,6 @@ def make_divisible(v, divisor=8, min_value=None, round_limit=.9):
     if new_v < round_limit * v:
         new_v += divisor
     return new_v
-
-
-class QueryFreePosEmbedRel(nn.Module):
-
-    def __init__(self, block_size, win_size, num_heads) -> None:
-        super().__init__()
-        self.block_size = block_size
-        self.win_size = win_size
-        self.num_heads = num_heads
-        self.relative_position_bias_table = nn.Parameter(
-            torch.zeros((2 * win_size - 1) * (2 * win_size - 1), num_heads))
-        self.register_buffer(
-            "relative_position_index",
-            self._get_relative_position_index(win_size, win_size, block_size,
-                                              block_size))
-
-    def _get_rel_pos_bias(self) -> torch.Tensor:
-        relative_position_bias = self.relative_position_bias_table[
-            self.relative_position_index.view(-1)].view(
-                self.block_size**2, self.win_size * self.win_size,
-                -1)  # Wh*Ww,Wh*Ww,nH
-        relative_position_bias = relative_position_bias.permute(
-            2, 0, 1).contiguous()  # nH, Wh*Ww, Wh*Ww
-        return relative_position_bias.unsqueeze(0).unsqueeze(2)
-
-    def _get_relative_position_index(self, win_h, win_w, block_h, block_w):
-        # get pair-wise relative position index for each token inside the window
-        '''
-        coords = torch.stack(
-            torch.meshgrid(
-                [torch.arange(win_h), torch.arange(win_w)],
-                indexing='ij'))  # 2, Wh, Ww
-        '''
-        
-        # shimin: for lower version torch, "indexing" arugment is not supported
-        coords = torch.stack(
-            torch.meshgrid(
-                [torch.arange(win_h), torch.arange(win_w)]))  # 2, Wh, Ww
-
-        coords_flatten = torch.flatten(coords, 1)  # 2, Wh*Ww
-        relative_coords = coords_flatten[:, :,
-                                         None] - coords_flatten[:,
-                                                                None, :]  # 2, Wh*Ww, Wh*Ww
-        relative_coords = relative_coords.permute(
-            1, 2, 0).contiguous()  # Wh*Ww, Wh*Ww, 2
-        relative_coords[:, :, 0] += win_h - 1  # shift to start from 0
-        relative_coords[:, :, 1] += win_w - 1
-        relative_coords[:, :, 0] *= 2 * win_w - 1
-        relative_coords = relative_coords.sum(-1)  # Wh*Ww, Wh*Ww
-        _sh, _sw = (win_h - block_h) // 2, (win_w - block_w) // 2
-        relative_coords = relative_coords.reshape(win_h, win_w, win_h, win_w)
-        relative_coords = relative_coords[_sh:_sh + block_h,
-                                          _sw:_sw + block_w, :, 0:win_w]
-        relative_coords = relative_coords.reshape(block_h * block_w,
-                                                  win_h * win_w)
-        return relative_coords.contiguous()
-
-    def forward(self, _):
-        # 1, 4, 1, 49, 169
-        # 1, num_heads, 1, block_size ** 2, win_size ** 2
-        return self._get_rel_pos_bias()
-
-
-class QueryRelatedPosEmbedRel(nn.Module):
-    """ Relative Position Embedding
-    As per: https://gist.github.com/aravindsrinivas/56359b79f0ce4449bcb04ab4b56a57a2
-    Originally from: `Attention Augmented Convolutional Networks` - https://arxiv.org/abs/1904.09925
-
-    """
-
-    def __init__(self, block_size, win_size, dim_head, scale):
-        """
-        Args:
-            block_size (int): block size
-            win_size (int): neighbourhood window size
-            dim_head (int): attention head dim
-            scale (float): scale factor (for init)
-        """
-        super().__init__()
-        self.block_size = block_size
-        self.dim_head = dim_head
-        self.height_rel = nn.Parameter(torch.randn(win_size * 2 - 1, dim_head) * scale)
-        self.width_rel = nn.Parameter(torch.randn(win_size * 2 - 1, dim_head) * scale)
-
-    def forward(self, q):
-        B, NH, BB, HW, C = q.shape
-
-        q = q.flatten(0, 1)
-        B = B * NH
-
-        # relative logits in width dimension.
-        q = q.reshape(-1, self.block_size, self.block_size, self.dim_head)
-        rel_logits_w = rel_logits_1d(q, self.width_rel, permute_mask=(0, 1, 3, 2, 4))
-
-        # relative logits in height dimension.
-        q = q.transpose(1, 2)
-        rel_logits_h = rel_logits_1d(q, self.height_rel, permute_mask=(0, 3, 1, 4, 2))
-
-        rel_logits = rel_logits_h + rel_logits_w
-        rel_logits = rel_logits.reshape(B, BB, HW, -1)
-        # bsz, num_heads, num_blocks ** 2, block_size ** 2, win_size ** 2
-        return rel_logits.reshape(B // NH, NH, BB, HW, -1)
 
 
 class HaloAttn(nn.Module):
@@ -157,7 +55,6 @@ class HaloAttn(nn.Module):
                  qk_ratio=1.0,
                  qkv_bias=False,
                  avg_down=False,
-                 pos_embed_type='query_free',
                  scale_pos_embed=False):
         super().__init__()
         dim_out = dim_out or dim
@@ -174,35 +71,79 @@ class HaloAttn(nn.Module):
         self.block_size = self.block_size_ds = block_size
         self.halo_size = halo_size
         self.win_size = block_size + halo_size * 2  # neighbourhood window size
+
+        # pre-calculate the block area
+        self.q_win_s = self.block_size ** 2
+        self.kv_win_s = self.win_size ** 2
+
         self.block_stride = 1
         use_avg_pool = False
 
         # FIXME not clear if this stride behaviour is what the paper intended
         # Also, the paper mentions using a 3D conv for dealing with the blocking/gather, and leaving
         # data in unfolded block form. I haven't wrapped my head around how that'd look.
-        self.kv = nn.Conv2d(dim,
-                            self.dim_out_qk + self.dim_out_v,
-                            1,
-                            bias=qkv_bias)
+        # self.kv = nn.Conv2d(dim,
+        #                     self.dim_out_qk + self.dim_out_v,
+        #                     1,
+        #                     bias=qkv_bias)
         self.q = nn.Linear(dim, self.dim_out_qk, bias=qkv_bias)
+        self.k = nn.Linear(dim, self.dim_out_qk, bias=qkv_bias)
+        self.v = nn.Linear(dim, self.dim_out_v, bias=qkv_bias)
 
-        if pos_embed_type == 'query_free':
-            self.pos_embed = QueryFreePosEmbedRel(block_size=self.block_size_ds,
-                                                  win_size=self.win_size,
-                                                  num_heads=num_heads)
-        elif pos_embed_type == 'query_related':
-            self.pos_embed = QueryRelatedPosEmbedRel(block_size=self.block_size,
-                                                     win_size=self.win_size,
-                                                     dim_head=self.dim_head_qk,
-                                                     scale=self.scale)
-        else:
-            raise NotImplementedError(pos_embed_type)
+
+        # generate absolute position embedding from DETR
+        q_pos, k_pos = self.get_abs_pos_embed(self.win_size, self.halo_size, dim=dim//2)
+        self.q_pos = nn.Parameter(q_pos)
+        self.k_pos = nn.Parameter(k_pos)
+        self.q_pos.requires_grad = False
+        self.k_pos.requires_grad = False
+        #----------------------------------------------------------------
 
         self.pool = nn.AvgPool2d(2, 2) if use_avg_pool else nn.Identity()
         self.proj = nn.Linear(self.dim_out_v, self.dim_out_v)
 
         self.H, self.W = None, None
         self.mask = None
+
+    
+    def get_abs_pos_embed(self,
+                          win_size,
+                          halo_size,
+                          dim,
+                          temperature=10000,
+                          normalize=True,
+                          scale=2 * math.pi,
+                          eps=1e-6,
+                          offset=0.,):
+
+        mask = torch.ones((win_size, win_size), dtype=torch.long)
+        y_embed = mask.cumsum(0, dtype=torch.float32) # [h, w], recording the y coordinate ot each pixel
+        x_embed = mask.cumsum(1, dtype=torch.float32)
+        if normalize: # default True
+            y_embed = (y_embed + offset) / \
+                      (y_embed[-1:, :] + eps) * scale
+            x_embed = (x_embed + offset) / \
+                      (x_embed[:, -1:] + eps) * scale
+
+        dim_t = torch.arange(dim, dtype=torch.float32, device=mask.device)
+        dim_t = temperature**(2 * (dim_t // 2) / dim)
+        pos_x = x_embed[:, :, None] / dim_t   # [h, w, num_feats]
+        pos_y = y_embed[:, :, None] / dim_t
+
+        # use `view` instead of `flatten` for dynamically exporting to ONNX
+        H, W = mask.size()
+        pos_x = torch.stack(
+            (pos_x[:, :, 0::2].sin(), pos_x[:, :, 1::2].cos()),
+            dim=3).view(H, W, -1) # [h, w, num_feats]
+        pos_y = torch.stack(
+            (pos_y[:, :, 0::2].sin(), pos_y[:, :, 1::2].cos()),
+            dim=3).view(H, W, -1) 
+        pos = torch.cat((pos_y, pos_x), dim=2).permute(2, 0, 1) # [2 * num_feats, win_size, win_size]
+
+        q_pos = pos[:, halo_size:-halo_size, halo_size:-halo_size]
+        k_pos = pos
+    
+        return q_pos.flatten(1,2).transpose(0, 1), k_pos.flatten(1,2).transpose(0,1) # []
 
     def forward(self, x):
         B, H, W, C = x.shape
@@ -212,19 +153,18 @@ class HaloAttn(nn.Module):
         num_w_blocks = W // self.block_size
         num_blocks = num_h_blocks * num_w_blocks
 
-        q = self.q(x)
+        #q = self.q(x)
         # unfold
-        q = q.reshape(-1, num_h_blocks, self.block_size_ds, num_w_blocks,
-                      self.block_size_ds, self.num_heads,
-                      self.dim_head_qk).permute(0, 5, 1, 3, 2, 4, 6)
-        # B, num_heads, num_h_blocks, num_w_blocks, block_size_ds, block_size_ds, dim_head_qk
-        q = q.reshape(-1, self.num_heads, num_blocks, self.block_size**2,
-                      self.dim_head_qk)
-        # B, num_heads, num_blocks, block_size ** 2, dim_head
+        q = x.reshape(-1, num_h_blocks, self.block_size_ds, num_w_blocks,
+                      self.block_size_ds, self.dim_out_qk).permute(0, 1, 3, 2, 4, 5) # [bs, h, w, wh, ww, dim]
+        q = q.reshape(B, num_blocks, self.q_win_s, self.dim_out_qk) # [bs, num_blocks, win_s, dim]
+        q = self.q(q + self.q_pos[None, None, :, :]) # [bs, num_blocks, win_s, dim]
+        q = q.reshape(B, num_blocks, self.q_win_s, self.num_heads, -1).permute(0, 3, 1, 2, 4) # [bs, num_heads, num_blocks, win_s, head_dim]
 
-        kv = self.kv(x.permute(0, 3, 1, 2))
+
+        #kv = self.kv(x.permute(0, 3, 1, 2))
         kv = F.pad(
-            kv,
+            x.permute(0, 3, 1, 2),
             [
                 self.halo_size,
                 self.halo_size,
@@ -234,22 +174,16 @@ class HaloAttn(nn.Module):
         )
         kv = kv.unfold(2, self.win_size, self.block_size).unfold(
             3, self.win_size,
-            self.block_size).reshape(-1, self.num_heads,
-                                     self.dim_head_qk + self.dim_head_v,
+            self.block_size).reshape(-1, 
+                                     self.dim_out_qk,
                                      num_blocks,
-                                     self.win_size**2).permute(0, 1, 3, 4, 2)
-        k, v = torch.split(kv, [self.dim_head_qk, self.dim_head_v], dim=-1)
-        k = k.reshape(-1, self.num_heads, num_blocks, self.win_size,
-                      self.win_size, self.dim_head_qk)
-        v = v.reshape(-1, self.num_heads, num_blocks, self.win_size,
-                      self.win_size, self.dim_head_v)
-        k = k.flatten(3, 4)
-        v = v.flatten(3, 4)
+                                     self.kv_win_s).permute(0, 2, 3, 1) # [bs, num_b, win_s, dim]
+        k = self.k(kv + self.k_pos[None, None, :, :])
+        v = self.v(kv)
+        k = k.reshape(B, num_blocks, self.kv_win_s, self.num_heads, -1).permute(0, 3, 1, 2, 4) # [bs, num_heads, num_blocks, win_s, head_dim]
+        v = v.reshape(B, num_blocks, self.kv_win_s, self.num_heads, -1).permute(0, 3, 1, 2, 4) 
 
-        if self.scale_pos_embed:
-            attn = (q @ k.transpose(-1, -2) + self.pos_embed()) * self.scale
-        else:
-            attn = (q * self.scale) @ k.transpose(-1, -2) + self.pos_embed(q)
+        attn = (q * self.scale) @ k.transpose(-1, -2)
 
         max_neg_value = -torch.finfo(attn.dtype).max
         attn.masked_fill_(self.get_mask(H, W, attn.device), max_neg_value)
@@ -305,7 +239,6 @@ class HaloBlockV2(nn.Module):
                  mlp_ratio=4.,
                  drop=0.,
                  act_layer=nn.GELU,
-                 pos_embed_type='query_free',
                  **kwargs):
         super().__init__()
         self.dim = dim
@@ -316,8 +249,7 @@ class HaloBlockV2(nn.Module):
                              dim_out=dim,
                              num_heads=num_heads[stage],
                              block_size=block_size,
-                             halo_size=halo_size,
-                             pos_embed_type=pos_embed_type)
+                             halo_size=halo_size)
 
         self.gamma_1 = nn.Parameter(
             layer_scale_init_value * torch.ones((1, 1, 1, dim)),
