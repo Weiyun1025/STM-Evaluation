@@ -179,7 +179,8 @@ class MetaArch(nn.Module):
                   for j in range(depth)]
             )
             self.stages.append(stage)
-            self.stage_norms.append(norm_layer(dim) if norm_every_stage else nn.Identity())
+            # self.stage_norms.append(norm_layer(dim) if norm_every_stage else nn.Identity())
+            self.stage_norms.append(nn.LayerNorm(dim) if norm_every_stage else nn.Identity())
             cur += depths[i]
         self.stage_end_norm = nn.Identity() if norm_every_stage or norm_after_avg else norm_layer(dims[-1])
 
@@ -229,9 +230,15 @@ class MetaArch(nn.Module):
         for i in range(4):
             # x = x.to(memory_format=torch.channels_last)
             x = self.downsample_layers[i](x)
+
+            x = x.permute(0, 2, 3, 1)
+
             x = self.stages[i](x if not deform else (x, deform_inputs[i]))
             x = x[0] if deform else x
             x = self.stage_norms[i](x)
+
+            x = x.permute(0, 3, 1, 2)
+
         x = self.stage_end_norm(x)
 
         x = self.conv_head(x)

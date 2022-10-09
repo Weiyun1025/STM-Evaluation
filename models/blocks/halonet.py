@@ -103,7 +103,9 @@ class HaloAttn(nn.Module):
         trunc_normal_(self.pos_embed.width_rel, std=self.scale)
 
     def forward(self, x):
-        B, C, H, W = x.shape
+        B, H, W, C = x.shape
+        x = x.permute(0, 3, 1, 2)
+
         _assert(H % self.block_size == 0, '')
         _assert(W % self.block_size == 0, '')
         num_h_blocks = H // self.block_size
@@ -150,7 +152,7 @@ class HaloAttn(nn.Module):
             B, self.dim_out_v, H // self.block_stride, W // self.block_stride)
         # B, dim_out, H // block_stride, W // block_stride
         out = self.to_out(out)
-        return out
+        return out.permute(0, 2, 3, 1)
 
     def get_mask(self, H, W, device):
         if self.H == H and self.W == W and self.mask is not None:
@@ -210,7 +212,7 @@ class HaloBlockV2(nn.Module):
                  mlp_ratio=4.,
                  drop=0.,
                  act_layer=nn.GELU,
-                 norm_layer=LayerNorm2d,
+                 norm_layer=nn.LayerNorm,
                  **kwargs):
         super().__init__()
         self.dim = dim
@@ -223,7 +225,7 @@ class HaloBlockV2(nn.Module):
                              block_size=block_size,
                              halo_size=halo_size)
 
-        self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((1, dim, 1, 1)),
+        self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((1, 1, 1, dim)),
                                     requires_grad=True) if layer_scale_init_value > 0 else None
 
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
@@ -237,7 +239,7 @@ class HaloBlockV2(nn.Module):
                                     requires_grad=True) if layer_scale_init_value > 0 else None
 
     def forward(self, x):
-        # shape: B, C, H, W
+        # shape: B, H, W, C
         shortcut = x
         x = self.attn(self.norm1(x))
 
@@ -248,12 +250,11 @@ class HaloBlockV2(nn.Module):
 
         # FFN
         shortcut = x
-        x = self.mlp(self.norm2(x).permute(0, 2, 3, 1))
+        x = self.mlp(self.norm2(x))
 
         if self.gamma_2 is not None:
             x = self.gamma_2 * x
 
-        x = x.permute(0, 3, 1, 2)
         x = shortcut + self.drop_path(x)
 
         return x
