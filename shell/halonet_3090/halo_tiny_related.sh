@@ -59,4 +59,4 @@ torchrun \
     --project 'model evaluation' \
     --name ${PROJECT_NAME} \
     --output_dir "backbone_outputdir/${PROJECT_NAME}" \
-    1>"logs/${PROJECT_NAME}.out" 2>"log/${PROJECT_NAME}.err"
+    1>"logs/${PROJECT_NAME}.out" 2>"logs/${PROJECT_NAME}.err"
