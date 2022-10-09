@@ -9,6 +9,7 @@
 import sys
 import argparse
 from pathlib import Path
+from xml.sax import default_parser_list
 
 import torch
 import numpy as np
@@ -22,7 +23,7 @@ from engine import evaluate_invariance, VarianceCollateFN
 import utils
 import models
 from main import str2bool
-from tools.variance_transforms import standard_transform, position_jitter_transform
+from tools.variance_transforms import standard_transform, position_jitter_transform, rotate_transform
 
 
 def get_args_parser():
@@ -49,7 +50,9 @@ def get_args_parser():
                         help='loading training data to memory')
     parser.add_argument('--nb_classes', default=1000, type=int,
                         help='number of the classification types')
+    parser.add_argument('--variance_type', default="translation", choices=['translation', 'rotation'])
     parser.add_argument('--jitter_strength', default=0, type=int)
+    parser.add_argument('--rotation_angle', default=0, type=int)
 
     parser.add_argument('--imagenet_default_mean_and_std', type=str2bool, default=True)
     parser.add_argument('--data_set', default='IMNET1k',
@@ -131,11 +134,20 @@ def main(args):
 
     transform = standard_transform(img_size=args.input_size,
                                    crop_ratio=args.crop_pct)
-    variance_transforms = {
-        'position jitter': position_jitter_transform(img_size=args.input_size,
-                                                     crop_ratio=args.crop_pct,
-                                                     jitter_strength=args.jitter_strength)
-    }
+
+    if args.variance_type == 'translation':
+        variance_transforms = {
+            'position jitter': position_jitter_transform(img_size=args.input_size,
+                                                        crop_ratio=args.crop_pct,
+                                                        jitter_strength=args.jitter_strength)
+        }
+    elif args.variance_type == 'rotation':
+        variance_transforms = {
+            'rotation': rotate_transform(img_size=args.input_size,
+                                                crop_ratio=args.crop_pct,
+                                                angle=args.rotation_angle)
+        }
+
     collate_fn = VarianceCollateFN(standard_transform=transform,
                                    variance_transforms=variance_transforms)
 
