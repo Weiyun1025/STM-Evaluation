@@ -5,17 +5,17 @@ mkdir logs
 
 PARTITION=VC
 
-MODEL="conv_halo_v2_timm_tiny" 
-CKPT="/mnt/petrelfs/share_data/shimin/share_checkpoint/halonet/halonet_v2_tiny/checkpoint-best.pth"
+#MODEL="conv_halo_v2_timm_tiny" 
+#CKPT="/mnt/petrelfs/share_data/shimin/share_checkpoint/halonet/halonet_v2_tiny/checkpoint-best.pth"
 
-#MODEL="conv_swin_tiny" 
-#CKPT="/mnt/petrelfs/share_data/shimin/share_checkpoint/swin/swin_tiny/checkpoint-best.pth"
+MODEL="conv_swin_tiny" 
+CKPT="/mnt/petrelfs/share_data/shimin/share_checkpoint/swin/swin_tiny/checkpoint-best.pth"
 
 #MODEL="conv_convnext_v2_tiny" 
 #CKPT="/mnt/petrelfs/share_data/shimin/share_checkpoint/convnext/convnext_tiny/checkpoint-best-ema.pth"
 
 DESC="eval" 
-ROTATION_ANGLE=90
+ROTATION_ANGLE=45
 
 # key hyperparameters
 TOTAL_BATCH_SIZE="1024"
