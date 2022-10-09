@@ -769,7 +769,7 @@ def conv_halo_v2_micro(pretrained=False, **kwargs):
 
 
 @register_model
-def conv_halo_v2_tiny(pretrained=False, **kwargs):
+def conv_halo_v2_free_tiny(pretrained=False, **kwargs):
     dims = [96 * 2 ** i for i in range(4)]
     depths = [2, 2, 6, 2]
     num_heads = [3, 6, 12, 24]
@@ -779,10 +779,36 @@ def conv_halo_v2_tiny(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
                      depths=depths,
                      dims=dims,
-                     block_type=halonet.HaloBlockV2,
+                     block_type=halonet_opt_v1.HaloBlockV2,
                      block_kwargs=dict(num_heads=num_heads,
                                        block_size=block_size,
-                                       halo_size=halo_size),
+                                       halo_size=halo_size,
+                                       pos_embed_type='query_free'),
+                     #  downsample_type=nn.Identity,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@register_model
+def conv_halo_v2_related_tiny(pretrained=False, **kwargs):
+    dims = [96 * 2 ** i for i in range(4)]
+    depths = [2, 2, 6, 2]
+    num_heads = [3, 6, 12, 24]
+    block_size = 7
+    halo_size = 3
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     block_type=halonet_opt_v1.HaloBlockV2,
+                     block_kwargs=dict(num_heads=num_heads,
+                                       block_size=block_size,
+                                       halo_size=halo_size,
+                                       pos_embed_type='query_related'),
                      #  downsample_type=nn.Identity,
                      **kwargs)
 
