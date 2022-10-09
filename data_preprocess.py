@@ -11,12 +11,13 @@ def parse(base_dir):
         for idx, label in enumerate(os.listdir(dirname)):
             image_dir = os.path.join(dirname, label)
             for image in os.listdir(image_dir):
-                meta.append(f'{os.path.join(label, image)}\t{idx}\n')
+                meta.append(f'{os.path.join(label, image)} {idx}\n')
 
             num_labels = idx
 
         meta_path = os.path.join(base_dir, 'meta', f'{dirname}.txt')
         os.makedirs(os.path.dirname(meta_path), exist_ok=True)
+        print(meta_path)
         with open(meta_path, 'w', encoding='utf-8') as file:
             file.writelines(meta)
 
@@ -27,7 +28,7 @@ def parse(base_dir):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--base_dir', type=str, default='/dev/ImageNet')
+    parser.add_argument('--base_dir', type=str, default='/root/ImageNet')
     args = parser.parse_args()
 
     parse(args.base_dir)

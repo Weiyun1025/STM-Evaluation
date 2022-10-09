@@ -50,7 +50,7 @@ torchrun \
     --color_jitter 0.4 \
     --crop_pct 0.875 \
     --data_set IMNET1k \
-    --data_path /mnt/cache/share/images/ \
+    --data_path /root/ImageNet \
     --data_on_memory false \
     --nb_classes 1000 \
     --use_amp true \
