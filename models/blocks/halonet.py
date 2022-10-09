@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 from torch import nn
-from timm.models.layers import DropPath, Mlp, make_divisible
+from timm.models.layers import DropPath, Mlp, make_divisible, LayerNorm2d
 from timm.models.layers.halo_attn import PosEmbedRel, trunc_normal_, _assert
 
 
@@ -188,7 +188,7 @@ class HaloBlockV2(nn.Module):
                  mlp_ratio=4.,
                  drop=0.,
                  act_layer=nn.GELU,
-                 norm_layer=LayerNorm,
+                 norm_layer=LayerNorm2d,
                  **kwargs):
         super().__init__()
         self.dim = dim
