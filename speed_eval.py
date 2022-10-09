@@ -39,7 +39,7 @@ def benchmark_qps(model, data, backward=False, num_warm=10, num_iter=100):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_type', type=str, default='conv_halo_v2_base')
+    parser.add_argument('--model_type', type=str, default='conv_halo_opt_v1_tiny')
     parser.add_argument('--backward', action='store_true', default=False)
     args = parser.parse_args()
 
