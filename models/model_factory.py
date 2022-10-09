@@ -819,6 +819,30 @@ def conv_halo_v2_related_tiny(pretrained=False, **kwargs):
 
 
 @register_model
+def conv_halo_v2_abs_tiny(pretrained=False, **kwargs):
+    dims = [96 * 2 ** i for i in range(4)]
+    depths = [2, 2, 6, 2]
+    num_heads = [3, 6, 12, 24]
+    block_size = 7
+    halo_size = 3
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     block_type=halo_opt_abs_pe.HaloBlockV2,
+                     block_kwargs=dict(num_heads=num_heads,
+                                       block_size=block_size,
+                                       halo_size=halo_size),
+                     #  downsample_type=nn.Identity,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@register_model
 def conv_halo_v2_small(pretrained=False, **kwargs):
     dims = [96 * 2 ** i for i in range(4)]
     depths = [2, 2, 18, 2]
@@ -914,34 +938,12 @@ def conv_halo_opt_v2_base(pretrained=False, **kwargs):
 
     return model
 
-@register_model
-def conv_halo_opt_v1_tiny(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [2, 2, 6, 2]
-    num_heads = [3, 6, 12, 24]
-    block_size = 7
-    halo_size = 3
-
-    model = MetaArch(img_size=224,
-                     depths=depths,
-                     dims=dims,
-                     block_type=halonet_opt_v1.HaloBlockV2,
-                     block_kwargs=dict(num_heads=num_heads,
-                                       block_size=block_size,
-                                       halo_size=halo_size),
-                     #  downsample_type=nn.Identity,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
 
 @register_model
-def conv_halo_opt_abs_pe_tiny(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [2, 2, 6, 2]
-    num_heads = [3, 6, 12, 24]
+def conv_halo_opt_v3_base(pretrained=False, **kwargs):
+    dims = [128 * 2 ** i for i in range(4)]
+    depths = [2, 2, 18, 2]
+    num_heads = [4, 8, 16, 32]
     block_size = 7
     halo_size = 3
 
