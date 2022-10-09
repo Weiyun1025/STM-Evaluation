@@ -1,8 +1,39 @@
 import torch
 import torch.nn.functional as F
 from torch import nn
-from timm.models.layers import DropPath, LayerNorm2d, Mlp, make_divisible
+from timm.models.layers import DropPath, Mlp, make_divisible
 from timm.models.layers.halo_attn import PosEmbedRel, trunc_normal_, _assert
+
+
+class LayerNorm(nn.Module):
+    r""" LayerNorm that supports two data formats: channels_last (default) or channels_first. 
+    The ordering of the dimensions in the inputs. channels_last corresponds to inputs with 
+    shape (batch_size, height, width, channels) while channels_first corresponds to inputs 
+    with shape (batch_size, channels, height, width).
+    """
+
+    def __init__(self, normalized_shape, eps=1e-6, data_format="channels_first"):
+        super().__init__()
+        self.weight = nn.Parameter(torch.ones(normalized_shape))
+        self.bias = nn.Parameter(torch.zeros(normalized_shape))
+        self.eps = eps
+        self.data_format = data_format
+        if self.data_format not in ["channels_last", "channels_first"]:
+            raise NotImplementedError
+        self.normalized_shape = (normalized_shape, )
+
+    def forward(self, x):
+        if self.data_format == "channels_last":
+            return F.layer_norm(x, self.normalized_shape, self.weight, self.bias, self.eps)
+
+        if self.data_format == "channels_first":
+            u = x.mean(1, keepdim=True)
+            s = (x - u).pow(2).mean(1, keepdim=True)
+            x = (x - u) / torch.sqrt(s + self.eps)
+            x = self.weight[:, None, None] * x + self.bias[:, None, None]
+            return x
+
+        raise NotImplementedError(self.data_format)
 
 
 class HaloAttn(nn.Module):
@@ -157,7 +188,7 @@ class HaloBlockV2(nn.Module):
                  mlp_ratio=4.,
                  drop=0.,
                  act_layer=nn.GELU,
-                 norm_layer=LayerNorm2d,
+                 norm_layer=LayerNorm,
                  **kwargs):
         super().__init__()
         self.dim = dim
