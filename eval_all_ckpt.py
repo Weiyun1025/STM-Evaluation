@@ -35,6 +35,9 @@ def main():
         if model_type not in MODEL_TYPE_DICT:
             continue
 
+        if 'dcn' in model_type:
+            continue
+
         model_dir = os.path.join(BASE_DIR, model_type)
         model_type = MODEL_TYPE_DICT[model_type]
         for model_scale in os.listdir(model_dir):
@@ -47,10 +50,10 @@ def main():
 
             args.model = f'{model_type}_{model_scale}'
             args.resume = ckpt_path
-            res[args.model] = eval_main(args)
+            res[args.model] = eval_main(args, init_dist=False)
 
             args.resume = ckpt_ema_path
-            res[f'{args.model}_ema'] = eval_main(args)
+            res[f'{args.model}_ema'] = eval_main(args, init_dist=False)
 
     for key, value in res.items():
         print(f'{key}: {value}')
