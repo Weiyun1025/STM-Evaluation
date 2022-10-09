@@ -44,7 +44,6 @@ class HaloAttn(nn.Module):
     4. query-related position
     5. layout optim
 
-    TODO: mask Tensor.masked_fill_ or Addidion ?
     TODO: layout optim
     TODO: query-free pos embed
     TODO: query-addition pos embed

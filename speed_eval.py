@@ -4,6 +4,7 @@ import contextlib
 import torch
 from timm.models import create_model
 import models
+import models.blocks.halo_opt_v1
 
 torch.backends.cudnn.enabled = True
 torch.backends.cudnn.deterministic = False
