@@ -3,7 +3,7 @@
 set -x
 mkdir logs
 
-MODEL="conv_halo_v2_free_tiny"
+MODEL="conv_halo_v2_related_tiny"
 DESC="unified_config_3090" 
 
 # key hyperparameters
