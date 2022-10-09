@@ -138,7 +138,10 @@ class HaloAttn(nn.Module):
                                         num_heads=num_heads)
 
         self.pool = nn.AvgPool2d(2, 2) if use_avg_pool else nn.Identity()
-        self.proj = nn.Linear(dim, dim)
+        self.proj = nn.Linear(self.dim_out_v, self.dim_out_v)
+
+        self.H, self.W = None, None
+        self.mask = None
 
     def forward(self, x):
         B, H, W, C = x.shape
@@ -189,6 +192,9 @@ class HaloAttn(nn.Module):
         else:
             attn = (q * self.scale) @ k.transpose(-1, -2) + self.pos_embed()
 
+        max_neg_value = -torch.finfo(attn.dtype).max
+        attn.masked_fill_(self.get_mask(H, W, attn.device), max_neg_value)
+
         # B, num_heads, num_blocks, block_size ** 2, win_size ** 2
         attn = attn.softmax(dim=-1)
 
@@ -202,6 +208,29 @@ class HaloAttn(nn.Module):
         out = self.proj(out)
         # B, H, W, dim_out
         return out
+
+    def get_mask(self, H, W, device):
+        if self.H == H and self.W == W and self.mask is not None:
+            return self.mask
+
+        num_h_blocks = H // self.block_size
+        num_w_blocks = W // self.block_size
+        num_blocks = num_h_blocks * num_w_blocks
+
+        mask = torch.ones((1, 1, H, W), device=device)
+        mask = F.pad(mask, [self.halo_size, self.halo_size, self.halo_size, self.halo_size])
+        mask = mask.unfold(2, self.win_size, self.block_size)
+        mask = mask.unfold(3, self.win_size, self.block_size)
+        mask = mask.reshape(1, num_blocks, self.win_size * self.win_size)
+        mask = mask.unsqueeze(-2)
+
+        # 1, num_blocks, 1, win_size * win_size
+        mask = mask.bool()
+
+        self.H = H
+        self.W = W
+        self.mask = ~mask
+        return self.mask
 
 
 class HaloBlockV2(nn.Module):
