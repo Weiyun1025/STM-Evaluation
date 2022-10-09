@@ -4,7 +4,7 @@ set -x
 mkdir logs
 
 PARTITION=VC
-MODEL="dcn_v3_base"
+MODEL="dcn_v3_tiny"
 DESC="erf_analysis" 
 INPUT_SIZE=448
 
@@ -32,8 +32,8 @@ srun -p ${PARTITION} \
     --model ${MODEL} \
     --input_size ${INPUT_SIZE} \
     --data_path /mnt/cache/share/images/ \
-    --weights "/mnt/petrelfs/share_data/shimin/share_checkpoint/dcnv3/dcnv3_base/checkpoint-best.pth" \
-    --num_data 200
+    --weights "/mnt/petrelfs/share_data/shimin/share_checkpoint/dcnv3/dcnv3_tiny/checkpoint-best.pth" \
+    --num_data 1500
     #--output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
     
 # sh ./shell/dcnv3_tiny.sh
