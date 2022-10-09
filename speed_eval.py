@@ -1,4 +1,5 @@
 import time
+import argparse
 import contextlib
 import torch
 from timm.models import create_model
@@ -37,11 +38,16 @@ def benchmark_qps(model, data, backward=False, num_warm=10, num_iter=100):
 
 
 def main():
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = create_model('conv_halo_v2_tiny').to(device)
-    data = torch.randn(4, 3, 224, 224).to(device)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model_type', type=str, default='conv_halo_v2_base')
+    parser.add_argument('--backward', action='store_true', default=False)
+    args = parser.parse_args()
 
-    print(benchmark_qps(model, data))
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model = create_model(args.model_type).to(device)
+    data = torch.randn(32, 3, 224, 224).to(device)
+
+    print(benchmark_qps(model, data, backward=args.backward))
 
 
 if __name__ == '__main__':
