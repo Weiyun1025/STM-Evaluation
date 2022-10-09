@@ -112,6 +112,7 @@ class RotateTransform:
 
     def __call__(self, image):
         resized_image = self.resize(image)
+        # resized_image = self.rotate(resized_image)
         resized_image = self.crop(resized_image)
         resized_image = self.rotate(resized_image)
         resized_image = self.to_tensor(resized_image)
