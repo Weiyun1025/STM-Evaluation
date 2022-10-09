@@ -1,10 +1,9 @@
 import torch
 import torch.nn.functional as F
 from torch import nn
-from timm.models import register_model
+from timm.models import create_model
 from timm.models.layers import DropPath, LayerNorm2d, Mlp, make_divisible
 from timm.models.layers.halo_attn import PosEmbedRel, trunc_normal_, _assert
-from ..meta_arch import MetaArch
 
 
 class HaloAttn(nn.Module):
@@ -73,6 +72,9 @@ class HaloAttn(nn.Module):
         self.to_out = nn.Conv2d(self.dim_out_v, self.dim_out_v, 1) if out_proj else nn.Identity()
         self.reset_parameters()
 
+        self.H, self.W = None, None
+        self.mask = None
+
     def reset_parameters(self):
         std = self.q.weight.shape[1] ** -0.5  # fan-in
         trunc_normal_(self.q.weight, std=std)
@@ -138,6 +140,29 @@ class HaloAttn(nn.Module):
         out = self.pool(out)
         return out
 
+    def get_mask(self, H, W, device):
+        if self.H == H and self.W == W and self.mask is not None:
+            return self.mask
+
+        num_h_blocks = H // self.block_size
+        num_w_blocks = W // self.block_size
+        num_blocks = num_h_blocks * num_w_blocks
+
+        mask = torch.ones((1, 1, H, W), device=device)
+        mask = F.pad(mask, [self.halo_size, self.halo_size, self.halo_size, self.halo_size])
+        mask = mask.unfold(2, self.win_size, self.block_size)
+        mask = mask.unfold(3, self.win_size, self.block_size)
+        mask = mask.reshape(1, num_blocks, self.win_size * self.win_size)
+        mask = mask.unsqueeze(-2)
+
+        # 1, num_blocks, 1, win_size * win_size
+        mask = mask.bool()
+
+        self.H = H
+        self.W = W
+        self.mask = ~mask
+        return self.mask
+
 
 class HaloBlockV2(nn.Module):
     def __init__(self, dim, drop_path, layer_scale_init_value,
@@ -191,27 +216,3 @@ class HaloBlockV2(nn.Module):
         x = shortcut + self.drop_path(x)
 
         return x
-
-
-@register_model
-def conv_halo_v2_no_train_mask_timm_tiny(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [2, 2, 6, 2]
-    num_heads = [3, 6, 12, 24]
-    block_size = 7
-    halo_size = 3
-
-    model = MetaArch(img_size=224,
-                     depths=depths,
-                     dims=dims,
-                     block_type=HaloBlockV2,
-                     block_kwargs=dict(num_heads=num_heads,
-                                       block_size=block_size,
-                                       halo_size=halo_size),
-                     #  downsample_type=nn.Identity,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model

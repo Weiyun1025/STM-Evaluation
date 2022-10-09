@@ -13,7 +13,6 @@ class HaloAttn(nn.Module):
     4. query-related position
     5. layout optim
 
-    TODO: mask
     TODO: mask Tensor.masked_fill_ or Addidion ?
     TODO: layout optim
     TODO: query-free pos embed
@@ -67,9 +66,9 @@ class HaloAttn(nn.Module):
         self.mask = None
 
     def reset_parameters(self):
-        std = self.q.weight.shape[1] ** -0.5  # fan-in
-        trunc_normal_(self.q.weight, std=std)
-        trunc_normal_(self.kv.weight, std=std)
+        std = self.to_q.weight.shape[1] ** -0.5  # fan-in
+        trunc_normal_(self.to_q.weight, std=std)
+        trunc_normal_(self.to_kv.weight, std=std)
         trunc_normal_(self.pos_embed.height_rel, std=self.scale)
         trunc_normal_(self.pos_embed.width_rel, std=self.scale)
 
@@ -134,11 +133,11 @@ class HaloAttn(nn.Module):
         mask = F.pad(mask, [self.halo_size, self.halo_size, self.halo_size, self.halo_size])
         mask = mask.unfold(2, self.win_size, self.block_size)
         mask = mask.unfold(3, self.win_size, self.block_size)
-        mask = mask.reshape(1, 1, num_blocks, self.win_size * self.win_size).permute(0, 2, 3, 1)
+        mask = mask.reshape(1, num_blocks, self.win_size * self.win_size)
+        mask = mask.unsqueeze(-2)
 
+        # 1, num_blocks, 1, win_size * win_size
         mask = mask.bool()
-        # mask = mask.squeeze(-1).repeat_interleave(self.num_heads, 0)
-        # mask = mask.unsqueeze(-2).repeat(1, 1, attn.shape[-2], 1)
 
         self.H = H
         self.W = W
@@ -165,11 +164,11 @@ class HaloBlockV2(nn.Module):
         self.mlp_ratio = mlp_ratio
 
         self.norm1 = norm_layer(dim)
-        self.attn = HaloAttention(dim=dim,
-                                  dim_out=dim,
-                                  num_heads=num_heads[stage],
-                                  block_size=block_size,
-                                  halo_size=halo_size)
+        self.attn = HaloAttn(dim=dim,
+                             dim_out=dim,
+                             num_heads=num_heads[stage],
+                             block_size=block_size,
+                             halo_size=halo_size)
 
         self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((1, dim, 1, 1)),
                                     requires_grad=True) if layer_scale_init_value > 0 else None
