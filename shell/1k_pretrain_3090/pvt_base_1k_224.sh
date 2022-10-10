@@ -15,17 +15,19 @@ DROP_PATH="0.5"
 
 PROJECT_NAME="${MODEL}_1k_${DESC}"
 
+GPUS=${GPUS:-16}
 GPUS_PER_NODE=${GPUS_PER_NODE:-8}
 
 SRUN_ARGS=${SRUN_ARGS:-""}
 
 torchrun \
-    --nnodes=1 \
+    --nnodes=2 \
     --nproc_per_node=${GPUS_PER_NODE} \
+    --master_addr 172.18.255.9 \
     main.py \
     --model ${MODEL} \
     --epochs 300 \
-    --batch_size $((TOTAL_BATCH_SIZE/GPUS_PER_NODE)) \
+    --batch_size $((TOTAL_BATCH_SIZE/GPUS)) \
     --warmup_epochs 20 \
     --lr ${LR} \
     --warmup_init_lr ${INIT_LR} \
