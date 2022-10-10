@@ -3,10 +3,10 @@ import argparse
 
 
 def parse(base_dir):
-    for dirname in ('train', 'val'):
+    for split in ('train', 'val'):
         meta = []
         num_labels = 0
-        dirname = os.path.join(base_dir, dirname)
+        dirname = os.path.join(base_dir, split)
         print(dirname)
         for idx, label in enumerate(os.listdir(dirname)):
             image_dir = os.path.join(dirname, label)
@@ -15,7 +15,7 @@ def parse(base_dir):
 
             num_labels = idx
 
-        meta_path = os.path.join(base_dir, 'meta', f'{dirname}.txt')
+        meta_path = os.path.join(base_dir, 'meta', f'{split}.txt')
         os.makedirs(os.path.dirname(meta_path), exist_ok=True)
         print(meta_path)
         with open(meta_path, 'w', encoding='utf-8') as file:
