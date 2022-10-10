@@ -24,6 +24,9 @@ torchrun \
     --nnodes=2 \
     --nproc_per_node=${GPUS_PER_NODE} \
     --master_addr 172.18.255.9 \
+    --rdzv_id=0 \
+    --rdzv_backend=c10d \
+    --rdzv_endpoint=172.18.255.9 \
     main.py \
     --model ${MODEL} \
     --epochs 300 \
