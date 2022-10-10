@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from timm.models.layers import DropPath
+from timm.models.layers import DropPath, trunc_normal_
 
 
 class Mlp(nn.Module):
@@ -71,10 +71,32 @@ class Attention(nn.Module):
 
 class PvtBlock(nn.Module):
 
-    def __init__(self, dim, drop_path, layer_scale_init_value, stage, num_heads,
-                 mlp_ratios, sr_ratios, qkv_bias, qk_scale=None, drop=0., attn_drop=0.,
-                 act_layer=nn.GELU, norm_layer=nn.LayerNorm, **kwargs):
+    def __init__(self,
+                 dim,
+                 drop_path,
+                 layer_scale_init_value,
+                 num_heads,
+                 input_resolution,
+                 stage,
+                 depth,
+                 mlp_ratios,
+                 sr_ratios,
+                 qkv_bias,
+                 qk_scale=None,
+                 drop=0.,
+                 attn_drop=0.,
+                 act_layer=nn.GELU,
+                 norm_layer=nn.LayerNorm,
+                 **kwargs):
         super().__init__()
+        self.pos_embed = None
+        self.pos_drop = None
+        if depth == 0:
+            self.pos_embed = nn.Parameter(torch.zeros(1, dim, *input_resolution))
+            self.pos_drop = nn.Dropout(p=drop)
+
+            trunc_normal_(self.pos_embed, std=.02)
+
         self.norm1 = norm_layer(dim)
         self.attn = Attention(dim,
                               num_heads=num_heads[stage], qkv_bias=qkv_bias, qk_scale=qk_scale,
@@ -91,6 +113,10 @@ class PvtBlock(nn.Module):
 
     def forward(self, x):
         B, C, H, W = x.shape
+
+        if self.pos_embed is not None:
+            x = self.pos_drop(x + self.pos_embed)
+
         x = x.flatten(2).permute(0, 2, 1)
         x = x + self.drop_path(self.gamma_1 * self.attn(self.norm1(x), H, W))
         x = x + self.drop_path(self.gamma_2 * self.mlp(self.norm2(x)))
