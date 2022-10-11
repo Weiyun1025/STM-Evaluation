@@ -141,20 +141,20 @@ def main(args):
                                                                                        crop_ratio=args.crop_pct,
                                                                                        jitter_strength=strength)
 
-    for angle in range(0, 90+1, 15):
+    for angle in range(0, 270+1, 15):
         variance_transforms[f'pre rotation {angle}'] = rotate_transform(img_size=args.input_size,
                                                                         crop_ratio=args.crop_pct,
                                                                         angle=angle,
                                                                         pre_rotate=True)
 
-    for angle in range(0, 90+1, 15):
+    for angle in range(0, 270+1, 15):
         variance_transforms[f'pre rotation {angle}'] = rotate_transform(img_size=args.input_size,
                                                                         crop_ratio=args.crop_pct,
                                                                         angle=angle,
                                                                         pre_rotate=False)
 
-    for ratio in range(50, 150+1, 25):
-        ratio = ratio / 100
+    for ratio in range(500, 1500+1, 215):
+        ratio = ratio / 1000
         variance_transforms[f'scale {ratio}'] = standard_transform(img_size=args.input_size,
                                                                    crop_ratio=ratio)
 
