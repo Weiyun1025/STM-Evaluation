@@ -135,18 +135,15 @@ def main(args):
     transform = standard_transform(img_size=args.input_size,
                                    crop_ratio=args.crop_pct)
 
+    variance_transforms = {}
     if args.variance_type == 'translation':
-        variance_transforms = {
-            'position jitter': position_jitter_transform(img_size=args.input_size,
-                                                        crop_ratio=args.crop_pct,
-                                                        jitter_strength=args.jitter_strength)
-        }
+        variance_transforms['position jitter'] = position_jitter_transform(img_size=args.input_size,
+                                                                           crop_ratio=args.crop_pct,
+                                                                           jitter_strength=args.jitter_strength)
     elif args.variance_type == 'rotation':
-        variance_transforms = {
-            'rotation': rotate_transform(img_size=args.input_size,
-                                                crop_ratio=args.crop_pct,
-                                                angle=args.rotation_angle)
-        }
+        variance_transforms['rotation'] = rotate_transform(img_size=args.input_size,
+                                                           crop_ratio=args.crop_pct,
+                                                           angle=args.rotation_angle)
 
     collate_fn = VarianceCollateFN(standard_transform=transform,
                                    variance_transforms=variance_transforms)

@@ -42,7 +42,7 @@ srun -p ${PARTITION} \
     --output="logs/${PROJECT_NAME}.out" \
     --error="logs/${PROJECT_NAME}.err" \
     ${SRUN_ARGS} \
-    python -u invariance_eval.py \
+    python -u invariance_eval_single.py \
     --model ${MODEL} \
     --resume ${CKPT} \
     --batch_size $((TOTAL_BATCH_SIZE/GPUS_PER_NODE)) \

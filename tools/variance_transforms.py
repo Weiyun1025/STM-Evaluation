@@ -26,10 +26,11 @@ def position_jitter_transform(img_size=224, crop_ratio=0.875, jitter_strength=0)
                                    jitter_strength=jitter_strength)
 
 
-def rotate_transform(img_size=224, crop_ratio=0.875, angle=0):
+def rotate_transform(img_size=224, crop_ratio=0.875, angle=0, pre_rotate=False):
     return RotateTransform(input_size=img_size,
                            resizing_size=int(img_size / crop_ratio),
-                           angle=angle)
+                           angle=angle,
+                           pre_rotate=pre_rotate)
 
 
 class PositionJitterTransform:
@@ -100,10 +101,12 @@ class PositionJitterTransform:
 
 
 class RotateTransform:
-    def __init__(self, angle=0, resizing_size=256, input_size=224):
+    def __init__(self, angle=0, resizing_size=256, input_size=224, pre_rotate=False):
+        self.angle = angle
         self.resizing_size = resizing_size
         self.input_size = input_size
-        self.angle = angle
+        self.pre_rotate = pre_rotate
+
         self.resize = transforms.Resize(self.resizing_size,
                                         interpolation=transforms.InterpolationMode.BICUBIC)
         self.crop = transforms.CenterCrop(input_size)
@@ -112,9 +115,11 @@ class RotateTransform:
 
     def __call__(self, image):
         resized_image = self.resize(image)
-        # resized_image = self.rotate(resized_image)
+        if self.pre_rotate:
+            resized_image = self.rotate(resized_image)
         resized_image = self.crop(resized_image)
-        resized_image = self.rotate(resized_image)
+        if not self.pre_rotate:
+            resized_image = self.rotate(resized_image)
         resized_image = self.to_tensor(resized_image)
         resized_image = self.norm(resized_image)
 
