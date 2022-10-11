@@ -141,13 +141,13 @@ def main(args):
                                                                                        crop_ratio=args.crop_pct,
                                                                                        jitter_strength=strength)
 
-    for angle in range(0, 270+1, 15):
+    for angle in range(0, 90+1, 15):
         variance_transforms[f'pre rotation {angle}'] = rotate_transform(img_size=args.input_size,
                                                                         crop_ratio=args.crop_pct,
                                                                         angle=angle,
                                                                         pre_rotate=True)
 
-    for angle in range(0, 270+1, 15):
+    for angle in range(0, 90+1, 15):
         variance_transforms[f'pre rotation {angle}'] = rotate_transform(img_size=args.input_size,
                                                                         crop_ratio=args.crop_pct,
                                                                         angle=angle,
@@ -157,6 +157,8 @@ def main(args):
         ratio = ratio / 100
         variance_transforms[f'scale {ratio}'] = standard_transform(img_size=args.input_size,
                                                                    crop_ratio=ratio)
+
+    print('num variance transforms:', len(variance_transforms))
 
     collate_fn = VarianceCollateFN(standard_transform=transform,
                                    variance_transforms=variance_transforms)
@@ -210,3 +212,5 @@ if __name__ == '__main__':
     if args.output_dir:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
     main(args)
+
+    # srun -p VC --gres=gpu:1 --quotatype=spot --ntasks=1 --ntasks-per-node=1 python invariance_eval_all.py --batch_size 1024 --data_path /mnt/cache/share/images/ --output_dir ./backbone_outputdir/eval --model conv_swin_tiny --resume /mnt/petrelfs/share_data/shimin/share_checkpoint/swin/swin_tiny/checkpoint-best.pth
