@@ -4,7 +4,7 @@ set -x
 mkdir logs
 
 MODEL="conv_swin_tiny" 
-CKPT_DIR="/mnt/petrelfs/share_data/shimin/share_checkpoint/swin/swin_tiny"
+CKPT_DIR="./backbone_outputdir/conv_swin_tiny_1k_unified_config_3090"
 
 DESC="eval_invariance" 
 
