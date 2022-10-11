@@ -51,7 +51,8 @@ def get_args_parser():
                         help='loading training data to memory')
     parser.add_argument('--nb_classes', default=1000, type=int,
                         help='number of the classification types')
-    # parser.add_argument('--variance_type', default="translation", choices=['translation', 'rotation'])
+    parser.add_argument('--variance_type', default="translation",
+                        choices=['translation', 'pre_rotation', 'post_rotation', 'scale'])
     # parser.add_argument('--jitter_strength', default=0, type=int)
     # parser.add_argument('--rotation_angle', default=0, type=int)
 
@@ -137,27 +138,32 @@ def main(args):
                                    crop_ratio=args.crop_pct)
 
     variance_transforms = {}
-    for strength in range(0, 64+1, 4):
-        variance_transforms[f'position jitter {strength}'] = position_jitter_transform(img_size=args.input_size,
-                                                                                       crop_ratio=args.crop_pct,
-                                                                                       jitter_strength=strength)
 
-    for angle in range(0, 270+1, 15):
-        variance_transforms[f'pre rotation {angle}'] = rotate_transform(img_size=args.input_size,
-                                                                        crop_ratio=args.crop_pct,
-                                                                        angle=angle,
-                                                                        pre_rotate=True)
+    if args.variance_type == 'translation':
+        for strength in range(0, 64+1, 4):
+            variance_transforms[f'position jitter {strength}'] = position_jitter_transform(img_size=args.input_size,
+                                                                                           crop_ratio=args.crop_pct,
+                                                                                           jitter_strength=strength)
 
-    for angle in range(0, 270+1, 15):
-        variance_transforms[f'pre rotation {angle}'] = rotate_transform(img_size=args.input_size,
-                                                                        crop_ratio=args.crop_pct,
-                                                                        angle=angle,
-                                                                        pre_rotate=False)
+    if args.variance_type == 'pre_rotation':
+        for angle in range(0, 270+1, 15):
+            variance_transforms[f'pre rotation {angle}'] = rotate_transform(img_size=args.input_size,
+                                                                            crop_ratio=args.crop_pct,
+                                                                            angle=angle,
+                                                                            pre_rotate=True)
 
-    for ratio in range(500, 1500+1, 215):
-        ratio = ratio / 1000
-        variance_transforms[f'scale {ratio}'] = standard_transform(img_size=args.input_size,
-                                                                   crop_ratio=ratio)
+    if args.variance_type == 'post_rotation':
+        for angle in range(0, 270+1, 15):
+            variance_transforms[f'pre rotation {angle}'] = rotate_transform(img_size=args.input_size,
+                                                                            crop_ratio=args.crop_pct,
+                                                                            angle=angle,
+                                                                            pre_rotate=False)
+
+    if args.variance_type == 'scale':
+        for ratio in range(500, 1500+1, 215):
+            ratio = ratio / 1000
+            variance_transforms[f'scale {ratio}'] = standard_transform(img_size=args.input_size,
+                                                                       crop_ratio=ratio)
 
     print('num variance transforms:', len(variance_transforms))
 
@@ -204,7 +210,7 @@ def main(args):
 
     test_stats = evaluate_invariance(data_loader_val, model, device, use_amp=args.use_amp)
 
-    with open(os.path.join(args.output_dir, 'variance.txt'), 'w', encoding='utf-8') as file:
+    with open(os.path.join(args.output_dir, f'variance_{args.variance_type}.txt'), 'w', encoding='utf-8') as file:
         file.write('* Eval Results\n')
         for key, value in test_stats.items():
             file.write(f'\t{key}: {value}\n')
