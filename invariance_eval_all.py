@@ -160,7 +160,7 @@ def main(args):
                                                                             pre_rotate=False)
 
     if args.variance_type == 'scale':
-        for ratio in range(500, 1500+1, 215):
+        for ratio in range(500, 1500+1, 125):
             ratio = ratio / 1000
             variance_transforms[f'scale {ratio}'] = standard_transform(img_size=args.input_size,
                                                                        crop_ratio=ratio)
