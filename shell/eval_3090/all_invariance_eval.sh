@@ -9,7 +9,7 @@ CKPT_DIR="./backbone_outputdir/conv_swin_tiny_1k_unified_config_3090"
 DESC="eval_invariance" 
 
 # key hyperparameters
-TOTAL_BATCH_SIZE="256"
+TOTAL_BATCH_SIZE="1024"
 
 PROJECT_NAME="${MODEL}_1k_${DESC}"
 
