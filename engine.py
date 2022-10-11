@@ -149,7 +149,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
 @torch.no_grad()
 def evaluate(data_loader, model, device, use_amp=False):
-    criterion = torch.nn.CrossEntropyLoss() 
+    criterion = torch.nn.CrossEntropyLoss()
 
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'
@@ -263,4 +263,4 @@ def evaluate_invariance(data_loader, model, device, use_amp=False):
     for key, value in metric_logger.meters.items():
         print(f'\t{key}: {value}')
 
-    return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
+    return metric_logger.meters

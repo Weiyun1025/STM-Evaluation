@@ -6,6 +6,7 @@
 # LICENSE file in the root directory of this source tree.
 
 
+import os
 import sys
 import argparse
 from pathlib import Path
@@ -203,7 +204,10 @@ def main(args):
 
     test_stats = evaluate_invariance(data_loader_val, model, device, use_amp=args.use_amp)
 
-    print(f"Accuracy of the network on {len(dataset_val)} test images: {test_stats['acc1']:.5f}%")
+    with open(os.path.join(args.output_dir, 'variance.txt'), 'w', encoding='utf-8') as file:
+        file.write('* Eval Results\n')
+        for key, value in test_stats.items():
+            file.write(f'\t{key}: {value}\n')
 
 
 if __name__ == '__main__':
