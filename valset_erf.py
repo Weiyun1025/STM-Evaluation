@@ -99,10 +99,10 @@ def main(args):
     if args.weights is not None:
         print('load weights')
         weights = torch.load(args.weights, map_location='cpu')
-        if 'model' in weights:
+        if 'ema' in args.weights:
+            weights = weights['model_ema']
+        else:
             weights = weights['model']
-        if 'state_dict' in weights:
-            weights = weights['state_dict']
         model.load_state_dict(weights)
         print('loaded')
 
