@@ -192,7 +192,7 @@ class MetaArch(nn.Module):
         features = int(dims[-1] * extra_transform_ratio) if extra_transform else dims[-1]
         self.avg_head = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
-            norm_layer(features) if norm_after_avg and not norm_every_stage else nn.Identity(),
+            norm_layer(features) if norm_after_avg else nn.Identity(),
             nn.Flatten(1),
         )
 
