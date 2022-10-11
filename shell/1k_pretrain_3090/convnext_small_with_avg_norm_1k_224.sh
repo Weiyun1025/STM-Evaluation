@@ -24,7 +24,7 @@ SRUN_ARGS=${SRUN_ARGS:-""}
 torchrun \
     --nnodes=1 \
     --nproc_per_node=${GPUS_PER_NODE} \
-    python -u main.py \
+    main.py \
     --model ${MODEL} \
     --epochs 300 \
     --batch_size $((TOTAL_BATCH_SIZE/GPUS)) \
