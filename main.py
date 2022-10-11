@@ -214,9 +214,8 @@ def get_args_parser():
     return parser
 
 
-def main(args, init_dist=True):
-    if init_dist:
-        utils.init_distributed_mode(args)
+def main(args):
+    utils.init_distributed_mode(args)
     print(args)
     device = torch.device(args.device)
 
