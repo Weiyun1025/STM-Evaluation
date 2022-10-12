@@ -7,4 +7,5 @@ from . import (
     halonet_timm,
     halonet_github,
     pvt_v2,
+    pvt,
 )
