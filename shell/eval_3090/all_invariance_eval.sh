@@ -19,7 +19,7 @@ GPUS_PER_NODE=${GPUS_PER_NODE:-8}
 CPUS_PER_TASK=${CPUS_PER_TASK:-12}
 
 VARIANCE_TYPE=('translation' 'pre_rotation' 'post_rotation' 'scale')
-CKPT_NAME=('checkpoint-49.pth' 'checkpoint-99.pth' 'checkpoint-149.pth' 'checkpoint-199.pth' 'checkpoint-249.pth' 'checkpoint-299.pth' 'checkpoint-best.pth')
+CKPT_NAME=('49' '99' '149' '199' '249' '299' 'best')
 
 for variance in "${VARIANCE_TYPE[@]}"
 do
@@ -31,11 +31,11 @@ do
             invariance_eval_all.py \
             --model ${MODEL} \
             --variance_type ${variance} \
-            --resume "${CKPT_DIR}/${ckpt}" \
+            --resume "${CKPT_DIR}/checkpoint-${ckpt}.pth" \
             --batch_size $((TOTAL_BATCH_SIZE/GPUS_PER_NODE)) \
             --data_path /root/ImageNet \
             --data_on_memory false \
             --use_amp true \
-            --output_dir "backbone_outputdir/${PROJECT_NAME}"
+            --output_dir "backbone_outputdir/${PROJECT_NAME}_${ckpt}"
     done
 done
