@@ -3,8 +3,8 @@
 set -x
 mkdir logs
 
-MODEL="conv_swin_tiny" 
-CKPT_DIR="./backbone_outputdir/conv_swin_tiny_1k_unified_config_3090"
+MODEL="conv_pvt_tiny" 
+CKPT_DIR="/root/ckpt/conv_pvt_tiny_1k_unified_config_3090"
 
 DESC="eval_invariance" 
 
