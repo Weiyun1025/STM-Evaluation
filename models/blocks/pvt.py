@@ -115,7 +115,9 @@ class PvtBlock(nn.Module):
         B, C, H, W = x.shape
 
         if self.pos_embed is not None:
-            x = self.pos_drop(x + self.pos_embed)
+            pos_embed = nn.functional.interpolate(self.pos_embed, scale_factor=2)
+            x = self.pos_drop(x + pos_embed)
+            # x = self.pos_drop(x + self.pos_embed)
 
         x = x.flatten(2).permute(0, 2, 1)
         x = x + self.drop_path(self.gamma_1 * self.attn(self.norm1(x), H, W))

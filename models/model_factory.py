@@ -6,7 +6,7 @@ from .blocks.dcn_v3 import DCNv3Block
 from .blocks.pvt import PvtBlock
 from .blocks.pvt_v2 import PvtV2Block
 from .blocks import halonet_github, halonet_timm
-from .blocks import halonet_opt_v1, halo_opt_abs_pe
+from .blocks import halonet_opt_v1#, halo_opt_abs_pe
 
 
 @ register_model

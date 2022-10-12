@@ -4,7 +4,7 @@ set -x
 mkdir logs
 
 PARTITION=VC
-MODEL="conv_swin_tiny"
+MODEL="conv_pvt_tiny"
 DESC="erf_analysis" 
 INPUT_SIZE=448
 
@@ -32,8 +32,8 @@ srun -p ${PARTITION} \
     --model ${MODEL} \
     --input_size ${INPUT_SIZE} \
     --data_path /mnt/cache/share/images/ \
-    --weights "/mnt/petrelfs/share_data/shimin/share_checkpoint/swin/swin_tiny/checkpoint-149.pth" \
+    --weights "/mnt/petrelfs/share_data/shimin/share_checkpoint/pvt/pvt_tiny/checkpoint-best.pth" \
     --num_data 2000
     #--output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
     
-# sh ./shell/swin_tiny.sh
+# sh ./shell/pvt_tiny.sh

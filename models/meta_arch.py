@@ -111,7 +111,6 @@ class MetaArch(nn.Module):
     r""" ConvNeXt
         A PyTorch impl of : `A ConvNet for the 2020s`  -
           https://arxiv.org/pdf/2201.03545.pdf
-
     Args:
         in_chans (int): Number of input image channels. Default: 3
         num_classes (int): Number of classes for classification head. Default: 1000
@@ -221,34 +220,31 @@ class MetaArch(nn.Module):
         return no_weight_decay
 
     def forward_features(self, x):
+        stage_outputs = [] # store intermediate feature maps for ERF analysis
+
         deform = self.block_type is DCNv3Block
         if deform:
             deform_inputs = self._deform_inputs(x)
 
         # shape: (B, C, H, W)
         for i in range(4):
+            # x = x.to(memory_format=torch.channels_last)
             x = self.downsample_layers[i](x)
-            if hasattr(self.block_type, 'pre_stage_transform'):
-                x = self.block_type.pre_stage_transform(x)
             x = self.stages[i](x if not deform else (x, deform_inputs[i]))
-            if hasattr(self.block_type, 'post_stage_transform'):
-                x = self.block_type.post_stage_transform(x)
             x = x[0] if deform else x
             x = self.stage_norms[i](x)
+            stage_outputs.append(x)
 
         x = self.stage_end_norm(x)
 
         x = self.conv_head(x)
         x = self.avg_head(x)
-        return x
+        return x, stage_outputs
 
     def forward(self, x):
-        x = self.forward_features(x)
+        x, stage_outputs = self.forward_features(x)
         x = self.head(x)
-        return x
-
-    def target_layers(self):
-        return [self.stages[-1][-1]]
+        return x, stage_outputs
 
     def _deform_inputs(self, x):
         b, c, h, w = x.shape
