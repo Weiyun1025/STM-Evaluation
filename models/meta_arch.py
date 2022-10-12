@@ -5,8 +5,7 @@ from timm.models.layers import LayerNorm2d, to_2tuple, trunc_normal_
 from .blocks.dcn_v3 import DCNv3Block
 
 # TODO: 检查所有norm的位置
-# NOTE: in erf-analysis branch, the meta model will output a dict containing the output feautres
-#       for all the stages along with the output logits.
+
 
 class Stem(nn.Module):
     def __init__(self, in_channels, out_channels, img_size, norm_layer, act_layer, ratio=0.5, **kwargs):
@@ -222,31 +221,34 @@ class MetaArch(nn.Module):
         return no_weight_decay
 
     def forward_features(self, x):
-        stage_outputs = [] # store intermediate feature maps for ERF analysis
-
         deform = self.block_type is DCNv3Block
         if deform:
             deform_inputs = self._deform_inputs(x)
 
         # shape: (B, C, H, W)
         for i in range(4):
-            # x = x.to(memory_format=torch.channels_last)
             x = self.downsample_layers[i](x)
+            if hasattr(self.block_type, 'pre_stage_transform'):
+                x = self.block_type.pre_stage_transform(x)
             x = self.stages[i](x if not deform else (x, deform_inputs[i]))
+            if hasattr(self.block_type, 'post_stage_transform'):
+                x = self.block_type.post_stage_transform(x)
             x = x[0] if deform else x
             x = self.stage_norms[i](x)
-            stage_outputs.append(x)
 
         x = self.stage_end_norm(x)
 
         x = self.conv_head(x)
         x = self.avg_head(x)
-        return x, stage_outputs
+        return x
 
     def forward(self, x):
-        x, stage_outputs = self.forward_features(x)
+        x = self.forward_features(x)
         x = self.head(x)
-        return x, stage_outputs
+        return x
+
+    def target_layers(self):
+        return [self.stages[-1][-1]]
 
     def _deform_inputs(self, x):
         b, c, h, w = x.shape
