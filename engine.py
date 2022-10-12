@@ -230,8 +230,14 @@ def evaluate_invariance(data_loader, model, device, use_amp=False):
         images = batch['standard_img']
         images = images.to(device, non_blocking=True)
         gold_target = batch['gold'].to(device, non_blocking=True)
-        pred_target = F.softmax(model(images), dim=-1)
-        # generate predicted labels to calculate consistency
+
+        if use_amp:
+            with torch.cuda.amp.autocast():
+                pred_logits = model(images)
+        else:
+            pred_logits = model(images)
+
+        pred_target = F.softmax(pred_logits, dim=-1)
         pred_label = pred_target.max(dim=1)[1]
 
         batch_size = images.shape[0]
