@@ -34,6 +34,13 @@ import utils
 import models
 
 
+torch.backends.cudnn.enabled = True
+torch.backends.cudnn.deterministic = False
+torch.backends.cudnn.benchmark = True
+torch.backends.cudnn.allow_tf32 = True
+torch.backends.cuda.matmul.allow_tf32 = True
+
+
 def str2bool(v):
     """
     Converts string to bool type; enables command line 
@@ -273,6 +280,7 @@ def main(args, init_dist=True):
         num_workers=args.num_workers,
         pin_memory=args.pin_mem,
         drop_last=True,
+        persistent_workers=True,
     )
 
     if dataset_val is not None:
@@ -281,7 +289,8 @@ def main(args, init_dist=True):
             batch_size=int(args.batch_size),
             num_workers=args.num_workers,
             pin_memory=args.pin_mem,
-            drop_last=False
+            drop_last=False,
+            persistent_workers=True,
         )
     else:
         data_loader_val = None
