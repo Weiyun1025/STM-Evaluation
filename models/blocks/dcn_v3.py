@@ -9,8 +9,8 @@ from torch.autograd.function import once_differentiable
 from torch.cuda.amp import custom_bwd, custom_fwd
 from torch.nn.init import xavier_uniform_, constant_
 from timm.models.layers import DropPath
-# import MultiScaleDeformableAttention as MSDA
-from mmcv.ops.multi_scale_deform_attn import MultiScaleDeformableAttention as MSDA
+import MultiScaleDeformableAttention as MSDA
+# from mmcv.ops.multi_scale_deform_attn import MultiScaleDeformableAttention as MSDA
 
 
 class MLP(nn.Module):
