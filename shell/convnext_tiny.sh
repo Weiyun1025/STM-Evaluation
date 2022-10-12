@@ -33,7 +33,7 @@ srun -p ${PARTITION} \
     --input_size ${INPUT_SIZE} \
     --data_path /mnt/cache/share/images/ \
     --weights "/mnt/petrelfs/share_data/shimin/share_checkpoint/convnext/convnext_tiny/checkpoint-best.pth" \
-    --num_data 200
+    --num_data 2000
     #--output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
     
 # sh ./shell/convnext_tiny.sh

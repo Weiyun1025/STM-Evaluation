@@ -4,8 +4,8 @@ set -x
 mkdir logs
 
 PARTITION=VC
-MODEL="halonet_v2_timm_tiny"
-DESC="erf_analysis"
+MODEL="conv_pvt_small"
+DESC="erf_analysis" 
 INPUT_SIZE=448
 
 # key hyperparameters
@@ -32,8 +32,8 @@ srun -p ${PARTITION} \
     --model ${MODEL} \
     --input_size ${INPUT_SIZE} \
     --data_path /mnt/cache/share/images/ \
-    --weights "/mnt/petrelfs/share_data/shimin/share_checkpoint/halonet/halonet_v2_tiny/checkpoint-best.pth" \
+    --weights "/mnt/petrelfs/share_data/shimin/share_checkpoint/pvt/pvt_small/checkpoint-best.pth" \
     --num_data 2000
     #--output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
     
-# sh ./shell/halonet_tiny.sh
+# sh ./shell/pvt_small.sh
