@@ -10,59 +10,6 @@ from .blocks import halonet_opt_v1, halo_opt_abs_pe
 
 
 @ register_model
-def pe_convnext_tiny(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
-                     depths=[3, 3, 9, 3],
-                     dims=[96, 192, 384, 768],
-                     stem_type=PatchEmbed,
-                     stem_kwargs=dict(patch_size=4),
-                     block_type=ConvNeXtBlock,
-                     downsample_type=PatchEmbed,
-                     downsample_kwargs=dict(patch_size=2),
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@ register_model
-def pm_convnext_tiny(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
-                     depths=[3, 3, 9, 3],
-                     dims=[96, 192, 384, 768],
-                     stem_type=PatchEmbed,
-                     stem_kwargs=dict(patch_size=4),
-                     block_type=ConvNeXtBlock,
-                     downsample_type=PatchMerging,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@ register_model
-def pe_convnext_v2_tiny(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
-                     depths=[3, 3, 9, 3],
-                     dims=[96, 192, 384, 768],
-                     stem_type=PatchEmbed,
-                     stem_kwargs=dict(patch_size=4),
-                     block_type=ConvNeXtV2Block,
-                     downsample_type=PatchEmbed,
-                     downsample_kwargs=dict(patch_size=2),
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@ register_model
 def conv_convnext_v2_micro(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
                      depths=[3, 3, 12, 3],
@@ -91,21 +38,6 @@ def conv_convnext_v2_tiny(pretrained=False, **kwargs):
 
 
 @ register_model
-def conv_convnext_v2_with_avg_norm_tiny(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
-                     depths=[3, 3, 9, 3],
-                     dims=[96, 192, 384, 768],
-                     block_type=ConvNeXtV2Block,
-                     norm_after_avg=True,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@ register_model
 def conv_convnext_v2_small(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
                      depths=[3, 3, 27, 3],
@@ -120,104 +52,11 @@ def conv_convnext_v2_small(pretrained=False, **kwargs):
 
 
 @ register_model
-def conv_convnext_v2_with_avg_norm_small(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
-                     depths=[3, 3, 27, 3],
-                     dims=[96, 192, 384, 768],
-                     block_type=ConvNeXtV2Block,
-                     norm_after_avg=True,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@ register_model
 def conv_convnext_v2_base(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
                      depths=[3, 3, 27, 3],
                      dims=[128, 256, 512, 1024],
                      block_type=ConvNeXtV2Block,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@ register_model
-def conv_convnext_v3_tiny(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
-                     depths=[2, 2, 9, 2],
-                     dims=[96, 192, 384, 768],
-                     block_type=ConvNeXtV3Block,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@ register_model
-def conv_convnext_v3_small(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
-                     depths=[2, 2, 24, 2],
-                     dims=[96, 192, 384, 768],
-                     block_type=ConvNeXtV3Block,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-# *********************************************************
-# Swin
-
-
-@register_model
-def pe_swin_tiny(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [2, 2, 6, 2]
-    num_heads = [3, 6, 12, 24]
-    window_size = 7
-
-    model = MetaArch(img_size=224,
-                     depths=depths,
-                     dims=dims,
-                     stem_type=PatchEmbed,
-                     stem_kwargs=dict(patch_size=4),
-                     block_type=SwinBlock,
-                     block_kwargs=dict(num_heads=num_heads, window_size=window_size),
-                     downsample_type=PatchEmbed,
-                     downsample_kwargs=dict(patch_size=2),
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@register_model
-def pm_swin_tiny(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [2, 2, 6, 2]
-    num_heads = [3, 6, 12, 24]
-    window_size = 7
-
-    model = MetaArch(img_size=224,
-                     depths=depths,
-                     dims=dims,
-                     stem_type=PatchEmbed,
-                     stem_kwargs=dict(patch_size=4),
-                     block_type=SwinBlock,
-                     block_kwargs=dict(num_heads=num_heads, window_size=window_size),
-                     downsample_type=PatchMerging,
                      **kwargs)
 
     if pretrained:
@@ -789,7 +628,7 @@ def conv_halo_v2_micro(pretrained=False, **kwargs):
                      block_kwargs=dict(num_heads=num_heads,
                                        block_size=block_size,
                                        halo_size=halo_size,
-                                       pos_embed_type='query_free'),
+                                       pos_embed_type='query_related'),
                      **kwargs)
 
     if pretrained:
@@ -813,7 +652,7 @@ def conv_halo_v2_tiny(pretrained=False, **kwargs):
                      block_kwargs=dict(num_heads=num_heads,
                                        block_size=block_size,
                                        halo_size=halo_size,
-                                       pos_embed_type='query_free'),
+                                       pos_embed_type='query_related'),
                      **kwargs)
 
     if pretrained:
@@ -823,7 +662,7 @@ def conv_halo_v2_tiny(pretrained=False, **kwargs):
 
 
 @register_model
-def conv_halo_v2_related_tiny(pretrained=False, **kwargs):
+def conv_halo_v2_free_tiny(pretrained=False, **kwargs):
     dims = [96 * 2 ** i for i in range(4)]
     depths = [2, 2, 6, 2]
     num_heads = [3, 6, 12, 24]
@@ -837,7 +676,7 @@ def conv_halo_v2_related_tiny(pretrained=False, **kwargs):
                      block_kwargs=dict(num_heads=num_heads,
                                        block_size=block_size,
                                        halo_size=halo_size,
-                                       pos_embed_type='query_related'),
+                                       pos_embed_type='query_free'),
                      #  downsample_type=nn.Identity,
                      **kwargs)
 
@@ -886,7 +725,7 @@ def conv_halo_v2_small(pretrained=False, **kwargs):
                      block_kwargs=dict(num_heads=num_heads,
                                        block_size=block_size,
                                        halo_size=halo_size,
-                                       pos_embed_type='query_free'),
+                                       pos_embed_type='query_related'),
                      **kwargs)
 
     if pretrained:
@@ -910,80 +749,7 @@ def conv_halo_v2_base(pretrained=False, **kwargs):
                      block_kwargs=dict(num_heads=num_heads,
                                        block_size=block_size,
                                        halo_size=halo_size,
-                                       pos_embed_type='query_free'),
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@register_model
-def conv_halo_opt_v1_base(pretrained=False, **kwargs):
-    dims = [128 * 2 ** i for i in range(4)]
-    depths = [2, 2, 18, 2]
-    num_heads = [4, 8, 16, 32]
-    block_size = 7
-    halo_size = 3
-
-    model = MetaArch(img_size=224,
-                     depths=depths,
-                     dims=dims,
-                     block_type=halonet_opt_v1.HaloBlockV2,
-                     block_kwargs=dict(num_heads=num_heads,
-                                       block_size=block_size,
-                                       halo_size=halo_size),
-                     #  downsample_type=nn.Identity,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@register_model
-def conv_halo_opt_v2_base(pretrained=False, **kwargs):
-    dims = [128 * 2 ** i for i in range(4)]
-    depths = [2, 2, 18, 2]
-    num_heads = [4, 8, 16, 32]
-    block_size = 7
-    halo_size = 3
-
-    model = MetaArch(img_size=224,
-                     depths=depths,
-                     dims=dims,
-                     block_type=halonet_opt_v1.HaloBlockV2,
-                     block_kwargs=dict(num_heads=num_heads,
-                                       block_size=block_size,
-                                       halo_size=halo_size,
                                        pos_embed_type='query_related'),
-                     #  downsample_type=nn.Identity,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@register_model
-def conv_halo_opt_v3_base(pretrained=False, **kwargs):
-    dims = [128 * 2 ** i for i in range(4)]
-    depths = [2, 2, 18, 2]
-    num_heads = [4, 8, 16, 32]
-    block_size = 7
-    halo_size = 3
-
-    model = MetaArch(img_size=224,
-                     depths=depths,
-                     dims=dims,
-                     block_type=halo_opt_abs_pe.HaloBlockV2,
-                     block_kwargs=dict(num_heads=num_heads,
-                                       block_size=block_size,
-                                       halo_size=halo_size),
-                     #  downsample_type=nn.Identity,
                      **kwargs)
 
     if pretrained:

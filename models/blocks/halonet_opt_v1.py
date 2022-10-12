@@ -45,7 +45,7 @@ class QueryFreePosEmbedRel(nn.Module):
                 [torch.arange(win_h), torch.arange(win_w)],
                 indexing='ij'))  # 2, Wh, Ww
         '''
-        
+
         # shimin: for lower version torch, "indexing" arugment is not supported
         coords = torch.stack(
             torch.meshgrid(
@@ -305,7 +305,7 @@ class HaloBlockV2(nn.Module):
                  mlp_ratio=4.,
                  drop=0.,
                  act_layer=nn.GELU,
-                 pos_embed_type='query_free',
+                 pos_embed_type='query_related',
                  **kwargs):
         super().__init__()
         self.dim = dim
