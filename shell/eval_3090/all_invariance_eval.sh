@@ -35,7 +35,7 @@ do
             --batch_size $((TOTAL_BATCH_SIZE/GPUS_PER_NODE)) \
             --data_path /root/ImageNet \
             --data_on_memory false \
-            --use_amp true \
+            --use_amp false \
             --output_dir "backbone_outputdir/${PROJECT_NAME}_${ckpt}"
     done
 done

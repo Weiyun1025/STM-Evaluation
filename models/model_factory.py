@@ -1,7 +1,7 @@
 from timm.models import register_model
 from .meta_arch import MetaArch, PatchEmbed, PatchMerging
 from .blocks.convnext import ConvNeXtBlock, ConvNeXtV2Block, ConvNeXtV3Block
-from .blocks.swin import SwinBlock
+from .blocks.swin import SwinBlock, SwinSingleResBlock
 from .blocks.dcn_v3 import DCNv3Block
 from .blocks.pvt import PvtBlock
 from .blocks.pvt_v2 import PvtV2Block
@@ -98,6 +98,26 @@ def conv_swin_tiny(pretrained=False, **kwargs):
                      depths=depths,
                      dims=dims,
                      block_type=SwinBlock,
+                     block_kwargs=dict(num_heads=num_heads, window_size=window_size),
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@register_model
+def conv_swin_single_res_tiny(pretrained=False, **kwargs):
+    dims = [96 * 2 ** i for i in range(4)]
+    depths = [2, 2, 6, 2]
+    num_heads = [3, 6, 12, 24]
+    window_size = 7
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     block_type=SwinSingleResBlock,
                      block_kwargs=dict(num_heads=num_heads, window_size=window_size),
                      **kwargs)
 
