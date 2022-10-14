@@ -52,6 +52,35 @@ def conv_convnext_v2_small(pretrained=False, **kwargs):
 
 
 @ register_model
+def conv_convnext_v2_avg_norm_small(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[3, 3, 27, 3],
+                     dims=[96, 192, 384, 768],
+                     block_type=ConvNeXtV2Block,
+                     norm_after_avg=True,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@ register_model
+def conv_convnext_small(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[3, 3, 27, 3],
+                     dims=[96, 192, 384, 768],
+                     block_type=ConvNeXtBlock,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@ register_model
 def conv_convnext_v2_base(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
                      depths=[3, 3, 27, 3],
