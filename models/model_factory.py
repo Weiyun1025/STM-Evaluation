@@ -81,6 +81,21 @@ def conv_convnext_small(pretrained=False, **kwargs):
 
 
 @ register_model
+def conv_convnext_single_res_avg_norm_small(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[3, 3, 27, 3],
+                     dims=[96, 192, 384, 768],
+                     block_type=ConvNeXtBlock,
+                     norm_after_avg=True,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@ register_model
 def conv_convnext_v2_base(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
                      depths=[3, 3, 27, 3],
@@ -148,6 +163,48 @@ def conv_swin_single_res_tiny(pretrained=False, **kwargs):
                      dims=dims,
                      block_type=SwinSingleResBlock,
                      block_kwargs=dict(num_heads=num_heads, window_size=window_size),
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@register_model
+def conv_swin_single_res_avg_norm_tiny(pretrained=False, **kwargs):
+    dims = [96 * 2 ** i for i in range(4)]
+    depths = [2, 2, 6, 2]
+    num_heads = [3, 6, 12, 24]
+    window_size = 7
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     block_type=SwinSingleResBlock,
+                     block_kwargs=dict(num_heads=num_heads, window_size=window_size),
+                     norm_after_avg=True,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@register_model
+def conv_swin_avg_norm_tiny(pretrained=False, **kwargs):
+    dims = [96 * 2 ** i for i in range(4)]
+    depths = [2, 2, 6, 2]
+    num_heads = [3, 6, 12, 24]
+    window_size = 7
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     block_type=SwinBlock,
+                     block_kwargs=dict(num_heads=num_heads, window_size=window_size),
+                     norm_after_avg=True,
                      **kwargs)
 
     if pretrained:

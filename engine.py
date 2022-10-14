@@ -219,7 +219,7 @@ class VarianceCollateFN:
 @torch.no_grad()
 def evaluate_invariance(data_loader, model, device, use_amp=False):
     #criterion = torch.nn.CrossEntropyLoss()
-    # criterion = SoftTargetCrossEntropy()
+    criterion = SoftTargetCrossEntropy()
 
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Invariance Test:'
@@ -237,7 +237,7 @@ def evaluate_invariance(data_loader, model, device, use_amp=False):
         else:
             pred_logits = model(images)
 
-        pred_target = F.log_softmax(pred_logits, dim=-1)
+        # pred_target = F.log_softmax(pred_logits, dim=-1)
         pred_label = pred_logits.max(dim=1)[1]
 
         batch_size = images.shape[0]
@@ -246,12 +246,12 @@ def evaluate_invariance(data_loader, model, device, use_amp=False):
             if use_amp:
                 with torch.cuda.amp.autocast():
                     output = model(transformed_images)
-                    kl_div = F.kl_div(output, pred_target)
+                    loss = criterion(output, gold_target)
             else:
                 output = model(transformed_images)
-                kl_div = F.kl_div(output, pred_target)
+                loss = criterion(output, gold_target)
 
-            metric_logger.meters[f'{variance_name} kl_div'].update(kl_div.item(), n=batch_size)
+            metric_logger.meters[f'{variance_name} loss'].update(loss.item(), n=batch_size)
 
             acc1, acc5 = accuracy(output, gold_target, topk=(1, 5))
             consistency = accuracy(output, pred_label)[0]
