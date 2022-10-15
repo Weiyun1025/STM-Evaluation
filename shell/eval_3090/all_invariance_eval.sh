@@ -15,6 +15,7 @@ CKPT_NAME=('49' '99' '149' '199' '249' '299')
 VARIANCE_TYPE=('translation' 'pre_rotation' 'post_rotation' 'scale')
 for model_type in "${MODEL[@]}"
 do
+    model_type="${model_type}_tiny"
     for ckpt in "${CKPT_NAME[@]}"
     do
         for variance in "${VARIANCE_TYPE[@]}"
