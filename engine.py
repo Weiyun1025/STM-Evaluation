@@ -237,7 +237,7 @@ def evaluate_invariance(data_loader, model, device, use_amp=False):
         else:
             pred_logits = model(images)
 
-        # pred_target = F.log_softmax(pred_logits, dim=-1)
+        pred_target = F.softmax(pred_logits, dim=-1)
         pred_label = pred_logits.max(dim=1)[1]
 
         batch_size = images.shape[0]
@@ -246,10 +246,10 @@ def evaluate_invariance(data_loader, model, device, use_amp=False):
             if use_amp:
                 with torch.cuda.amp.autocast():
                     output = model(transformed_images)
-                    loss = criterion(output, gold_target)
+                    loss = criterion(output, pred_target)
             else:
                 output = model(transformed_images)
-                loss = criterion(output, gold_target)
+                loss = criterion(output, pred_target)
 
             metric_logger.meters[f'{variance_name} loss'].update(loss.item(), n=batch_size)
 
