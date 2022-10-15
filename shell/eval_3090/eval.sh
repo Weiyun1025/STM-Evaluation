@@ -3,8 +3,8 @@
 set -x
 mkdir logs
 
-CKPT_DIR=$1
-MODEL=$2
+CKPT_DIR="./backbone_outputdir/model_ckpt"
+MODEL=$1
 
 # key hyperparameters
 TOTAL_BATCH_SIZE="1024"
@@ -19,7 +19,7 @@ torchrun \
     main.py \
     --model "${MODEL}" \
     --eval true \
-    --resume "${CKPT_DIR}/${CKPT}.pth" \
+    --resume "${CKPT_DIR}/${MODEL}.pth" \
     --batch_size $((TOTAL_BATCH_SIZE/GPUS_PER_NODE)) \
     --input_size 224 \
     --data_set IMNET1k \
