@@ -146,21 +146,21 @@ def main(args):
                                                                                            jitter_strength=strength)
 
     if args.variance_type == 'pre_rotation':
-        for angle in range(0, 270+1, 15):
+        for angle in range(0, 360+1, 15):
             variance_transforms[f'pre rotation {angle}'] = rotate_transform(img_size=args.input_size,
                                                                             crop_ratio=args.crop_pct,
                                                                             angle=angle,
                                                                             pre_rotate=True)
 
     if args.variance_type == 'post_rotation':
-        for angle in range(0, 270+1, 15):
+        for angle in range(0, 360+1, 15):
             variance_transforms[f'pre rotation {angle}'] = rotate_transform(img_size=args.input_size,
                                                                             crop_ratio=args.crop_pct,
                                                                             angle=angle,
                                                                             pre_rotate=False)
 
     if args.variance_type == 'scale':
-        for ratio in range(500, 1500+1, 125):
+        for ratio in range(200, 2000+1, 125):
             ratio = ratio / 1000
             variance_transforms[f'scale {ratio}'] = standard_transform(img_size=args.input_size,
                                                                        crop_ratio=ratio)
