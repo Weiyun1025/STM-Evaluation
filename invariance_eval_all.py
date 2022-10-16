@@ -146,14 +146,14 @@ def main(args):
                                                                                            jitter_strength=strength)
 
     if args.variance_type == 'pre_rotation':
-        for angle in range(0, 360+1, 15):
+        for angle in range(0, 90+1, 5):
             variance_transforms[f'pre rotation {angle}'] = rotate_transform(img_size=args.input_size,
                                                                             crop_ratio=args.crop_pct,
                                                                             angle=angle,
                                                                             pre_rotate=True)
 
     if args.variance_type == 'post_rotation':
-        for angle in range(0, 360+1, 15):
+        for angle in range(0, 90+1, 5):
             variance_transforms[f'pre rotation {angle}'] = rotate_transform(img_size=args.input_size,
                                                                             crop_ratio=args.crop_pct,
                                                                             angle=angle,
