@@ -39,12 +39,13 @@ def benchmark_qps(model, data, backward=False, num_warm=10, num_iter=100):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_type', type=str, default='conv_halo_opt_abs_pe_tiny')
+    parser.add_argument('--model_type', type=str, required=True)
+    parser.add_argument('--bsz', type=int, default=128)
     args = parser.parse_args()
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = create_model(args.model_type).to(device)
-    data = torch.randn(32, 3, 224, 224).to(device)
+    data = torch.randn(args.bsz, 3, 224, 224).to(device)
 
     print(benchmark_qps(model, data, backward=False))
     print(benchmark_qps(model, data, backward=True))
