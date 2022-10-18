@@ -487,8 +487,11 @@ def save_model(args, epoch, model, model_without_ddp, optimizer, loss_scaler, mo
     if is_main_process() and isinstance(epoch, int):
         to_del = epoch - args.save_ckpt_num * args.save_ckpt_freq
         old_ckpt = output_dir / ('checkpoint-%s.pth' % to_del)
-        if os.path.exists(old_ckpt) and (to_del + 1) % 50 != 0:
-            os.remove(old_ckpt)
+        if os.path.exists(old_ckpt):
+            if args.save_interval_ckpt and (to_del + 1) % 50 == 0:
+                pass
+            else:
+                os.remove(old_ckpt)
 
 
 def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, model_ema=None):

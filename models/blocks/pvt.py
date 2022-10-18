@@ -122,3 +122,58 @@ class PvtBlock(nn.Module):
         x = x + self.drop_path(self.gamma_2 * self.mlp(self.norm2(x)))
 
         return x.reshape(B, H, W, -1).permute(0, 3, 1, 2)
+
+
+class PvtSingleResBlock(nn.Module):
+
+    def __init__(self,
+                 dim,
+                 drop_path,
+                 layer_scale_init_value,
+                 num_heads,
+                 input_resolution,
+                 stage,
+                 depth,
+                 mlp_ratios,
+                 sr_ratios,
+                 qkv_bias,
+                 qk_scale=None,
+                 drop=0.,
+                 attn_drop=0.,
+                 act_layer=nn.GELU,
+                 norm_layer=nn.LayerNorm,
+                 **kwargs):
+        super().__init__()
+        self.pos_embed = None
+        self.pos_drop = None
+        if depth == 0:
+            self.pos_embed = nn.Parameter(torch.zeros(1, dim, *input_resolution))
+            self.pos_drop = nn.Dropout(p=drop)
+
+            trunc_normal_(self.pos_embed, std=.02)
+
+        self.attn = Attention(dim,
+                              num_heads=num_heads[stage], qkv_bias=qkv_bias, qk_scale=qk_scale,
+                              attn_drop=attn_drop, proj_drop=drop, sr_ratio=sr_ratios[stage])
+
+        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+        self.norm = norm_layer(dim)
+        mlp_hidden_dim = int(dim * mlp_ratios[stage])
+        self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
+        self.gamma = nn.Parameter(layer_scale_init_value * torch.ones((dim)),
+                                  requires_grad=True) if layer_scale_init_value > 0 else 1
+
+    def forward(self, x):
+        B, C, H, W = x.shape
+
+        if self.pos_embed is not None:
+            x = self.pos_drop(x + self.pos_embed)
+
+        x = x.flatten(2).permute(0, 2, 1)
+
+        shortcut = x
+        x = self.attn(x, H, W)
+        x = self.gamma * self.mlp(self.norm(x))
+
+        x = shortcut + self.drop_path(x)
+        return x.reshape(B, H, W, -1).permute(0, 3, 1, 2)

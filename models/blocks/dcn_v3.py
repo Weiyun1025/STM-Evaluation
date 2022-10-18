@@ -89,7 +89,7 @@ class DCNv3Block(nn.Module):
             x = shortcut + self.drop_path(x)
             x = x + self.drop_path(self.mlp(self.norm2(x)))
 
-            return x.permute(0, 3, 1, 2)
+            return (x.permute(0, 3, 1, 2), x_deform_inputs[1])
 
         shortcut = x
         x = self.norm1(x)
@@ -98,6 +98,69 @@ class DCNv3Block(nn.Module):
         x = shortcut + self.drop_path(self.gamma1 * x)
         x = x + self.drop_path(self.gamma2 * self.mlp(self.norm2(x)))
 
+        return (x.permute(0, 3, 1, 2), x_deform_inputs[1])  # the returned value will be passed to the next block
+
+
+class DCNv3SingleResBlock(nn.Module):
+    def __init__(self, dim, drop_path, layer_scale_init_value, stage, total_depth, num_heads,
+                 kernel_size=7, deform_points=25, deform_ratio=1.0,
+                 dilation_rates=(1,),  deform_padding=True, mlp_ratio=4., drop=0.,
+                 act_layer=nn.GELU, norm_layer=nn.LayerNorm, offsets_scaler=1.0,
+                 **kwargs):
+        super().__init__()
+        self.dim = dim
+        self.num_heads = num_heads[stage]
+        self.mlp_ratio = mlp_ratio
+        self.depth = total_depth
+        self.stage = stage
+
+        self.attn = MSDeformAttnGrid_softmax(
+            d_model=dim, n_levels=1, n_heads=num_heads[stage],
+            n_points=deform_points, ratio=deform_ratio, dilation_rates=dilation_rates,
+            padding=deform_padding, dw_ks=kernel_size, offsets_scaler=offsets_scaler)
+        self.drop_path = DropPath(
+            drop_path) if drop_path > 0. else nn.Identity()
+        self.norm = norm_layer(dim)
+        self.mlp = MLP(in_features=dim, hidden_features=int(
+            dim * mlp_ratio), act_layer=act_layer, drop=drop)
+        self.layer_scale = False
+        if layer_scale_init_value > 0:
+            self.layer_scale = True
+            self.gamma = nn.Parameter(
+                layer_scale_init_value * torch.ones(dim), requires_grad=True)
+
+    def forward(self, x_deform_inputs):
+        def deform_forward(x):
+            n, h, w, c = x.shape
+            x = self.attn(
+                query=x.reshape(n, h*w, c),
+                reference_points=deform_inputs[0],
+                input_flatten=None,
+                input_spatial_shapes=deform_inputs[1],
+                input_level_start_index=deform_inputs[2],
+                input_padding_mask=None).reshape(n, h, w, c)
+
+            return x
+        # print(len(x_deform_inputs))
+        x = x_deform_inputs[0]
+        #deform_inputs = x_deform_inputs[1][self.depth]
+        deform_inputs = x_deform_inputs[1]
+
+        B, C, H, W = x.shape
+        x = x.permute(0, 2, 3, 1)
+        if not self.layer_scale:
+            shortcut = x
+            x = deform_forward(x)
+            x = self.mlp(self.norm(x))
+
+            x = shortcut + self.drop_path(x)
+            return (x.permute(0, 3, 1, 2), x_deform_inputs[1])
+
+        shortcut = x
+        x = deform_forward(x)
+        x = self.gamma * self.mlp(self.norm(x))
+
+        x = shortcut + self.drop_path(x)
         return (x.permute(0, 3, 1, 2), x_deform_inputs[1])  # the returned value will be passed to the next block
 
 

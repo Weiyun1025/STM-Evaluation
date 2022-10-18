@@ -182,6 +182,7 @@ def get_args_parser():
                         help='resume from checkpoint')
     parser.add_argument('--auto_resume', type=str2bool, default=True)
     parser.add_argument('--save_ckpt', type=str2bool, default=True)
+    parser.add_argument('--save_interval_ckpt', type=str2bool, default=True)
     parser.add_argument('--save_ckpt_freq', default=1, type=int)
     parser.add_argument('--save_ckpt_num', default=3, type=int)
 
