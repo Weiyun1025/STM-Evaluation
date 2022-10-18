@@ -4,8 +4,8 @@ set -x
 mkdir logs
 
 PARTITION=VC
-MODEL="conv_halo_v2_small"
-DESC="unified_config" 
+MODEL=$1
+DESC="ablate" 
 
 # key hyperparameters
 TOTAL_BATCH_SIZE="1024"
@@ -69,7 +69,10 @@ srun -p ${PARTITION} \
     --nb_classes 1000 \
     --use_amp true \
     --save_ckpt true \
-    --enable_wandb true \
+    --save_interval_ckpt false \
+    --enable_wandb false \
     --project 'model evaluation' \
     --name ${PROJECT_NAME} \
     --output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
+    
+# sh shell/1k_pretrain/convnext_small_1k_224.sh

@@ -39,7 +39,7 @@ srun -p ${PARTITION} \
     python -u main.py \
     --model ${MODEL} \
     --epochs 300 \
-    --batch_size $((TOTAL_BATCH_SIZE/GPUS_PER_NODE)) \
+    --batch_size $((TOTAL_BATCH_SIZE/GPUS)) \
     --warmup_epochs 20 \
     --lr ${LR} \
     --warmup_init_lr ${INIT_LR} \
