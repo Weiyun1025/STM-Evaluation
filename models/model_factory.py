@@ -1074,8 +1074,8 @@ def conv_halo_v2_c_small(pretrained=False, **kwargs):
                                        halo_size=halo_size,
                                        pos_embed_type='query_related'),
                      norm_every_stage=False,
-                     norm_after_avg=True
-                     ** kwargs)
+                     norm_after_avg=True,
+                     **kwargs)
 
     if pretrained:
         raise NotImplementedError()
