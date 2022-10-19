@@ -45,7 +45,7 @@ class QueryFreePosEmbedRel(nn.Module):
                 [torch.arange(win_h), torch.arange(win_w)],
                 indexing='ij'))  # 2, Wh, Ww
         '''
-        
+
         # shimin: for lower version torch, "indexing" arugment is not supported
         coords = torch.stack(
             torch.meshgrid(
@@ -79,7 +79,6 @@ class QueryRelatedPosEmbedRel(nn.Module):
     """ Relative Position Embedding
     As per: https://gist.github.com/aravindsrinivas/56359b79f0ce4449bcb04ab4b56a57a2
     Originally from: `Attention Augmented Convolutional Networks` - https://arxiv.org/abs/1904.09925
-
     """
 
     def __init__(self, block_size, win_size, dim_head, scale):
@@ -118,10 +117,8 @@ class QueryRelatedPosEmbedRel(nn.Module):
 
 class HaloAttn(nn.Module):
     """ Halo Attention
-
     Paper: `Scaling Local Self-Attention for Parameter Efficient Visual Backbones`
         - https://arxiv.org/abs/2103.12731
-
     The internal dimensions of the attention module are controlled by the interaction of several arguments.
       * the output dimension of the module is specified by dim_out, which falls back to input dim if not set
       * the value (v) dimension is set to dim_out // num_heads, the v projection determines the output dim
@@ -129,7 +126,6 @@ class HaloAttn(nn.Module):
         * num_heads * dim_head if dim_head is not None
         * num_heads * (dim_out * attn_ratio // num_heads) if dim_head is None
       * as seen above, attn_ratio determines the ratio of q and k relative to the output if dim_head not used
-
     Args:
         dim (int): input dimension to the module
         dim_out (int): output dimension of the module, same as dim if not set
@@ -305,7 +301,7 @@ class HaloBlockV2(nn.Module):
                  mlp_ratio=4.,
                  drop=0.,
                  act_layer=nn.GELU,
-                 pos_embed_type='query_free',
+                 pos_embed_type='query_related',
                  **kwargs):
         super().__init__()
         self.dim = dim
@@ -328,7 +324,7 @@ class HaloBlockV2(nn.Module):
         self.norm2 = nn.LayerNorm((dim, ))
         self.mlp = Mlp(in_features=dim,
                        hidden_features=int(dim * mlp_ratio),
-                       act_layer=act_layer, 
+                       act_layer=act_layer,
                        drop=drop)
 
         self.gamma_2 = nn.Parameter(
