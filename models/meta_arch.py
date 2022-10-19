@@ -2,7 +2,7 @@ import math
 import torch
 from torch import nn
 from timm.models.layers import LayerNorm2d, to_2tuple, trunc_normal_
-from .blocks.dcn_v3 import DCNv3Block
+from .blocks.dcn_v3 import DCNv3Block, DCNv3SingleResBlock
 
 # TODO: 检查所有norm的位置
 
@@ -221,7 +221,7 @@ class MetaArch(nn.Module):
         return no_weight_decay
 
     def forward_features(self, x):
-        deform = self.block_type is DCNv3Block
+        deform = self.block_type is DCNv3Block or self.block_type is DCNv3SingleResBlock
         if deform:
             deform_inputs = self._deform_inputs(x)
 
