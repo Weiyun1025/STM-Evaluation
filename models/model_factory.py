@@ -6,6 +6,35 @@ from .blocks.dcn_v3 import DCNv3Block, DCNv3SingleResBlock
 from .blocks.pvt import PvtBlock, PvtSingleResBlock
 from .blocks.pvt_v2 import PvtV2Block
 from .blocks import halonet, halonet_github, halonet_timm
+from .blocks.poolformer import PoolformerBlock, PoolformerV2Block
+
+
+@ register_model
+def conv_poolformer_tiny(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[3, 3, 9, 3],
+                     dims=[96, 192, 384, 768],
+                     block_type=PoolformerBlock,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@ register_model
+def conv_poolformer_v2_tiny(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[3, 3, 9, 3],
+                     dims=[96, 192, 384, 768],
+                     block_type=PoolformerV2Block,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
 
 
 @ register_model
