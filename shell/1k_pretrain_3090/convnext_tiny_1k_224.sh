@@ -3,7 +3,7 @@
 set -x
 mkdir logs
 
-MODEL="conv_convnext_v2_with_avg_norm_tiny"
+MODEL="conv_convnext_v3_tiny"
 DESC="unified_config" 
 
 # key hyperparameters

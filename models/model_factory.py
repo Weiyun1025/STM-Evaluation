@@ -52,11 +52,39 @@ def conv_convnext_v2_micro(pretrained=False, **kwargs):
 
 
 @ register_model
+def conv_convnext_v3_micro(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[3, 3, 8, 3],
+                     dims=[32, 64, 128, 256],
+                     block_type=ConvNeXtV3Block,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@ register_model
 def conv_convnext_v2_tiny(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
                      depths=[3, 3, 9, 3],
                      dims=[96, 192, 384, 768],
                      block_type=ConvNeXtV2Block,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@ register_model
+def conv_convnext_v3_tiny(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[2, 2, 9, 2],
+                     dims=[96, 192, 384, 768],
+                     block_type=ConvNeXtV3Block,
                      **kwargs)
 
     if pretrained:
@@ -166,6 +194,21 @@ def conv_convnext_v2_base(pretrained=False, **kwargs):
         raise NotImplementedError()
 
     return model
+
+
+@ register_model
+def conv_convnext_v3_base(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[2, 2, 24, 2],
+                     dims=[128, 256, 512, 1024],
+                     block_type=ConvNeXtV3Block,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
 
 # ******************* Swin with Conv Stem and Conv transition layer ******************
 

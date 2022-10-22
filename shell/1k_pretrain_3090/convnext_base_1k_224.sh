@@ -3,15 +3,15 @@
 set -x
 mkdir logs
 
-MODEL="conv_convnext_v2_with_avg_norm_small"
+MODEL="conv_convnext_v3_base"
 DESC="unified_config" 
 
 # key hyperparameters
-TOTAL_BATCH_SIZE="4096"
+TOTAL_BATCH_SIZE="1024"
 LR="4e-3"
 INIT_LR="0"
 END_LR="1e-6"
-DROP_PATH="0.4"
+DROP_PATH="0.5"
 
 PROJECT_NAME="${MODEL}_1k_${DESC}"
 
@@ -28,6 +28,7 @@ torchrun \
     --model ${MODEL} \
     --epochs 300 \
     --batch_size $((TOTAL_BATCH_SIZE/GPUS)) \
+    --update_freq 4 \
     --warmup_epochs 20 \
     --lr ${LR} \
     --warmup_init_lr ${INIT_LR} \
@@ -57,6 +58,7 @@ torchrun \
     --nb_classes 1000 \
     --use_amp true \
     --save_ckpt true \
+    --save_interval_ckpt false \
     --enable_wandb true \
     --project 'model evaluation' \
     --name ${PROJECT_NAME} \
