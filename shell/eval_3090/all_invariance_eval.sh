@@ -10,7 +10,7 @@ TOTAL_BATCH_SIZE="64"
 GPUS=${GPUS:-8}
 GPUS_PER_NODE=${GPUS_PER_NODE:-8}
 
-MODEL=('conv_convnext_v2' 'conv_swin' 'conv_halo_v2' 'dcn_v3' 'conv_pvt')
+MODEL=('conv_convnext_v3' 'conv_swin' 'conv_halo_v2' 'dcn_v3' 'conv_pvt')
 CKPT_NAME=('49' '99' '149' '199' '249' '299')
 VARIANCE_TYPE=('translation' 'pre_rotation' 'post_rotation' 'scale')
 for model_type in "${MODEL[@]}"

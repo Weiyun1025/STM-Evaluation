@@ -169,7 +169,7 @@ def conv_convnext_e_small(pretrained=False, **kwargs):
 
 
 @ register_model
-def conv_convnext_f_small(pretrained=False, **kwargs):
+def conv_convnext_v3_small(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
                      depths=[2, 2, 24, 2],
                      dims=[96, 192, 384, 768],
