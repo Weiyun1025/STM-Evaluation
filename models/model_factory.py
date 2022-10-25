@@ -1,6 +1,6 @@
 from timm.models import register_model
 from .meta_arch import MetaArch, PatchEmbed, PatchMerging
-from .blocks.convnext import ConvNeXtBlock, ConvNeXtV2Block, ConvNeXtV3Block
+from .blocks.convnext import ConvNeXtBlock, ConvNeXtV2Block, ConvNeXtV3Block, ConvNeXtV3SingleResBlock
 from .blocks.swin import SwinBlock, SwinSingleResBlock
 from .blocks.dcn_v3 import DCNv3Block, DCNv3SingleResBlock
 from .blocks.pvt import PvtBlock, PvtSingleResBlock
@@ -110,9 +110,9 @@ def conv_convnext_v2_small(pretrained=False, **kwargs):
 @ register_model
 def conv_convnext_b_small(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
-                     depths=[3, 3, 27, 3],
+                     depths=[2, 2, 24, 2],
                      dims=[96, 192, 384, 768],
-                     block_type=ConvNeXtV2Block,
+                     block_type=ConvNeXtV3Block,
                      norm_after_avg=True,
                      **kwargs)
 
@@ -125,9 +125,9 @@ def conv_convnext_b_small(pretrained=False, **kwargs):
 @ register_model
 def conv_convnext_c_small(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
-                     depths=[3, 3, 27, 3],
+                     depths=[2, 2, 24, 2],
                      dims=[96, 192, 384, 768],
-                     block_type=ConvNeXtV2Block,
+                     block_type=ConvNeXtV3Block,
                      norm_every_stage=False,
                      norm_after_avg=True,
                      **kwargs)
@@ -141,9 +141,9 @@ def conv_convnext_c_small(pretrained=False, **kwargs):
 @ register_model
 def conv_convnext_d_small(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
-                     depths=[3, 3, 27, 3],
+                     depths=[2, 2, 24, 2],
                      dims=[96, 192, 384, 768],
-                     block_type=ConvNeXtBlock,
+                     block_type=ConvNeXtV3SingleResBlock,
                      **kwargs)
 
     if pretrained:
@@ -155,9 +155,9 @@ def conv_convnext_d_small(pretrained=False, **kwargs):
 @ register_model
 def conv_convnext_e_small(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
-                     depths=[3, 3, 27, 3],
+                     depths=[2, 2, 24, 2],
                      dims=[96, 192, 384, 768],
-                     block_type=ConvNeXtBlock,
+                     block_type=ConvNeXtV3SingleResBlock,
                      norm_every_stage=False,
                      norm_after_avg=True,
                      **kwargs)
