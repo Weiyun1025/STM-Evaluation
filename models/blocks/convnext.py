@@ -169,10 +169,10 @@ class ConvNeXtV3SingleResBlock(nn.Module):
 
         if self.gamma is not None:
             x = self.gamma * x
-        x = shortcut + self.drop_path(x)
 
         # (N, H, W, C) -> (N, C, H, W)
         x = x.permute(0, 3, 1, 2)
+        x = shortcut + self.drop_path(x)
         return x
 
 
