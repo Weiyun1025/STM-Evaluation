@@ -7,7 +7,7 @@ MODEL="conv_halo_v2_small"
 DESC="unified_config_3090" 
 
 # key hyperparameters
-TOTAL_BATCH_SIZE="1024"
+TOTAL_BATCH_SIZE="512"
 LR="1e-3"
 INIT_LR="1e-6"
 END_LR="1e-5"
@@ -26,6 +26,7 @@ torchrun \
     --model ${MODEL} \
     --epochs 300 \
     --batch_size $((TOTAL_BATCH_SIZE/GPUS_PER_NODE)) \
+    --update_freq 2 \
     --warmup_epochs 20 \
     --lr ${LR} \
     --warmup_init_lr ${INIT_LR} \
@@ -55,6 +56,7 @@ torchrun \
     --nb_classes 1000 \
     --use_amp true \
     --save_ckpt true \
+    --save_interval_ckpt false \
     --enable_wandb true \
     --project 'model evaluation' \
     --name ${PROJECT_NAME} \
