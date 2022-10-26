@@ -40,6 +40,7 @@ class ConvNeXtBlock(nn.Module):
 
 
 class ConvNeXtV2Block(nn.Module):
+    # double res
     def __init__(self, dim, drop_path, layer_scale_init_value, **kwargs):
         super().__init__()
         self.dw_norm = LayerNorm2d(dim, eps=1e-6)
@@ -84,9 +85,8 @@ class ConvNeXtV2Block(nn.Module):
         return x
 
 
-# Compared with V2
-# V3 block add a output proj for dw conv
 class ConvNeXtV3Block(nn.Module):
+    # double res + in/out proj
     def __init__(self, dim, drop_path, layer_scale_init_value, **kwargs):
         super().__init__()
         self.dw_norm = LayerNorm2d(dim, eps=1e-6)
@@ -136,6 +136,7 @@ class ConvNeXtV3Block(nn.Module):
 
 
 class ConvNeXtV4Block(nn.Module):
+    # double res + out proj
     def __init__(self, dim, drop_path, layer_scale_init_value, **kwargs):
         super().__init__()
         self.dw_norm = LayerNorm2d(dim, eps=1e-6)
@@ -184,6 +185,7 @@ class ConvNeXtV4Block(nn.Module):
 
 
 class ConvNeXtV3SingleResBlock(nn.Module):
+    # single res + in/out proj
     def __init__(self, dim, drop_path, layer_scale_init_value, **kwargs):
         super().__init__()
         self.dw_norm = LayerNorm2d(dim, eps=1e-6)
@@ -221,6 +223,56 @@ class ConvNeXtV3SingleResBlock(nn.Module):
         # (N, H, W, C) -> (N, C, H, W)
         x = x.permute(0, 3, 1, 2)
         x = shortcut + self.drop_path(x)
+        return x
+
+
+class ConvNeXtV5Block(nn.Module):
+    # double res + in/out proj
+    def __init__(self, dim, drop_path, layer_scale_init_value, **kwargs):
+        super().__init__()
+        self.dw_norm = LayerNorm2d(dim, eps=1e-6)
+        self.dwconv = nn.Sequential(
+            nn.Conv2d(dim, dim * 2, kernel_size=1, stride=1, padding=0),
+            nn.GELU(),
+            nn.Conv2d(dim * 2, dim * 2, kernel_size=7, padding=3, groups=dim),
+            nn.GELU(),
+            nn.Conv2d(dim * 2, dim, kernel_size=1, stride=1, padding=0),
+        )
+
+        self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((1, dim, 1, 1)),
+                                    requires_grad=True) if layer_scale_init_value > 0 else None
+
+        # pointwise/1x1 convs, implemented with linear layers
+        self.pw_norm = nn.LayerNorm(dim, eps=1e-6)
+        self.pwconv = nn.Sequential(
+            nn.Linear(dim, 4 * dim),
+            nn.GELU(),
+            nn.Linear(4 * dim, dim),
+        )
+
+        self.gamma_2 = nn.Parameter(layer_scale_init_value * torch.ones((1, 1, 1, dim)),
+                                    requires_grad=True) if layer_scale_init_value > 0 else None
+
+        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+
+    def forward(self, x):
+        shortcut = x
+        x = self.dwconv(self.dw_norm(x))
+        if self.gamma_1 is not None:
+            x = self.gamma_1 * x
+        x = shortcut + self.drop_path(x)
+
+        # (N, C, H, W) -> (N, H, W, C)
+        x = x.permute(0, 2, 3, 1)
+
+        shortcut = x
+        x = self.pwconv(self.pw_norm(x))
+        if self.gamma_2 is not None:
+            x = self.gamma_2 * x
+        x = shortcut + self.drop_path(x)
+
+        # (N, H, W, C) -> (N, C, H, W)
+        x = x.permute(0, 3, 1, 2)
         return x
 
 
