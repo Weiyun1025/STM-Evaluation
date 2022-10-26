@@ -139,8 +139,9 @@ def main(args):
     heatmap visualization
     """
     cmap = plt.cm.get_cmap('viridis')
+    #cmap = plt.cm.get_cmap('YlGn')
     #original_image = np.from_array(image)
-    figure = plt.figure(dpi=800)
+    figure = plt.figure(dpi=1600)
 
     for lidx, erf_map in enumerate(mean_erf):
         contribution_scores = erf_map / (counter)
