@@ -1,6 +1,6 @@
 from timm.models import register_model
 from .meta_arch import MetaArch, PatchEmbed, PatchMerging
-from .blocks.convnext import ConvNeXtBlock, ConvNeXtV2Block, ConvNeXtV3Block, ConvNeXtV3SingleResBlock, ConvNeXtV4Block, ConvNeXtV5Block
+from .blocks.convnext import ConvNeXtBlock, ConvNeXtV2Block, ConvNeXtV3Block, ConvNeXtV3SingleResBlock, ConvNeXtV4Block, ConvNeXtV5Block, ConvNeXtV6Block
 from .blocks.swin import SwinBlock, SwinSingleResBlock
 from .blocks.dcn_v3 import DCNv3Block, DCNv3SingleResBlock
 from .blocks.pvt import PvtBlock, PvtSingleResBlock
@@ -202,6 +202,20 @@ def conv_convnext_v5_small(pretrained=False, **kwargs):
                      depths=[2, 2, 18, 2],
                      dims=[96, 192, 384, 768],
                      block_type=ConvNeXtV5Block,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@ register_model
+def conv_convnext_v6_small(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[3, 3, 18, 3],
+                     dims=[96, 192, 384, 768],
+                     block_type=ConvNeXtV6Block,
                      **kwargs)
 
     if pretrained:
