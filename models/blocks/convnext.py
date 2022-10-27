@@ -228,15 +228,15 @@ class ConvNeXtV3SingleResBlock(nn.Module):
 
 class ConvNeXtV5Block(nn.Module):
     # double res + in/out proj
-    def __init__(self, dim, drop_path, layer_scale_init_value, **kwargs):
+    def __init__(self, dim, drop_path, layer_scale_init_value, bias=False, **kwargs):
         super().__init__()
         self.dw_norm = LayerNorm2d(dim, eps=1e-6)
         self.dwconv = nn.Sequential(
-            nn.Conv2d(dim, dim * 2, kernel_size=1, stride=1, padding=0),
+            nn.Conv2d(dim, dim * 2, kernel_size=1, stride=1, padding=0, bias=bias),
             nn.GELU(),
             nn.Conv2d(dim * 2, dim * 2, kernel_size=7, padding=3, groups=dim),
             nn.GELU(),
-            nn.Conv2d(dim * 2, dim, kernel_size=1, stride=1, padding=0),
+            nn.Conv2d(dim * 2, dim, kernel_size=1, stride=1, padding=0, bias=bias),
         )
 
         self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((1, dim, 1, 1)),
