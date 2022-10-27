@@ -3,7 +3,7 @@
 set -x
 mkdir logs
 
-MODEL="conv_swin_single_res_tiny"
+MODEL="conv_swin_tiny"
 DESC="unified_config_3090" 
 
 # key hyperparameters
