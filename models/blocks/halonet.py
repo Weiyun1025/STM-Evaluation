@@ -216,13 +216,13 @@ class HaloAttn(nn.Module):
         # unfold
         q = q.reshape(-1, num_h_blocks, self.block_size_ds, num_w_blocks,
                       self.block_size_ds, self.num_heads,
-                      self.dim_head_qk).permute(0, 5, 1, 3, 2, 4, 6)
+                      self.dim_head_qk).permute(0, 5, 1, 3, 2, 4, 6).contiguous()
         # B, num_heads, num_h_blocks, num_w_blocks, block_size_ds, block_size_ds, dim_head_qk
         q = q.reshape(-1, self.num_heads, num_blocks, self.block_size**2,
                       self.dim_head_qk)
         # B, num_heads, num_blocks, block_size ** 2, dim_head
 
-        kv = self.kv(x.permute(0, 3, 1, 2))
+        kv = self.kv(x.permute(0, 3, 1, 2).contiguous())
         kv = F.pad(
             kv,
             [
@@ -237,7 +237,7 @@ class HaloAttn(nn.Module):
             self.block_size).reshape(-1, self.num_heads,
                                      self.dim_head_qk + self.dim_head_v,
                                      num_blocks,
-                                     self.win_size**2).permute(0, 1, 3, 4, 2)
+                                     self.win_size**2).permute(0, 1, 3, 4, 2).contiguous()
         k, v = torch.split(kv, [self.dim_head_qk, self.dim_head_v], dim=-1)
         k = k.reshape(-1, self.num_heads, num_blocks, self.win_size,
                       self.win_size, self.dim_head_qk)
@@ -263,7 +263,7 @@ class HaloAttn(nn.Module):
         out = out.reshape(-1, self.num_heads, num_h_blocks, num_w_blocks,
                           self.block_size_ds, self.block_size_ds,
                           self.dim_head_qk)
-        out = out.permute(0, 2, 4, 3, 5, 1, 6).reshape(B, H, W, self.dim_out_v)
+        out = out.permute(0, 2, 4, 3, 5, 1, 6).reshape(B, H, W, self.dim_out_v).contiguous()
         out = self.proj(out)
         # B, H, W, dim_out
         return out
@@ -334,11 +334,11 @@ class HaloBlockV2(nn.Module):
 
     @staticmethod
     def pre_stage_transform(x):
-        return x.permute(0, 2, 3, 1)
+        return x.permute(0, 2, 3, 1).contiguous()
 
     @staticmethod
     def post_stage_transform(x):
-        return x.permute(0, 3, 1, 2)
+        return x.permute(0, 3, 1, 2).contiguous()
 
     def forward(self, x):
         # shape: (B, H, W, C)
@@ -399,11 +399,11 @@ class HaloSingleResBlock(nn.Module):
 
     @staticmethod
     def pre_stage_transform(x):
-        return x.permute(0, 2, 3, 1)
+        return x.permute(0, 2, 3, 1).contiguous()
 
     @staticmethod
     def post_stage_transform(x):
-        return x.permute(0, 3, 1, 2)
+        return x.permute(0, 3, 1, 2).contiguous()
 
     def forward(self, x):
         # shape: (B, H, W, C)

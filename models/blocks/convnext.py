@@ -1,8 +1,8 @@
 import torch
 from torch import nn
 from timm.models import register_model
-from timm.models.layers import DropPath, LayerNorm2d, to_2tuple
-from ..meta_arch import MetaArch
+from timm.models.layers import DropPath, to_2tuple
+from ..meta_arch import MetaArch, LayerNorm2d
 
 
 class ConvNeXtBlock(nn.Module):
@@ -21,10 +21,10 @@ class ConvNeXtBlock(nn.Module):
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
 
     def forward(self, x):
-        shortcut = x.permute(0, 2, 3, 1)
+        shortcut = x.permute(0, 2, 3, 1).contiguous()
         x = self.dwconv(x)
         # (N, C, H, W) -> (N, H, W, C)
-        x = x.permute(0, 2, 3, 1)
+        x = x.permute(0, 2, 3, 1).contiguous()
         x = self.norm(x)
         x = self.pwconv1(x)
         x = self.act(x)
@@ -34,7 +34,7 @@ class ConvNeXtBlock(nn.Module):
         x = shortcut + self.drop_path(x)
 
         # (N, H, W, C) -> (N, C, H, W)
-        x = x.permute(0, 3, 1, 2)
+        x = x.permute(0, 3, 1, 2).contiguous()
 
         return x
 
@@ -68,7 +68,7 @@ class ConvNeXtV2Block(nn.Module):
         x = shortcut + self.drop_path(x)
 
         # (N, C, H, W) -> (N, H, W, C)
-        x = x.permute(0, 2, 3, 1)
+        x = x.permute(0, 2, 3, 1).contiguous()
 
         shortcut = x
         x = self.pw_norm(x)
@@ -80,7 +80,7 @@ class ConvNeXtV2Block(nn.Module):
         x = shortcut + self.drop_path(x)
 
         # (N, H, W, C) -> (N, C, H, W)
-        x = x.permute(0, 3, 1, 2)
+        x = x.permute(0, 3, 1, 2).contiguous()
 
         return x
 
@@ -118,7 +118,7 @@ class ConvNeXtV3Block(nn.Module):
         x = shortcut + self.drop_path(x)
 
         # (N, C, H, W) -> (N, H, W, C)
-        x = x.permute(0, 2, 3, 1)
+        x = x.permute(0, 2, 3, 1).contiguous()
 
         shortcut = x
         x = self.pw_norm(x)
@@ -130,7 +130,7 @@ class ConvNeXtV3Block(nn.Module):
         x = shortcut + self.drop_path(x)
 
         # (N, H, W, C) -> (N, C, H, W)
-        x = x.permute(0, 3, 1, 2)
+        x = x.permute(0, 3, 1, 2).contiguous()
 
         return x
 
@@ -167,7 +167,7 @@ class ConvNeXtV4Block(nn.Module):
         x = shortcut + self.drop_path(x)
 
         # (N, C, H, W) -> (N, H, W, C)
-        x = x.permute(0, 2, 3, 1)
+        x = x.permute(0, 2, 3, 1).contiguous()
 
         shortcut = x
         x = self.pw_norm(x)
@@ -179,7 +179,7 @@ class ConvNeXtV4Block(nn.Module):
         x = shortcut + self.drop_path(x)
 
         # (N, H, W, C) -> (N, C, H, W)
-        x = x.permute(0, 3, 1, 2)
+        x = x.permute(0, 3, 1, 2).contiguous()
 
         return x
 
@@ -211,7 +211,7 @@ class ConvNeXtV3SingleResBlock(nn.Module):
         x = self.dw_out_proj(x)
 
         # (N, C, H, W) -> (N, H, W, C)
-        x = x.permute(0, 2, 3, 1)
+        x = x.permute(0, 2, 3, 1).contiguous()
         x = self.pw_norm(x)
         x = self.pwconv1(x)
         x = self.act(x)
@@ -221,7 +221,7 @@ class ConvNeXtV3SingleResBlock(nn.Module):
             x = self.gamma * x
 
         # (N, H, W, C) -> (N, C, H, W)
-        x = x.permute(0, 3, 1, 2)
+        x = x.permute(0, 3, 1, 2).contiguous()
         x = shortcut + self.drop_path(x)
         return x
 
@@ -263,7 +263,7 @@ class ConvNeXtV5Block(nn.Module):
         x = shortcut + self.drop_path(x)
 
         # (N, C, H, W) -> (N, H, W, C)
-        x = x.permute(0, 2, 3, 1)
+        x = x.permute(0, 2, 3, 1).contiguous()
 
         shortcut = x
         x = self.pwconv(self.pw_norm(x))
@@ -272,7 +272,7 @@ class ConvNeXtV5Block(nn.Module):
         x = shortcut + self.drop_path(x)
 
         # (N, H, W, C) -> (N, C, H, W)
-        x = x.permute(0, 3, 1, 2)
+        x = x.permute(0, 3, 1, 2).contiguous()
         return x
 
 
@@ -314,7 +314,7 @@ class ConvNeXtV6Block(nn.Module):
         x = self.dwconv(self.dwnorm(x))
 
         # (N, C, H, W) -> (N, H, W, C)
-        x = x.permute(0, 2, 3, 1)
+        x = x.permute(0, 2, 3, 1).contiguous()
 
         shortcut = x
         x = self.post_pwconv(self.post_pwnorm(x))
@@ -323,7 +323,7 @@ class ConvNeXtV6Block(nn.Module):
         x = shortcut + self.drop_path(x)
 
         # (N, H, W, C) -> (N, C, H, W)
-        x = x.permute(0, 3, 1, 2)
+        x = x.permute(0, 3, 1, 2).contiguous()
         return x
 
 

@@ -1,6 +1,7 @@
 import torch
 from torch import nn
-from timm.models.layers import DropPath, LayerNorm2d, Mlp
+from timm.models.layers import DropPath, Mlp
+from ..meta_arch import LayerNorm2d
 
 
 class PoolformerBlock(nn.Module):
@@ -36,7 +37,7 @@ class PoolformerBlock(nn.Module):
         x = shortcut + self.drop_path(x)
 
         # (N, C, H, W) -> (N, H, W, C)
-        x = x.permute(0, 2, 3, 1)
+        x = x.permute(0, 2, 3, 1).contiguous()
 
         shortcut = x
         x = self.pw_norm(x)
@@ -48,7 +49,7 @@ class PoolformerBlock(nn.Module):
         x = shortcut + self.drop_path(x)
 
         # (N, H, W, C) -> (N, C, H, W)
-        x = x.permute(0, 3, 1, 2)
+        x = x.permute(0, 3, 1, 2).contiguous()
 
         return x
 

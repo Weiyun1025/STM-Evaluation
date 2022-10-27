@@ -117,11 +117,11 @@ class PvtBlock(nn.Module):
         if self.pos_embed is not None:
             x = self.pos_drop(x + self.pos_embed)
 
-        x = x.flatten(2).permute(0, 2, 1)
+        x = x.flatten(2).permute(0, 2, 1).contiguous()
         x = x + self.drop_path(self.gamma_1 * self.attn(self.norm1(x), H, W))
         x = x + self.drop_path(self.gamma_2 * self.mlp(self.norm2(x)))
 
-        return x.reshape(B, H, W, -1).permute(0, 3, 1, 2)
+        return x.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
 
 
 class PvtSingleResBlock(nn.Module):
@@ -169,11 +169,11 @@ class PvtSingleResBlock(nn.Module):
         if self.pos_embed is not None:
             x = self.pos_drop(x + self.pos_embed)
 
-        x = x.flatten(2).permute(0, 2, 1)
+        x = x.flatten(2).permute(0, 2, 1).contiguous()
 
         shortcut = x
         x = self.attn(x, H, W)
         x = self.gamma * self.mlp(self.norm(x))
 
         x = shortcut + self.drop_path(x)
-        return x.reshape(B, H, W, -1).permute(0, 3, 1, 2)
+        return x.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()

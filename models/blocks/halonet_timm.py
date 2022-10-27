@@ -1,12 +1,12 @@
 import torch
 from torch import nn
 from timm.models import register_model
-from timm.models.layers import DropPath, LayerNorm2d, Mlp, to_2tuple, make_divisible
+from timm.models.layers import DropPath, Mlp, to_2tuple, make_divisible
 from timm.models.byobnet import _block_registry, num_groups, create_shortcut, LayerFn
 from timm.models.layers.halo_attn import HaloAttn as HaloAttention
 from timm.models.helpers import build_model_with_cfg
 from timm.models.byobnet import ByoModelCfg, ByoBlockCfg, ByobNet
-from ..meta_arch import MetaArch
+from ..meta_arch import MetaArch, LayerNorm2d
 
 
 class HaloBlock(nn.Module):

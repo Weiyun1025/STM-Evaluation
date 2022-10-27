@@ -1,9 +1,9 @@
 import torch
 from torch import nn
 from timm.models import register_model
-from timm.models.layers import DropPath, Mlp, LayerNorm2d, to_2tuple, _assert
+from timm.models.layers import DropPath, Mlp, to_2tuple, _assert
 from timm.models.swin_transformer import WindowAttention, window_partition, window_reverse
-from ..meta_arch import MetaArch
+from ..meta_arch import MetaArch, LayerNorm2d
 
 
 class SwinBlock(nn.Module):

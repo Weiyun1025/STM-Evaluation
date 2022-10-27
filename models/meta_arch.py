@@ -1,10 +1,23 @@
 import math
 import torch
+import torch.nn.functional as F
+
 from torch import nn
-from timm.models.layers import LayerNorm2d, to_2tuple, trunc_normal_
+from timm.models.layers import to_2tuple, trunc_normal_
 from .blocks.dcn_v3 import DCNv3Block, DCNv3SingleResBlock
 
-# TODO: 检查所有norm的位置
+
+class LayerNorm2d(nn.LayerNorm):
+    """ LayerNorm for channels of '2D' spatial NCHW tensors """
+
+    def __init__(self, num_channels, eps=1e-6, affine=True):
+        super().__init__(num_channels, eps=eps, elementwise_affine=affine)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = x.permute(0, 2, 3, 1).contiguous()
+        x = F.layer_norm(x, self.normalized_shape, self.weight, self.bias, self.eps)
+        x = x.permute(0, 3, 1, 2).contiguous()
+        return x
 
 
 class Stem(nn.Module):

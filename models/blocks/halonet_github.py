@@ -3,9 +3,9 @@ import torch.nn.functional as F
 from torch import nn, einsum
 from einops import rearrange, repeat
 from timm.models import register_model
-from timm.models.layers import DropPath, LayerNorm2d, Mlp
+from timm.models.layers import DropPath, Mlp
 
-from ..meta_arch import MetaArch
+from ..meta_arch import MetaArch, LayerNorm2d
 
 
 def to(x):
@@ -247,12 +247,12 @@ class HaloBlockV2(nn.Module):
 
         # FFN
         shortcut = x
-        x = self.mlp(self.norm2(x).permute(0, 2, 3, 1))
+        x = self.mlp(self.norm2(x).permute(0, 2, 3, 1).contiguous())
 
         if self.gamma_2 is not None:
             x = self.gamma_2 * x
 
-        x = x.permute(0, 3, 1, 2)
+        x = x.permute(0, 3, 1, 2).contiguous()
         x = shortcut + self.drop_path(x)
 
         return x
@@ -294,12 +294,12 @@ class HaloBlockV3(nn.Module):
 
         # FFN
         shortcut = x
-        x = self.mlp(self.norm2(x).permute(0, 2, 3, 1))
+        x = self.mlp(self.norm2(x).permute(0, 2, 3, 1).contiguous())
 
         if self.gamma_2 is not None:
             x = self.gamma_2 * x
 
-        x = x.permute(0, 3, 1, 2)
+        x = x.permute(0, 3, 1, 2).contiguous()
         x = shortcut + self.drop_path(x)
 
         return x

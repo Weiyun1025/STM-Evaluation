@@ -170,7 +170,7 @@ class PvtV2Block(nn.Module):
     def forward(self, x):
         B, C, H, W = x.shape
         # (B, C, H, W) -> (B, N, C)
-        x = x.view(B, C, H * W).permute(0, 2, 1)
+        x = x.view(B, C, H * W).permute(0, 2, 1).contiguous()
 
         shortcut = x
         x = self.drop_path(self.attn(self.norm1(x), H, W))
@@ -185,7 +185,7 @@ class PvtV2Block(nn.Module):
         x = shortcut + x
 
         # (B, N, C') -> (B, H, W, C') -> (B, C', H, W)
-        x = x.view(B, H,  W, -1).permute(0, 3, 1, 2)
+        x = x.view(B, H,  W, -1).permute(0, 3, 1, 2).contiguous()
         return x
 
 
