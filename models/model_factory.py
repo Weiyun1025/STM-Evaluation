@@ -108,6 +108,20 @@ def conv_convnext_v2_small(pretrained=False, **kwargs):
 
 
 @ register_model
+def conv_convnext_v1_small(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[3, 3, 27, 3],
+                     dims=[96, 192, 384, 768],
+                     block_type=ConvNeXtBlock,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@ register_model
 def conv_convnext_b_small(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
                      depths=[2, 2, 24, 2],

@@ -227,7 +227,7 @@ class ConvNeXtV3SingleResBlock(nn.Module):
 
 
 class ConvNeXtV5Block(nn.Module):
-    # double res + in/out proj
+    # double res + in/out proj + activation
     def __init__(self, dim, drop_path, layer_scale_init_value, bias=False, **kwargs):
         super().__init__()
         self.dw_norm = LayerNorm2d(dim, eps=1e-6)
@@ -277,7 +277,7 @@ class ConvNeXtV5Block(nn.Module):
 
 
 class ConvNeXtV6Block(nn.Module):
-    # double res + in/out proj
+    # demo
     def __init__(self, dim, drop_path, layer_scale_init_value, bias=False, **kwargs):
         super().__init__()
         self.pre_pwnorm = LayerNorm2d(dim, eps=1e-6)
