@@ -181,6 +181,7 @@ class MetaArch(nn.Module):
                  deform_padding=True,
                  cls_attn_len=5,
                  cls_num_heads=(3, 6, 12, 24),
+                 end_attn=False,
                  **kwargs,
                  ):
         super().__init__()
@@ -226,6 +227,11 @@ class MetaArch(nn.Module):
                                     num_heads=cls_num_heads[i],
                                     num_classes=num_classes))
             cur += depths[i]
+
+        if end_attn:
+            self.end_attn = nn.MultiheadAttention(embed_dim=num_classes,
+                                                  num_heads=8,
+                                                  batch_first=True)
 
         # self.stage_end_norm = nn.Identity() if norm_every_stage or norm_after_avg else norm_layer(dims[-1])
 
@@ -291,7 +297,10 @@ class MetaArch(nn.Module):
         # x = self.avg_head(x)
         # return x
 
-        return torch.mean(torch.cat(cls_tokens, dim=1), dim=1)
+        cls_tokens = torch.cat(cls_tokens, dim=1)
+        if hasattr(self, 'end_attn'):
+            cls_tokens = self.end_attn(query=cls_tokens, key=cls_tokens, value=cls_tokens)[0]
+        return torch.mean(cls_tokens, dim=1)
 
     def forward(self, x):
         x = self.forward_features(x)
