@@ -218,10 +218,13 @@ class MetaArch(nn.Module):
             )
             self.stages.append(stage)
             self.stage_norms.append(norm_layer(dim) if norm_every_stage else nn.Identity())
-            self.cls_attn.append(CLS(query_len=cls_attn_len,
-                                     dim=dim,
-                                     num_heads=cls_num_heads[i],
-                                     num_classes=num_classes))
+
+            if i in (3, 4):
+                self.add_module(f'cls_attn_{i}',
+                                CLS(query_len=cls_attn_len,
+                                    dim=dim,
+                                    num_heads=cls_num_heads[i],
+                                    num_classes=num_classes))
             cur += depths[i]
 
         # self.stage_end_norm = nn.Identity() if norm_every_stage or norm_after_avg else norm_layer(dims[-1])
@@ -280,14 +283,15 @@ class MetaArch(nn.Module):
             x = x[0] if deform else x
             x = self.stage_norms[i](x)
 
-            cls_tokens.append(self.cls_attn[i](x))
+            if hasattr(self, f'cls_attn_{i}'):
+                cls_tokens.append(getattr(self, f'cls_attn_{i}')(x))
 
         # x = self.stage_end_norm(x)
         # x = self.conv_head(x)
         # x = self.avg_head(x)
         # return x
 
-        return torch.mean(torch.cat(cls_tokens[-2:], dim=1), dim=1)
+        return torch.mean(torch.cat(cls_tokens, dim=1), dim=1)
 
     def forward(self, x):
         x = self.forward_features(x)
