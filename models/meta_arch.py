@@ -287,7 +287,7 @@ class MetaArch(nn.Module):
         # x = self.avg_head(x)
         # return x
 
-        return torch.mean(torch.cat(cls_tokens, dim=1), dim=1)
+        return torch.mean(torch.cat(cls_tokens[-2:], dim=1), dim=1)
 
     def forward(self, x):
         x = self.forward_features(x)
