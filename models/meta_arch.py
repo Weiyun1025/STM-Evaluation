@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 
 from torch import nn
-from timm.models.layers import to_2tuple, trunc_normal_
+from timm.models.layers import to_2tuple, trunc_normal_, Mlp
 from .blocks.dcn_v3 import DCNv3Block, DCNv3SingleResBlock
 
 
@@ -120,6 +120,28 @@ class PatchMerging(nn.Module):
         return x
 
 
+class CLS(nn.Module):
+    # todo: pos embed, residual
+    def __init__(self, query_len, dim, num_heads, num_classes):
+        super().__init__()
+        self.q = nn.Parameter(torch.randn(1, query_len, dim))
+        self.attn = nn.MultiheadAttention(embed_dim=dim,
+                                          num_heads=num_heads,
+                                          batch_first=True)
+        self.norm = nn.LayerNorm(dim)
+        self.mlp = Mlp(in_features=dim, out_features=num_classes)
+
+    def forward(self, x):
+        B, C, H, W = x.shape
+        # BCHW -> BLC
+        x = x.flatten(2).permute(0, 2, 1).contiguous()
+        x = self.attn(query=self.q.repeat(B, 1, 1), key=x, value=x)[0]
+        x = self.mlp(self.norm(x))
+
+        # bsz, query_len, num_classes
+        return x
+
+
 class MetaArch(nn.Module):
     r""" ConvNeXt
         A PyTorch impl of : `A ConvNet for the 2020s`  -
@@ -157,6 +179,8 @@ class MetaArch(nn.Module):
                  act_layer=nn.GELU,
                  deform_points=9,
                  deform_padding=True,
+                 cls_attn_len=5,
+                 cls_num_heads=(3, 6, 12, 24),
                  **kwargs,
                  ):
         super().__init__()
@@ -183,6 +207,7 @@ class MetaArch(nn.Module):
         dp_rates = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]
         self.stages = nn.ModuleList()
         self.stage_norms = nn.ModuleList()
+        self.cls_attn = nn.ModuleList()
         for i, (depth, dim) in enumerate(zip(depths, dims)):
             stage = nn.Sequential(
                 *[block_type(dim=dim, drop_path=dp_rates[cur + j], stage=i, depth=j, total_depth=cur+j,
@@ -193,26 +218,31 @@ class MetaArch(nn.Module):
             )
             self.stages.append(stage)
             self.stage_norms.append(norm_layer(dim) if norm_every_stage else nn.Identity())
+            self.cls_attn.append(CLS(query_len=cls_attn_len,
+                                     dim=dim,
+                                     num_heads=cls_num_heads[i],
+                                     num_classes=num_classes))
             cur += depths[i]
-        self.stage_end_norm = nn.Identity() if norm_every_stage or norm_after_avg else norm_layer(dims[-1])
 
-        self.conv_head = nn.Sequential(
-            nn.Conv2d(dims[-1], int(dims[-1] * extra_transform_ratio), 1, 1, 0, bias=False),
-            nn.BatchNorm2d(int(dims[-1] * extra_transform_ratio)),
-            act_layer()
-        ) if extra_transform else nn.Identity()
+        # self.stage_end_norm = nn.Identity() if norm_every_stage or norm_after_avg else norm_layer(dims[-1])
 
-        features = int(dims[-1] * extra_transform_ratio) if extra_transform else dims[-1]
-        self.avg_head = nn.Sequential(
-            nn.AdaptiveAvgPool2d(1),
-            norm_layer(features) if norm_after_avg else nn.Identity(),
-            nn.Flatten(1),
-        )
+        # self.conv_head = nn.Sequential(
+        #     nn.Conv2d(dims[-1], int(dims[-1] * extra_transform_ratio), 1, 1, 0, bias=False),
+        #     nn.BatchNorm2d(int(dims[-1] * extra_transform_ratio)),
+        #     act_layer()
+        # ) if extra_transform else nn.Identity()
 
-        if num_classes > 0:
-            self.head = nn.Linear(features, num_classes)
-        else:
-            self.head = nn.Identity()
+        # features = int(dims[-1] * extra_transform_ratio) if extra_transform else dims[-1]
+        # self.avg_head = nn.Sequential(
+        #     nn.AdaptiveAvgPool2d(1),
+        #     norm_layer(features) if norm_after_avg else nn.Identity(),
+        #     nn.Flatten(1),
+        # )
+
+        # if num_classes > 0:
+        #     self.head = nn.Linear(features, num_classes)
+        # else:
+        #     self.head = nn.Identity()
 
         self.apply(self._init_weights)
 
@@ -239,6 +269,7 @@ class MetaArch(nn.Module):
             deform_inputs = self._deform_inputs(x)
 
         # shape: (B, C, H, W)
+        cls_tokens = []
         for i in range(4):
             x = self.downsample_layers[i](x)
             if hasattr(self.block_type, 'pre_stage_transform'):
@@ -249,15 +280,18 @@ class MetaArch(nn.Module):
             x = x[0] if deform else x
             x = self.stage_norms[i](x)
 
-        x = self.stage_end_norm(x)
+            cls_tokens.append(self.cls_attn[i](x))
 
-        x = self.conv_head(x)
-        x = self.avg_head(x)
-        return x
+        # x = self.stage_end_norm(x)
+        # x = self.conv_head(x)
+        # x = self.avg_head(x)
+        # return x
+
+        return torch.mean(torch.cat(cls_tokens, dim=1), dim=1)
 
     def forward(self, x):
         x = self.forward_features(x)
-        x = self.head(x)
+        # x = self.head(x)
         return x
 
     def target_layers(self):
