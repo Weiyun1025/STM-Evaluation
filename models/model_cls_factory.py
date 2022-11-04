@@ -111,7 +111,7 @@ def c1_swin_tiny(pretrained=False, **kwargs):
                      block_kwargs=dict(num_heads=num_heads, window_size=window_size),
                      active_stages=(0, 1, 2, 3),
                      cls_type=ClassBlockV2,
-                     cls_kwargs=dict(query_len=5),
+                     cls_kwargs=dict(query_len=5, mlp_ratio=1.),
                      **kwargs)
 
     if pretrained:
@@ -135,7 +135,54 @@ def c2_swin_tiny(pretrained=False, **kwargs):
                      active_stages=(0, 1, 2, 3),
                      end_attn=True,
                      cls_type=ClassBlockV2,
-                     cls_kwargs=dict(query_len=5),
+                     cls_kwargs=dict(query_len=5, mlp_ratio=1.),
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@register_model
+def d1_swin_tiny(pretrained=False, **kwargs):
+    dims = [96 * 2 ** i for i in range(4)]
+    depths = [2, 2, 6, 2]
+    num_heads = [3, 6, 12, 24]
+    window_size = 7
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     block_type=SwinBlock,
+                     block_kwargs=dict(num_heads=num_heads, window_size=window_size),
+                     active_stages=(0, 1, 2, 3),
+                     cls_type=ClassBlockV2,
+                     cls_kwargs=dict(query_len=5, mlp_ratio=1.5),
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@register_model
+def d2_swin_tiny(pretrained=False, **kwargs):
+    dims = [96 * 2 ** i for i in range(4)]
+    depths = [2, 2, 6, 2]
+    num_heads = [3, 6, 12, 24]
+    window_size = 7
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     block_type=SwinBlock,
+                     block_kwargs=dict(num_heads=num_heads, window_size=window_size),
+                     active_stages=(0, 1, 2, 3),
+                     end_attn=True,
+                     cls_type=ClassBlockV2,
+                     cls_kwargs=dict(query_len=5, mlp_ratio=1.5),
                      **kwargs)
 
     if pretrained:
