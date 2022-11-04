@@ -3,7 +3,8 @@ import torch
 import torch.nn.functional as F
 
 from torch import nn
-from timm.models.layers import to_2tuple, trunc_normal_, Mlp
+from timm.models.layers import to_2tuple, trunc_normal_
+from .cls import MultiLayerClassBlock
 from .blocks.dcn_v3 import DCNv3Block, DCNv3SingleResBlock
 
 
@@ -59,89 +60,6 @@ class DownsampleLayer(nn.Module):
         return self.reduction(x)
 
 
-class PatchEmbed(nn.Module):
-    """ 2D Image to Patch Embedding
-    """
-
-    def __init__(self, in_channels, out_channels, img_size, patch_size, norm_layer, norm_first, **kwargs):
-        super().__init__()
-        img_size = to_2tuple(img_size)
-        patch_size = to_2tuple(patch_size)
-        self.img_size = img_size
-        self.patch_size = patch_size
-        self.grid_size = (img_size[0] // patch_size[0], img_size[1] // patch_size[1])
-        self.num_patches = self.grid_size[0] * self.grid_size[1]
-
-        self.pre_norm = norm_layer(in_channels) if norm_first and norm_layer else nn.Identity()
-        self.proj = nn.Conv2d(in_channels, out_channels, kernel_size=patch_size, stride=patch_size)
-        self.post_norm = norm_layer(out_channels) if not norm_first and norm_layer else nn.Identity()
-
-    def forward(self, x):
-        B, C, H, W = x.shape
-        assert H == self.img_size[0], f"Input image height ({H}) doesn't match model ({self.img_size[0]})."
-        assert W == self.img_size[1], f"Input image width ({W}) doesn't match model ({self.img_size[1]})."
-
-        x = self.pre_norm(x)
-        x = self.proj(x)
-        x = self.post_norm(x)
-        return x
-
-
-class PatchMerging(nn.Module):
-    def __init__(self, in_channels, out_channels, **kwargs):
-        super().__init__()
-        self.dim = in_channels
-        self.out_dim = out_channels or 2 * in_channels
-        self.norm = nn.LayerNorm(4 * in_channels)
-        self.reduction = nn.Linear(4 * in_channels, self.out_dim, bias=False)
-
-    def forward(self, x):
-        """
-        x: B, C, H, W
-        """
-        B, C, H, W = x.shape
-        assert H % 2 == 0 and W % 2 == 0, f"x size ({H}*{W}) are not even."
-
-        # x = x.view(B, H, W, C)
-        x = x.permute(0, 2, 3, 1)
-
-        x0 = x[:, 0::2, 0::2, :]  # B H/2 W/2 C
-        x1 = x[:, 1::2, 0::2, :]  # B H/2 W/2 C
-        x2 = x[:, 0::2, 1::2, :]  # B H/2 W/2 C
-        x3 = x[:, 1::2, 1::2, :]  # B H/2 W/2 C
-        x = torch.cat([x0, x1, x2, x3], -1)  # B H/2 W/2 4*C
-        x = x.view(B, -1, 4 * C)  # B H/2*W/2 4*C
-        x = x.view(B, H//2, W//2, 4 * C)
-
-        x = self.norm(x)
-        x = self.reduction(x)
-
-        x = x.permute(0, 3, 1, 2)
-        return x
-
-
-class CLS(nn.Module):
-    # todo: pos embed, residual
-    def __init__(self, query_len, dim, num_heads, num_classes):
-        super().__init__()
-        self.q = nn.Parameter(torch.randn(1, query_len, dim))
-        self.attn = nn.MultiheadAttention(embed_dim=dim,
-                                          num_heads=num_heads,
-                                          batch_first=True)
-        self.norm = nn.LayerNorm(dim)
-        self.mlp = Mlp(in_features=dim, out_features=num_classes)
-
-    def forward(self, x):
-        B, C, H, W = x.shape
-        # BCHW -> BLC
-        x = x.flatten(2).permute(0, 2, 1).contiguous()
-        x = self.attn(query=self.q.repeat(B, 1, 1), key=x, value=x)[0]
-        x = self.mlp(self.norm(x))
-
-        # bsz, query_len, num_classes
-        return x
-
-
 class MetaArch(nn.Module):
     r""" ConvNeXt
         A PyTorch impl of : `A ConvNet for the 2020s`  -
@@ -171,16 +89,14 @@ class MetaArch(nn.Module):
                  block_kwargs={},
                  downsample_type=DownsampleLayer,
                  downsample_kwargs={},
-                 extra_transform=True,
-                 extra_transform_ratio=1.5,
                  norm_layer=LayerNorm2d,
                  norm_every_stage=True,
-                 norm_after_avg=False,
                  act_layer=nn.GELU,
                  deform_points=9,
                  deform_padding=True,
-                 cls_attn_len=5,
-                 cls_num_heads=(3, 6, 12, 24),
+                 active_stages=(0, 1, 2, 3),
+                 cls_type=MultiLayerClassBlock,
+                 cls_kwargs={},
                  end_attn=False,
                  **kwargs,
                  ):
@@ -220,38 +136,14 @@ class MetaArch(nn.Module):
             self.stages.append(stage)
             self.stage_norms.append(norm_layer(dim) if norm_every_stage else nn.Identity())
 
-            if i in (3, 4):
-                self.add_module(f'cls_attn_{i}',
-                                CLS(query_len=cls_attn_len,
-                                    dim=dim,
-                                    num_heads=cls_num_heads[i],
-                                    num_classes=num_classes))
+            if i in active_stages:
+                self.add_module(f'cls_attn_{i}', cls_type(dim=dim, **cls_kwargs))
             cur += depths[i]
 
         if end_attn:
             self.end_attn = nn.MultiheadAttention(embed_dim=num_classes,
                                                   num_heads=8,
                                                   batch_first=True)
-
-        # self.stage_end_norm = nn.Identity() if norm_every_stage or norm_after_avg else norm_layer(dims[-1])
-
-        # self.conv_head = nn.Sequential(
-        #     nn.Conv2d(dims[-1], int(dims[-1] * extra_transform_ratio), 1, 1, 0, bias=False),
-        #     nn.BatchNorm2d(int(dims[-1] * extra_transform_ratio)),
-        #     act_layer()
-        # ) if extra_transform else nn.Identity()
-
-        # features = int(dims[-1] * extra_transform_ratio) if extra_transform else dims[-1]
-        # self.avg_head = nn.Sequential(
-        #     nn.AdaptiveAvgPool2d(1),
-        #     norm_layer(features) if norm_after_avg else nn.Identity(),
-        #     nn.Flatten(1),
-        # )
-
-        # if num_classes > 0:
-        #     self.head = nn.Linear(features, num_classes)
-        # else:
-        #     self.head = nn.Identity()
 
         self.apply(self._init_weights)
 
@@ -291,11 +183,6 @@ class MetaArch(nn.Module):
 
             if hasattr(self, f'cls_attn_{i}'):
                 cls_tokens.append(getattr(self, f'cls_attn_{i}')(x))
-
-        # x = self.stage_end_norm(x)
-        # x = self.conv_head(x)
-        # x = self.avg_head(x)
-        # return x
 
         cls_tokens = torch.cat(cls_tokens, dim=1)
         if hasattr(self, 'end_attn'):

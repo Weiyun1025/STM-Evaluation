@@ -1,5 +1,5 @@
 from timm.models import register_model
-from .meta_arch import MetaArch, PatchEmbed, PatchMerging
+from .meta_arch import MetaArch
 from .blocks.convnext import ConvNeXtBlock, ConvNeXtV2Block, ConvNeXtV3Block, ConvNeXtV3SingleResBlock, ConvNeXtV4Block, ConvNeXtV5Block, ConvNeXtV6Block
 from .blocks.swin import SwinBlock, SwinSingleResBlock
 from .blocks.dcn_v3 import DCNv3Block, DCNv3SingleResBlock
