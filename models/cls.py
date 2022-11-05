@@ -158,7 +158,9 @@ class GAPBlock(nn.Module):
         x = self.conv_head(x)
         x = self.avg_head(x)
         x = self.head(x)
-        return x
+
+        # bsz, 1, num_classes
+        return x.unsqueeze(1)
 
 
 class GAPBlockV2(nn.Module):
