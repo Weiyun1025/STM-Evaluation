@@ -21,13 +21,16 @@ GPUS_PER_NODE=${GPUS_PER_NODE:-8}
 CPUS_PER_TASK=${CPUS_PER_TASK:-12}
 SRUN_ARGS=${SRUN_ARGS:-""}
 
+BSZ=$((TOTAL_BATCH_SIZE/GPUS))
+BSZ=$((BSZ/UPDATE_FREQ))
+
 torchrun \
     --nnodes=1 \
     --nproc_per_node=${GPUS_PER_NODE} \
     main.py \
     --model ${MODEL} \
     --epochs 300 \
-    --batch_size $((TOTAL_BATCH_SIZE/GPUS/UPDATE_FREQ)) \
+    --batch_size ${BSZ} \
     --update_freq ${UPDATE_FREQ} \
     --warmup_epochs 20 \
     --lr ${LR} \
