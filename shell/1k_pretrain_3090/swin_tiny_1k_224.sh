@@ -52,6 +52,7 @@ torchrun \
     --nb_classes 1000 \
     --use_amp true \
     --save_ckpt true \
+    --save_interval_ckpt false \
     --enable_wandb true \
     --project 'model evaluation' \
     --name ${PROJECT_NAME} \
