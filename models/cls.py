@@ -89,3 +89,77 @@ class ClassBlockV2(nn.Module):
 
         # bsz, query_len, num_classes
         return x
+
+
+class ClassBlockV3(nn.Module):
+    def __init__(self, dim, query_len=5, num_heads=8, num_classes=1000, mlp_ratio=1.5):
+        super().__init__()
+        self.conv_head = nn.Sequential(
+            nn.Conv2d(dim, int(dim * mlp_ratio), 1, 1, 0, bias=False),
+            nn.BatchNorm2d(int(dim * mlp_ratio)),
+            nn.GELU(),
+        )
+
+        dim = int(dim * mlp_ratio)
+        self.q = nn.Parameter(torch.randn(1, query_len, dim))
+        self.attn = nn.MultiheadAttention(embed_dim=dim,
+                                          num_heads=num_heads,
+                                          batch_first=True)
+
+        self.norm = nn.LayerNorm(dim)
+        self.head = nn.Linear(dim, num_classes)
+
+    def forward(self, x):
+        x = self.conv_head(x)
+
+        B = x.shape[0]
+        x = x.flatten(2).permute(0, 2, 1).contiguous()
+        q = self.q.repeat(B, 1, 1)
+        x = self.attn(query=q, key=x, value=x)[0]
+
+        x = self.head(self.norm(x))
+        return x
+
+
+class GAPBlock(nn.Module):
+    def __init__(self, dim, num_classes=1000, mlp_ratio=1.5):
+        super().__init__()
+        self.conv_head = nn.Sequential(
+            nn.Conv2d(dim, int(dim * mlp_ratio), 1, 1, 0, bias=False),
+            nn.BatchNorm2d(int(dim * mlp_ratio)),
+            nn.GELU(),
+        )
+
+        dim = int(dim * mlp_ratio)
+        self.avg_head = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            nn.Flatten(1),
+            nn.LayerNorm(dim),
+        )
+
+        self.head = nn.Linear(dim, num_classes)
+
+    def forward(self, x):
+        x = self.conv_head(x)
+        x = self.avg_head(x)
+        x = self.head(x)
+        return x
+
+
+class GAPBlockV2(nn.Module):
+    def __init__(self, dim, num_classes=1000, mlp_ratio=1.5):
+        super().__init__()
+        self.avg = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            nn.Flatten(1),
+            nn.LayerNorm(dim)
+        )
+
+        self.mlp = Mlp(in_features=dim, hidden_features=int(dim * mlp_ratio), out_features=num_classes)
+
+    def forward(self, x):
+        x = self.avg(x)
+        x = self.mlp(x)
+
+        # bsz, 1, num_classes
+        return x.unsqueeze(1)
