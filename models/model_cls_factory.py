@@ -19,6 +19,7 @@ def a1_swin_tiny(pretrained=False, **kwargs):
                      active_stages=(3,),
                      cls_type=MultiLayerClassBlock,
                      cls_kwargs=dict(layer=1, query_len=1),
+                     drop_path_rate=0.2,
                      **kwargs)
 
     if pretrained:
@@ -42,6 +43,7 @@ def a2_swin_tiny(pretrained=False, **kwargs):
                      active_stages=(3,),
                      cls_type=MultiLayerClassBlock,
                      cls_kwargs=dict(layer=2, query_len=1),
+                     drop_path_rate=0.2,
                      **kwargs)
 
     if pretrained:
@@ -65,6 +67,7 @@ def b1_swin_tiny(pretrained=False, **kwargs):
                      active_stages=(3,),
                      cls_type=ClassBlockV2,
                      cls_kwargs=dict(query_len=5),
+                     drop_path_rate=0.2,
                      **kwargs)
 
     if pretrained:
@@ -89,6 +92,7 @@ def b2_swin_tiny(pretrained=False, **kwargs):
                      end_attn=True,
                      cls_type=ClassBlockV2,
                      cls_kwargs=dict(query_len=5),
+                     drop_path_rate=0.2,
                      **kwargs)
 
     if pretrained:
@@ -112,6 +116,7 @@ def c1_swin_tiny(pretrained=False, **kwargs):
                      active_stages=(0, 1, 2, 3),
                      cls_type=ClassBlockV2,
                      cls_kwargs=dict(query_len=5, mlp_ratio=1.),
+                     drop_path_rate=0.2,
                      **kwargs)
 
     if pretrained:
@@ -136,6 +141,7 @@ def c2_swin_tiny(pretrained=False, **kwargs):
                      end_attn=True,
                      cls_type=ClassBlockV2,
                      cls_kwargs=dict(query_len=5, mlp_ratio=1.),
+                     drop_path_rate=0.2,
                      **kwargs)
 
     if pretrained:
@@ -159,6 +165,7 @@ def d1_swin_tiny(pretrained=False, **kwargs):
                      active_stages=(0, 1, 2, 3),
                      cls_type=ClassBlockV2,
                      cls_kwargs=dict(query_len=5, mlp_ratio=1.5),
+                     drop_path_rate=0.2,
                      **kwargs)
 
     if pretrained:
@@ -183,6 +190,7 @@ def d2_swin_tiny(pretrained=False, **kwargs):
                      end_attn=True,
                      cls_type=ClassBlockV2,
                      cls_kwargs=dict(query_len=5, mlp_ratio=1.5),
+                     drop_path_rate=0.2,
                      **kwargs)
 
     if pretrained:
