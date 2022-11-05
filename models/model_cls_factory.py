@@ -3,13 +3,32 @@ from .meta_arch import MetaArch
 from .blocks.swin import SwinBlock
 from .cls import MultiLayerClassBlock, ClassBlockV2
 
+swin_cfgs = {
+    'tiny': {
+        'dims': [96 * 2 ** i for i in range(4)],
+        'depths': [2, 2, 6, 2],
+        'num_heads': [3, 6, 12, 24],
+        'window_size': 7,
+        'drop_path_rate': 0.2,
+    },
+    'small': {
+        'dims': [96 * 2 ** i for i in range(4)],
+        'depths': [2, 2, 18, 2],
+        'num_heads': [3, 6, 12, 24],
+        'window_size': 7,
+        'drop_path_rate': 0.3,
+    },
+}
+ablate_scale = 'tiny'
+
 
 @register_model
 def a1_swin_tiny(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [2, 2, 6, 2]
-    num_heads = [3, 6, 12, 24]
-    window_size = 7
+    dims = swin_cfgs[ablate_scale]['dims']
+    depths = swin_cfgs[ablate_scale]['depths']
+    num_heads = swin_cfgs[ablate_scale]['num_heads']
+    window_size = swin_cfgs[ablate_scale]['window_size']
+    drop_path_rate = swin_cfgs[ablate_scale]['drop_path_rate']
 
     model = MetaArch(img_size=224,
                      depths=depths,
@@ -19,7 +38,7 @@ def a1_swin_tiny(pretrained=False, **kwargs):
                      active_stages=(3,),
                      cls_type=MultiLayerClassBlock,
                      cls_kwargs=dict(layer=1, query_len=1),
-                     drop_path_rate=0.2,
+                     drop_path_rate=drop_path_rate,
                      **kwargs)
 
     if pretrained:
@@ -30,10 +49,11 @@ def a1_swin_tiny(pretrained=False, **kwargs):
 
 @register_model
 def a2_swin_tiny(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [2, 2, 6, 2]
-    num_heads = [3, 6, 12, 24]
-    window_size = 7
+    dims = swin_cfgs[ablate_scale]['dims']
+    depths = swin_cfgs[ablate_scale]['depths']
+    num_heads = swin_cfgs[ablate_scale]['num_heads']
+    window_size = swin_cfgs[ablate_scale]['window_size']
+    drop_path_rate = swin_cfgs[ablate_scale]['drop_path_rate']
 
     model = MetaArch(img_size=224,
                      depths=depths,
@@ -43,7 +63,7 @@ def a2_swin_tiny(pretrained=False, **kwargs):
                      active_stages=(3,),
                      cls_type=MultiLayerClassBlock,
                      cls_kwargs=dict(layer=2, query_len=1),
-                     drop_path_rate=0.2,
+                     drop_path_rate=drop_path_rate,
                      **kwargs)
 
     if pretrained:
@@ -54,10 +74,11 @@ def a2_swin_tiny(pretrained=False, **kwargs):
 
 @register_model
 def b1_swin_tiny(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [2, 2, 6, 2]
-    num_heads = [3, 6, 12, 24]
-    window_size = 7
+    dims = swin_cfgs[ablate_scale]['dims']
+    depths = swin_cfgs[ablate_scale]['depths']
+    num_heads = swin_cfgs[ablate_scale]['num_heads']
+    window_size = swin_cfgs[ablate_scale]['window_size']
+    drop_path_rate = swin_cfgs[ablate_scale]['drop_path_rate']
 
     model = MetaArch(img_size=224,
                      depths=depths,
@@ -67,7 +88,7 @@ def b1_swin_tiny(pretrained=False, **kwargs):
                      active_stages=(3,),
                      cls_type=ClassBlockV2,
                      cls_kwargs=dict(query_len=5),
-                     drop_path_rate=0.2,
+                     drop_path_rate=drop_path_rate,
                      **kwargs)
 
     if pretrained:
@@ -78,10 +99,11 @@ def b1_swin_tiny(pretrained=False, **kwargs):
 
 @register_model
 def b2_swin_tiny(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [2, 2, 6, 2]
-    num_heads = [3, 6, 12, 24]
-    window_size = 7
+    dims = swin_cfgs[ablate_scale]['dims']
+    depths = swin_cfgs[ablate_scale]['depths']
+    num_heads = swin_cfgs[ablate_scale]['num_heads']
+    window_size = swin_cfgs[ablate_scale]['window_size']
+    drop_path_rate = swin_cfgs[ablate_scale]['drop_path_rate']
 
     model = MetaArch(img_size=224,
                      depths=depths,
@@ -92,7 +114,7 @@ def b2_swin_tiny(pretrained=False, **kwargs):
                      end_attn=True,
                      cls_type=ClassBlockV2,
                      cls_kwargs=dict(query_len=5),
-                     drop_path_rate=0.2,
+                     drop_path_rate=drop_path_rate,
                      **kwargs)
 
     if pretrained:
@@ -103,10 +125,11 @@ def b2_swin_tiny(pretrained=False, **kwargs):
 
 @register_model
 def c1_swin_tiny(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [2, 2, 6, 2]
-    num_heads = [3, 6, 12, 24]
-    window_size = 7
+    dims = swin_cfgs[ablate_scale]['dims']
+    depths = swin_cfgs[ablate_scale]['depths']
+    num_heads = swin_cfgs[ablate_scale]['num_heads']
+    window_size = swin_cfgs[ablate_scale]['window_size']
+    drop_path_rate = swin_cfgs[ablate_scale]['drop_path_rate']
 
     model = MetaArch(img_size=224,
                      depths=depths,
@@ -116,7 +139,7 @@ def c1_swin_tiny(pretrained=False, **kwargs):
                      active_stages=(0, 1, 2, 3),
                      cls_type=ClassBlockV2,
                      cls_kwargs=dict(query_len=5, mlp_ratio=1.),
-                     drop_path_rate=0.2,
+                     drop_path_rate=drop_path_rate,
                      **kwargs)
 
     if pretrained:
@@ -127,10 +150,11 @@ def c1_swin_tiny(pretrained=False, **kwargs):
 
 @register_model
 def c2_swin_tiny(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [2, 2, 6, 2]
-    num_heads = [3, 6, 12, 24]
-    window_size = 7
+    dims = swin_cfgs[ablate_scale]['dims']
+    depths = swin_cfgs[ablate_scale]['depths']
+    num_heads = swin_cfgs[ablate_scale]['num_heads']
+    window_size = swin_cfgs[ablate_scale]['window_size']
+    drop_path_rate = swin_cfgs[ablate_scale]['drop_path_rate']
 
     model = MetaArch(img_size=224,
                      depths=depths,
@@ -141,7 +165,7 @@ def c2_swin_tiny(pretrained=False, **kwargs):
                      end_attn=True,
                      cls_type=ClassBlockV2,
                      cls_kwargs=dict(query_len=5, mlp_ratio=1.),
-                     drop_path_rate=0.2,
+                     drop_path_rate=drop_path_rate,
                      **kwargs)
 
     if pretrained:
@@ -152,10 +176,11 @@ def c2_swin_tiny(pretrained=False, **kwargs):
 
 @register_model
 def d1_swin_tiny(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [2, 2, 6, 2]
-    num_heads = [3, 6, 12, 24]
-    window_size = 7
+    dims = swin_cfgs[ablate_scale]['dims']
+    depths = swin_cfgs[ablate_scale]['depths']
+    num_heads = swin_cfgs[ablate_scale]['num_heads']
+    window_size = swin_cfgs[ablate_scale]['window_size']
+    drop_path_rate = swin_cfgs[ablate_scale]['drop_path_rate']
 
     model = MetaArch(img_size=224,
                      depths=depths,
@@ -165,7 +190,7 @@ def d1_swin_tiny(pretrained=False, **kwargs):
                      active_stages=(0, 1, 2, 3),
                      cls_type=ClassBlockV2,
                      cls_kwargs=dict(query_len=5, mlp_ratio=1.5),
-                     drop_path_rate=0.2,
+                     drop_path_rate=drop_path_rate,
                      **kwargs)
 
     if pretrained:
@@ -176,10 +201,11 @@ def d1_swin_tiny(pretrained=False, **kwargs):
 
 @register_model
 def d2_swin_tiny(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [2, 2, 6, 2]
-    num_heads = [3, 6, 12, 24]
-    window_size = 7
+    dims = swin_cfgs[ablate_scale]['dims']
+    depths = swin_cfgs[ablate_scale]['depths']
+    num_heads = swin_cfgs[ablate_scale]['num_heads']
+    window_size = swin_cfgs[ablate_scale]['window_size']
+    drop_path_rate = swin_cfgs[ablate_scale]['drop_path_rate']
 
     model = MetaArch(img_size=224,
                      depths=depths,
@@ -190,7 +216,7 @@ def d2_swin_tiny(pretrained=False, **kwargs):
                      end_attn=True,
                      cls_type=ClassBlockV2,
                      cls_kwargs=dict(query_len=5, mlp_ratio=1.5),
-                     drop_path_rate=0.2,
+                     drop_path_rate=drop_path_rate,
                      **kwargs)
 
     if pretrained:

@@ -3,15 +3,15 @@
 set -x
 mkdir logs
 
-MODEL="conv_convnext_v3_base"
+MODEL=$1
 DESC="unified_config" 
 
 # key hyperparameters
-TOTAL_BATCH_SIZE="1024"
+TOTAL_BATCH_SIZE="4096"
 LR="4e-3"
 INIT_LR="0"
 END_LR="1e-6"
-DROP_PATH="0.5"
+UPDATE_FREQ="4"
 
 PROJECT_NAME="${MODEL}_1k_${DESC}"
 
@@ -27,15 +27,14 @@ torchrun \
     main.py \
     --model ${MODEL} \
     --epochs 300 \
-    --batch_size $((TOTAL_BATCH_SIZE/GPUS)) \
-    --update_freq 4 \
+    --batch_size $((TOTAL_BATCH_SIZE/GPUS/UPDATE_FREQ)) \
+    --update_freq ${UPDATE_FREQ} \
     --warmup_epochs 20 \
     --lr ${LR} \
     --warmup_init_lr ${INIT_LR} \
     --min_lr ${END_LR} \
     --opt adamw \
     --clip_grad 5.0 \
-    --drop_path ${DROP_PATH} \
     --weight_decay 0.05 \
     --layer_scale_init_value 1e-6 \
     --smoothing 0.1 \

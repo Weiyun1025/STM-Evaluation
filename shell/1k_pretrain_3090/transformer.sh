@@ -11,6 +11,7 @@ TOTAL_BATCH_SIZE="1024"
 LR="1e-3"
 INIT_LR="1e-6"
 END_LR="1e-5"
+UPDATE_FREQ="1"
 
 PROJECT_NAME="${MODEL}_1k_${DESC}"
 
@@ -22,7 +23,8 @@ torchrun \
     main.py \
     --model ${MODEL} \
     --epochs 300 \
-    --batch_size $((TOTAL_BATCH_SIZE/GPUS_PER_NODE)) \
+    --batch_size $((TOTAL_BATCH_SIZE/GPUS/UPDATE_FREQ)) \
+    --update_freq ${UPDATE_FREQ} \
     --warmup_epochs 20 \
     --lr ${LR} \
     --warmup_init_lr ${INIT_LR} \
