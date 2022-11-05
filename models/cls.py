@@ -134,7 +134,7 @@ class GAPBlock(nn.Module):
         self.avg_head = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
             nn.Flatten(1),
-            nn.LayerNorm(dim),
+            # nn.LayerNorm(dim),
         )
 
         self.head = nn.Linear(dim, num_classes)
