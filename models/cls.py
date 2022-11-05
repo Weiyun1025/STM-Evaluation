@@ -4,7 +4,12 @@ from timm.models.layers import Mlp, DropPath
 
 
 class ClassBlock(nn.Module):
-    def __init__(self, dim, num_heads=8, layer_scale_init_value=1e-6, drop_path=0.):
+    def __init__(self,
+                 dim,
+                 num_heads=8,
+                 mlp_ratio=4.,
+                 layer_scale_init_value=1e-6,
+                 drop_path=0.):
         super().__init__()
 
         self.norm_1 = nn.LayerNorm(dim)
@@ -15,6 +20,7 @@ class ClassBlock(nn.Module):
 
         self.norm_2 = nn.LayerNorm(dim)
         self.mlp = Mlp(in_features=dim,
+                       hidden_features=int(dim * mlp_ratio),
                        out_features=dim)
         self.gamma_2 = nn.Parameter(layer_scale_init_value * torch.ones((1, 1, dim))) if layer_scale_init_value > 0 else None
 
@@ -39,7 +45,15 @@ class ClassBlock(nn.Module):
 
 
 class MultiLayerClassBlock(nn.Module):
-    def __init__(self, dim, layer=1, query_len=5, num_heads=8, num_classes=1000, layer_scale_init_value=1e-6, drop_path=0.):
+    def __init__(self,
+                 dim,
+                 layer=1,
+                 query_len=5,
+                 num_heads=8,
+                 num_classes=1000,
+                 mlp_ratio=4.,
+                 layer_scale_init_value=1e-6,
+                 drop_path=0.):
         super().__init__()
         self.q = nn.Parameter(torch.randn(1, query_len, dim))
 
@@ -47,6 +61,7 @@ class MultiLayerClassBlock(nn.Module):
         for _ in range(layer):
             self.blks.append(ClassBlock(dim=dim,
                                         num_heads=num_heads,
+                                        mlp_ratio=mlp_ratio,
                                         layer_scale_init_value=layer_scale_init_value,
                                         drop_path=drop_path))
 
