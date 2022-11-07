@@ -146,6 +146,31 @@ def a3_swin_tiny(pretrained=False, **kwargs):
 
 
 @register_model
+def a4_swin_tiny(pretrained=False, **kwargs):
+    dims = swin_cfgs[ablate_scale]['dims']
+    depths = swin_cfgs[ablate_scale]['depths']
+    num_heads = swin_cfgs[ablate_scale]['num_heads']
+    window_size = swin_cfgs[ablate_scale]['window_size']
+    drop_path_rate = swin_cfgs[ablate_scale]['drop_path_rate']
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     block_type=SwinBlock,
+                     block_kwargs=dict(num_heads=num_heads, window_size=window_size),
+                     active_stages=(0, 1, 2, 3),
+                     cls_type=MultiLayerClassBlock,
+                     cls_kwargs=dict(layer=1, query_len=1, mlp_ratio=1.),
+                     drop_path_rate=drop_path_rate,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@register_model
 def b1_swin_tiny(pretrained=False, **kwargs):
     dims = swin_cfgs[ablate_scale]['dims']
     depths = swin_cfgs[ablate_scale]['depths']
