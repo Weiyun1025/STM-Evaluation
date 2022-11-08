@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 from torch import nn
 from timm.models.layers import to_2tuple, trunc_normal_
-from .cls import MultiLayerClassBlock
+from .cls import MultiLayerClassBlock, MeanAggregation, LinearAggregation, AttnAggregation
 from .blocks.dcn_v3 import DCNv3Block, DCNv3SingleResBlock
 
 
@@ -97,7 +97,8 @@ class MetaArch(nn.Module):
                  active_stages=(0, 1, 2, 3),
                  cls_type=MultiLayerClassBlock,
                  cls_kwargs={},
-                 end_attn=False,
+                 aggregation_type=MeanAggregation,
+                 aggregation_kwargts={},
                  **kwargs,
                  ):
         super().__init__()
@@ -138,12 +139,10 @@ class MetaArch(nn.Module):
 
             if i in active_stages:
                 self.add_module(f'cls_attn_{i}', cls_type(dim=dim, **cls_kwargs))
+
             cur += depths[i]
 
-        if end_attn:
-            self.end_attn = nn.MultiheadAttention(embed_dim=num_classes,
-                                                  num_heads=8,
-                                                  batch_first=True)
+        self.aggregation = aggregation_type(dim=dims[-1], **aggregation_kwargts)
 
         self.apply(self._init_weights)
 
@@ -185,9 +184,7 @@ class MetaArch(nn.Module):
                 cls_tokens.append(getattr(self, f'cls_attn_{i}')(x))
 
         cls_tokens = torch.cat(cls_tokens, dim=1)
-        if hasattr(self, 'end_attn'):
-            cls_tokens = self.end_attn(query=cls_tokens, key=cls_tokens, value=cls_tokens)[0]
-        return torch.mean(cls_tokens, dim=1)
+        return self.aggregation(cls_tokens)
 
     def forward(self, x):
         x = self.forward_features(x)

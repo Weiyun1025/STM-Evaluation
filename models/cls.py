@@ -16,13 +16,15 @@ class ClassBlock(nn.Module):
         self.attn = nn.MultiheadAttention(embed_dim=dim,
                                           num_heads=num_heads,
                                           batch_first=True)
-        self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((1, 1, dim))) if layer_scale_init_value > 0 else None
+        self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((1, 1, dim)),
+                                    requires_grad=True) if layer_scale_init_value > 0 else None
 
         self.norm_2 = nn.LayerNorm(dim)
         self.mlp = Mlp(in_features=dim,
                        hidden_features=int(dim * mlp_ratio),
                        out_features=dim)
-        self.gamma_2 = nn.Parameter(layer_scale_init_value * torch.ones((1, 1, dim))) if layer_scale_init_value > 0 else None
+        self.gamma_2 = nn.Parameter(layer_scale_init_value * torch.ones((1, 1, dim)),
+                                    requires_grad=True) if layer_scale_init_value > 0 else None
 
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
 
@@ -180,3 +182,49 @@ class GAPBlockV2(nn.Module):
 
         # bsz, 1, num_classes
         return x.unsqueeze(1)
+
+
+class MeanAggregation(nn.Module):
+    def __init__(self, **kwargs):
+        super().__init__()
+
+    def forward(self, cls_tokens):
+        return torch.mean(cls_tokens, dim=1)
+
+
+class LinearAggregation(nn.Module):
+    def __init__(self, dim, seq_len, num_classes=1000):
+        super().__init__()
+        self.norm_1 = nn.LayerNorm(dim)
+        self.mixer = nn.Linear(seq_len, 1)
+
+        self.norm_2 = nn.LayerNorm(dim)
+        self.head = nn.Linear(dim, num_classes)
+
+    def forward(self, x):
+        x = self.norm_1(x).permute(0, 2, 1).contiguous()
+        x = self.mixer(x).permute(0, 2, 1).contiguous()
+
+        x = self.head(self.norm_2(x))
+
+        return x
+
+
+class AttnAggregation(nn.Module):
+    def __init__(self, dim, num_classes=1000, num_heads=8):
+        super().__init__()
+        self.q = nn.Parameter(torch.randn(1, 1, dim))
+        self.norm_1 = nn.LayerNorm(dim)
+        self.attn = nn.MultiheadAttention(embed_dim=dim,
+                                          num_heads=num_heads,
+                                          batch_first=True)
+
+        self.norm_2 = nn.LayerNorm(dim)
+        self.head = nn.Linear(dim, num_classes)
+
+    def forward(self, cls_tokens):
+        B = cls_tokens.shape[0]
+        cls_tokens = self.norm_1(cls_tokens)
+        q = self.attn(query=self.q.repeat(B, 1, 1), key=cls_tokens, value=cls_tokens)[0]
+        q = self.head(self.norm_2(q))
+        return q.squeeze(1)
