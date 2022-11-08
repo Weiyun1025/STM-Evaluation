@@ -136,6 +136,7 @@ class MetaArchV2(nn.Module):
             self.stage_norms.append(norm_layer(dim) if norm_every_stage else nn.Identity())
 
             self.add_module(f'cls_attn_{i}', cls_type(dim=dim, **cls_kwargs))
+            self.add_module(f'cls_norm_{i}', nn.LayerNorm(dim))
             self.add_module(f'cls_proj_{i}', nn.Linear(in_features=dim,
                                                        out_features=dims[i+1] if i+1 < len(depths) else num_classes))
 
@@ -180,6 +181,7 @@ class MetaArchV2(nn.Module):
             if hasattr(self, f'cls_attn_{i}'):
                 x_tokens = x.flatten(2).permute(0, 2, 1).contiguous()
                 cls_token = getattr(self, f'cls_attn_{i}')(cls_token, x_tokens)
+                cls_token = getattr(self, f'cls_norm_{i}')(cls_token)
                 cls_token = getattr(self, f'cls_proj_{i}')(cls_token)
 
         return cls_token.squeeze(1)
