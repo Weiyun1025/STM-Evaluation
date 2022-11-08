@@ -1,5 +1,6 @@
 from timm.models import register_model
 from .meta_arch import MetaArch
+from .meta_arch_v2 import MetaArchV2
 from .blocks.swin import SwinBlock
 from .cls import MultiLayerClassBlock, ClassBlockV2, ClassBlockV3, GAPBlock
 from .cls import MeanAggregation, LinearAggregation, AttnAggregation
@@ -388,6 +389,29 @@ def c2_swin_tiny(pretrained=False, **kwargs):
                      cls_kwargs=dict(query_len=5, mlp_ratio=1.),
                      drop_path_rate=drop_path_rate,
                      **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@register_model
+def cls_swin_tiny(pretrained=False, **kwargs):
+    dims = swin_cfgs[ablate_scale]['dims']
+    depths = swin_cfgs[ablate_scale]['depths']
+    num_heads = swin_cfgs[ablate_scale]['num_heads']
+    window_size = swin_cfgs[ablate_scale]['window_size']
+    drop_path_rate = swin_cfgs[ablate_scale]['drop_path_rate']
+
+    model = MetaArchV2(img_size=224,
+                       depths=depths,
+                       dims=dims,
+                       block_type=SwinBlock,
+                       block_kwargs=dict(num_heads=num_heads, window_size=window_size),
+                       cls_kwargs=dict(mlp_ratio=1.),
+                       drop_path_rate=drop_path_rate,
+                       **kwargs)
 
     if pretrained:
         raise NotImplementedError()
