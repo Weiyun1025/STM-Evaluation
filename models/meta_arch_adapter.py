@@ -144,6 +144,7 @@ class MetaArchAdapter(nn.Module):
         self.extra_extractor_1 = Extractor(dim=dims[-1], vit_dim=vit_dim)
         self.extra_extractor_2 = Extractor(dim=dims[-1], vit_dim=vit_dim)
 
+        self.vit_norm = nn.LayerNorm(vit_dim, eps=1e-6)
         self.head = nn.Linear(vit_dim, num_classes)
         self.apply(self._init_weights)
 
@@ -181,15 +182,14 @@ class MetaArchAdapter(nn.Module):
             if hasattr(self.block_type, 'post_stage_transform'):
                 x = self.block_type.post_stage_transform(x)
             x = x[0] if deform else x
+            x = self.stage_norms[i](x)
 
             vit_tokens = self.extractors[i](vit_tokens, x)
             if i == 3:
                 vit_tokens = self.extra_extractor_1(vit_tokens, x)
                 vit_tokens = self.extra_extractor_2(vit_tokens, x)
 
-            x = self.stage_norms[i](x)
-
-        return vit_tokens[:, 0]
+        return self.vit_norm(vit_tokens[:, 0])
 
     def forward(self, x):
         x = self.forward_features(x)
