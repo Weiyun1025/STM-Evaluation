@@ -207,7 +207,7 @@ class LinearAggregation(nn.Module):
 
         x = self.head(self.norm_2(x))
 
-        return x
+        return x.squeeze(1)
 
 
 class AttnAggregation(nn.Module):
