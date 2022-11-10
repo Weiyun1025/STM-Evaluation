@@ -1,6 +1,6 @@
 from timm.models import register_model
 from .meta_arch import MetaArch
-from .meta_arch_v2 import MetaArchV2
+from .meta_arch_cls import MetaArchV2
 from .meta_arch_adapter import MetaArchAdapter
 from .blocks.swin import SwinBlock
 from .cls import MultiLayerClassBlock, ClassBlockV2, ClassBlockV3, GAPBlock
