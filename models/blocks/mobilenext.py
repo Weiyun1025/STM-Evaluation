@@ -35,7 +35,7 @@ class MobileNeXtBlock(nn.Module):
         # (N, H, W, C) -> (N, C, H, W)
         x = self.norm2(x)
         x = x.permute(0, 3, 1, 2).contiguous()
-        x = self.dwconv1(x)
+        x = self.dwconv2(x)
 
         if self.gamma is not None:
             x = self.gamma * x
