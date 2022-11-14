@@ -6,9 +6,12 @@ from ..meta_arch import MetaArch, LayerNorm2d
 
 
 class ConvNeXtBlock(nn.Module):
-    def __init__(self, dim, drop_path, layer_scale_init_value, **kwargs):
+    def __init__(self, dim, drop_path, layer_scale_init_value, kernel_size=7, **kwargs):
         super().__init__()
-        self.dwconv = nn.Conv2d(dim, dim, kernel_size=7, padding=3, groups=dim)  # depthwise conv
+        self.dwconv = nn.Conv2d(dim, dim,
+                                kernel_size=kernel_size,
+                                padding=kernel_size // 2,
+                                groups=dim)  # depthwise conv
         self.norm = nn.LayerNorm(dim, eps=1e-6)
         # pointwise/1x1 convs, implemented with linear layers
         self.pwconv1 = nn.Linear(dim, 4 * dim)
@@ -41,10 +44,13 @@ class ConvNeXtBlock(nn.Module):
 
 class ConvNeXtV2Block(nn.Module):
     # double res
-    def __init__(self, dim, drop_path, layer_scale_init_value, **kwargs):
+    def __init__(self, dim, drop_path, layer_scale_init_value, kernel_size=7, **kwargs):
         super().__init__()
         self.dw_norm = LayerNorm2d(dim, eps=1e-6)
-        self.dwconv = nn.Conv2d(dim, dim, kernel_size=7, padding=3, groups=dim)  # depthwise conv
+        self.dwconv = nn.Conv2d(dim, dim,
+                                kernel_size=kernel_size,
+                                padding=kernel_size // 2,
+                                groups=dim)  # depthwise conv
 
         self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((1, dim, 1, 1)),
                                     requires_grad=True) if layer_scale_init_value > 0 else None

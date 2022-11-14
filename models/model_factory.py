@@ -1,5 +1,6 @@
 from timm.models import register_model
-from .meta_arch import MetaArch, PatchEmbed, PatchMerging
+from .meta_arch import MetaArch
+from .blocks.mobilenext import MobileNeXtBlock
 from .blocks.convnext import ConvNeXtBlock, ConvNeXtV2Block, ConvNeXtV3Block, ConvNeXtV3SingleResBlock, ConvNeXtV4Block, ConvNeXtV5Block, ConvNeXtV6Block
 from .blocks.swin import SwinBlock, SwinSingleResBlock
 from .blocks.dcn_v3 import DCNv3Block, DCNv3SingleResBlock
@@ -99,6 +100,21 @@ def conv_convnext_v2_small(pretrained=False, **kwargs):
                      depths=[3, 3, 27, 3],
                      dims=[96, 192, 384, 768],
                      block_type=ConvNeXtV2Block,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@ register_model
+def conv_convnext_v2_large_kernel_small(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[3, 3, 27, 3],
+                     dims=[96, 192, 384, 768],
+                     block_type=ConvNeXtV2Block,
+                     block_kwargs=dict(kernel_size=13),
                      **kwargs)
 
     if pretrained:
@@ -258,6 +274,20 @@ def conv_convnext_v3_base(pretrained=False, **kwargs):
                      depths=[2, 2, 24, 2],
                      dims=[128, 256, 512, 1024],
                      block_type=ConvNeXtV3Block,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@ register_model
+def conv_mobilenext_small(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[3, 3, 27, 3],
+                     dims=[96, 192, 384, 768],
+                     block_type=MobileNeXtBlock,
                      **kwargs)
 
     if pretrained:
