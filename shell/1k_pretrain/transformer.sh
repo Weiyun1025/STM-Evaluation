@@ -4,22 +4,21 @@ set -x
 mkdir logs
 
 PARTITION=VC
-MODEL="dcn_v3_micro"
+MODEL=$1
 DESC="unified_config" 
 
 # key hyperparameters
-TOTAL_BATCH_SIZE="4096"
-LR="4e-3"
-INIT_LR="0"
-END_LR="1e-6"
-DROP_PATH="0.0"
+TOTAL_BATCH_SIZE="1024"
+LR="1e-3"
+INIT_LR="1e-6"
+END_LR="1e-5"
 
 JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_${DESC}"
 
 GPUS=${GPUS:-8}
 GPUS_PER_NODE=${GPUS_PER_NODE:-8}
-QUOTA_TYPE="spot"
+QUOTA_TYPE="auto"
 
 CPUS_PER_TASK=${CPUS_PER_TASK:-12}
 SRUN_ARGS=${SRUN_ARGS:-""}
@@ -46,7 +45,6 @@ srun -p ${PARTITION} \
     --min_lr ${END_LR} \
     --opt adamw \
     --clip_grad 5.0 \
-    --drop_path ${DROP_PATH} \
     --weight_decay 0.05 \
     --layer_scale_init_value 1e-6 \
     --smoothing 0.1 \
@@ -65,14 +63,13 @@ srun -p ${PARTITION} \
     --crop_pct 0.875 \
     --data_set IMNET1k \
     --data_path /mnt/cache/share/images/ \
-    --data_on_memory false \
     --nb_classes 1000 \
     --use_amp true \
     --save_ckpt true \
+    --save_interval_ckpt false \
     --enable_wandb false \
     --project 'model evaluation' \
     --name ${PROJECT_NAME} \
-    --output_dir backbone_outputdir/${PROJECT_NAME}
-    #--output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
-    
-# sh shell/1k_pretrain/dcnv3_micro_1k_224.sh
+    --output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
+
+# sh shell/1k_pretrain/swin_base_1k_224.sh

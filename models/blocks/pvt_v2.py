@@ -1,9 +1,7 @@
 import math
 import torch
 from torch import nn
-from timm.models import register_model
 from timm.models.layers import DropPath, trunc_normal_, to_2tuple
-from ..meta_arch import MetaArch
 
 
 class Mlp(nn.Module):
@@ -245,26 +243,3 @@ class OverlapPatchEmbed(nn.Module):
         x = self.proj(x)
         x = self.norm(x)
         return x
-
-
-@register_model
-def official_pvt_v2_b0(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
-                     depths=[2, 2, 2, 2],
-                     dims=[32, 64, 160, 256],
-                     stem_type=OverlapPatchEmbed,
-                     stem_kwargs=dict(patch_size=7, stride=4),
-                     block_type=PvtV2Block,
-                     block_kwargs=dict(num_heads=[1, 2, 5, 8],
-                                       mlp_ratios=[8, 8, 4, 4],
-                                       qkv_bias=True,
-                                       sr_ratios=[8, 4, 2, 1],),
-                     downsample_type=OverlapPatchEmbed,
-                     downsample_kwargs=dict(patch_size=3, stride=2),
-                     extra_transform=False,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model

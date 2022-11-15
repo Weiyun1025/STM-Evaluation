@@ -264,29 +264,3 @@ class SwinDownsampleLayer(nn.Module):
 
         x = x.permute(0, 3, 1, 2).contiguous()
         return x
-
-
-@register_model
-def official_swin_tiny(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [2, 2, 6, 2]
-    num_heads = [3, 6, 12, 24]
-    window_size = 7
-
-    model = MetaArch(img_size=224,
-                     depths=depths,
-                     dims=dims,
-                     stem_type=SwinStem,
-                     stem_kwargs=dict(patch_size=4),
-                     block_type=SwinBlock,
-                     block_kwargs=dict(num_heads=num_heads, window_size=window_size),
-                     downsample_type=SwinDownsampleLayer,
-                     extra_transform=False,
-                     norm_every_stage=False,
-                     norm_after_avg=False,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
