@@ -121,20 +121,6 @@ class PatchMerging(nn.Module):
 
 
 class MetaArch(nn.Module):
-    r""" ConvNeXt
-        A PyTorch impl of : `A ConvNet for the 2020s`  -
-          https://arxiv.org/pdf/2201.03545.pdf
-
-    Args:
-        in_chans (int): Number of input image channels. Default: 3
-        num_classes (int): Number of classes for classification head. Default: 1000
-        depths (tuple(int)): Number of blocks at each stage. Default: [3, 3, 9, 3]
-        dims (int): Feature dimension at each stage. Default: [96, 192, 384, 768]
-        drop_path_rate (float): Stochastic depth rate. Default: 0.
-        layer_scale_init_value (float): Init value for Layer Scale. Default: 1e-6.
-        head_init_scale (float): Init scaling value for classifier weights and biases. Default: 1.
-    """
-
     def __init__(self,
                  img_size=224,
                  in_channels=3,
@@ -259,9 +245,6 @@ class MetaArch(nn.Module):
         x = self.forward_features(x)
         x = self.head(x)
         return x
-
-    def target_layers(self):
-        return [self.stages[-1][-1]]
 
     def _deform_inputs(self, x):
         b, c, h, w = x.shape

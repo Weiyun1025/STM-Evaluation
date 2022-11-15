@@ -69,6 +69,7 @@ srun -p ${PARTITION} \
     --nb_classes 1000 \
     --use_amp true \
     --save_ckpt true \
+    --save_interval_ckpt false \
     --enable_wandb false \
     --project 'model evaluation' \
     --name ${PROJECT_NAME} \

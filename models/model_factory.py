@@ -1,6 +1,6 @@
 from timm.models import register_model
 from .meta_arch import MetaArch
-from .blocks.mobilenext import MobileNeXtBlock
+from .blocks.mobilenext import MobileNeXtBlock, MobileNeXtV2Block
 from .blocks.convnext import ConvNeXtBlock, ConvNeXtV2Block, ConvNeXtV3Block, ConvNeXtV3SingleResBlock, ConvNeXtV4Block, ConvNeXtV5Block, ConvNeXtV6Block
 from .blocks.swin import SwinBlock, SwinSingleResBlock
 from .blocks.dcn_v3 import DCNv3Block, DCNv3SingleResBlock
@@ -288,6 +288,20 @@ def conv_mobilenext_small(pretrained=False, **kwargs):
                      depths=[3, 3, 27, 3],
                      dims=[96, 192, 384, 768],
                      block_type=MobileNeXtBlock,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@ register_model
+def conv_mobilenext_v2_small(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[3, 3, 21, 3],
+                     dims=[96, 192, 384, 768],
+                     block_type=MobileNeXtV2Block,
                      **kwargs)
 
     if pretrained:
