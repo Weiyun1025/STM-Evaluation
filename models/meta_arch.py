@@ -1,10 +1,8 @@
-import math
 import torch
 import torch.nn.functional as F
 
 from torch import nn
 from timm.models.layers import to_2tuple, trunc_normal_
-from .blocks.dcn_v3 import DCNv3Block, DCNv3SingleResBlock
 
 
 class LayerNorm2d(nn.LayerNorm):
@@ -80,26 +78,30 @@ class MetaArch(nn.Module):
                  drop_path_rate=0.,
                  layer_scale_init_value=1e-6,
                  stem_type=Stem,
-                 stem_kwargs={},
+                 stem_kwargs=None,
                  block_type=None,
-                 block_kwargs={},
+                 block_kwargs=None,
                  downsample_type=DownsampleLayer,
-                 downsample_kwargs={},
+                 downsample_kwargs=None,
                  extra_transform=True,
                  extra_transform_ratio=1.5,
                  norm_layer=LayerNorm2d,
                  norm_every_stage=True,
                  norm_after_avg=False,
                  act_layer=nn.GELU,
-                 deform_points=9,
-                 deform_padding=True,
+                 forward_kwargs=None,
                  **kwargs,
                  ):
         super().__init__()
+
+        stem_kwargs = stem_kwargs or {}
+        block_kwargs = block_kwargs or {}
+        downsample_kwargs = downsample_kwargs or {}
+        forward_kwargs = forward_kwargs or {}
+
         self.depths = depths
         self.block_type = block_type
-        self.deform_points = deform_points
-        self.deform_padding = deform_padding
+        self.forward_kwargs = forward_kwargs
 
         # stem + downsample_layers
         stem = stem_type(in_channels=in_channels,
@@ -180,20 +182,25 @@ class MetaArch(nn.Module):
         return no_weight_decay
 
     def forward_features(self, x):
-        deform = self.block_type is DCNv3Block or self.block_type is DCNv3SingleResBlock
-        if deform:
-            deform_inputs = self._deform_inputs(x)
+        extra_inputs = None
+        if hasattr(self.block_type, 'extra_inputs'):  # dcn_v3
+            extra_inputs = self.block_type.extra_inputs(x, **self.forward_kwargs)
 
         # shape: (B, C, H, W)
-        for i in range(4):
+        for i in range(len(self.depths)):
             x = self.downsample_layers[i](x)
-            if hasattr(self.block_type, 'pre_stage_transform'):
+
+            if hasattr(self.block_type, 'pre_stage_transform'):  # halonet
                 x = self.block_type.pre_stage_transform(x)
-            x = self.stages[i](x if not deform else (x, deform_inputs[i]))
+
+            x = self.stages[i](x if extra_inputs is None else (x, extra_inputs[i]))
+
             if hasattr(self.block_type, 'post_stage_transform'):
                 x = self.block_type.post_stage_transform(x)
-            x = x[0] if deform else x
+
+            x = x if extra_inputs is None else x[0]
             x = self.stage_norms[i](x)
+
         x = self.stage_end_norm(x)
 
         x = self.conv_head(x)
@@ -204,49 +211,3 @@ class MetaArch(nn.Module):
         x = self.forward_features(x)
         x = self.head(x)
         return x
-
-    def _deform_inputs(self, x):
-        b, c, h, w = x.shape
-        deform_inputs = []
-        if self.deform_padding:
-            padding = int(math.sqrt(self.deform_points) // 2)
-        else:
-            padding = int(0)
-
-        # for i in range(sum(self.depths)):
-        for i in range(len(self.depths)):
-            spatial_shapes = torch.as_tensor(
-                [(h // pow(2, i + 2) + 2 * padding,
-                    w // pow(2, i + 2) + 2 * padding)],
-                dtype=torch.long, device=x.device)
-            level_start_index = torch.cat(
-                (spatial_shapes.new_zeros((1,)),
-                    spatial_shapes.prod(1).cumsum(0)[:-1]))
-            reference_points = self._get_reference_points(
-                [(h // pow(2, i + 2) + 2 * padding,
-                    w // pow(2, i + 2) + 2 * padding)],
-                device=x.device, padding=padding)
-            deform_inputs.append(
-                [reference_points, spatial_shapes, level_start_index,
-                    (h // pow(2, i + 2), w // pow(2, i + 2))])
-
-        return deform_inputs
-
-    def _get_reference_points(self, spatial_shapes, device, padding=0):
-        reference_points_list = []
-        for lvl, (H_, W_) in enumerate(spatial_shapes):
-            ref_y, ref_x = torch.meshgrid(
-                torch.linspace(padding + 0.5, H_ - padding - 0.5,
-                               int(H_ - 2 * padding),
-                               dtype=torch.float32, device=device),
-                torch.linspace(padding + 0.5, W_ - padding - 0.5,
-                               int(W_ - 2 * padding),
-                               dtype=torch.float32, device=device))
-            ref_y = ref_y.reshape(-1)[None] / H_
-            ref_x = ref_x.reshape(-1)[None] / W_
-            ref = torch.stack((ref_x, ref_y), -1)
-            reference_points_list.append(ref)
-        reference_points = torch.cat(reference_points_list, 1)
-        reference_points = reference_points[:, :, None]
-
-        return reference_points

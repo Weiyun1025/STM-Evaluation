@@ -32,7 +32,60 @@ class MLP(nn.Module):
         return x
 
 
-class DCNv3Block(nn.Module):
+class DCNv3Base(nn.Module):
+    @staticmethod
+    def extra_inputs(x, depths=4, deform_points=9, deform_padding=True):
+        b, c, h, w = x.shape
+        deform_inputs = []
+        if deform_padding:
+            padding = int(math.sqrt(deform_points) // 2)
+        else:
+            padding = int(0)
+
+        # for i in range(sum(self.depths)):
+        for i in range(depths):
+            spatial_shapes = torch.as_tensor(
+                [(h // pow(2, i + 2) + 2 * padding,
+                    w // pow(2, i + 2) + 2 * padding)],
+                dtype=torch.long, device=x.device)
+            level_start_index = torch.cat(
+                (spatial_shapes.new_zeros((1,)),
+                    spatial_shapes.prod(1).cumsum(0)[:-1]))
+            reference_points = DCNv3Base._get_reference_points(
+                [(h // pow(2, i + 2) + 2 * padding,
+                    w // pow(2, i + 2) + 2 * padding)],
+                device=x.device, padding=padding)
+            deform_inputs.append(
+                [reference_points, spatial_shapes, level_start_index,
+                    (h // pow(2, i + 2), w // pow(2, i + 2))])
+
+        return deform_inputs
+
+    @staticmethod
+    def _get_reference_points(spatial_shapes, device, padding=0):
+        reference_points_list = []
+        for lvl, (H_, W_) in enumerate(spatial_shapes):
+            ref_y, ref_x = torch.meshgrid(
+                torch.linspace(padding + 0.5, H_ - padding - 0.5,
+                               int(H_ - 2 * padding),
+                               dtype=torch.float32, device=device),
+                torch.linspace(padding + 0.5, W_ - padding - 0.5,
+                               int(W_ - 2 * padding),
+                               dtype=torch.float32, device=device))
+            ref_y = ref_y.reshape(-1)[None] / H_
+            ref_x = ref_x.reshape(-1)[None] / W_
+            ref = torch.stack((ref_x, ref_y), -1)
+            reference_points_list.append(ref)
+        reference_points = torch.cat(reference_points_list, 1)
+        reference_points = reference_points[:, :, None]
+
+        return reference_points
+
+    def forward(self, x):
+        raise NotImplementedError()
+
+
+class DCNv3Block(DCNv3Base):
     def __init__(self, dim, drop_path, layer_scale_init_value, stage, total_depth, num_heads,
                  kernel_size=7, deform_points=25, deform_ratio=1.0,
                  dilation_rates=(1,),  deform_padding=True, mlp_ratio=4., drop=0.,
@@ -101,7 +154,7 @@ class DCNv3Block(nn.Module):
         return (x.permute(0, 3, 1, 2), x_deform_inputs[1])  # the returned value will be passed to the next block
 
 
-class DCNv3SingleResBlock(nn.Module):
+class DCNv3SingleResBlock(DCNv3Base):
     def __init__(self, dim, drop_path, layer_scale_init_value, stage, total_depth, num_heads,
                  kernel_size=7, deform_points=25, deform_ratio=1.0,
                  dilation_rates=(1,),  deform_padding=True, mlp_ratio=4., drop=0.,
