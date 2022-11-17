@@ -16,6 +16,7 @@ END_LR="1e-5"
 JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_${DESC}"
 
+UPDATE_FREQ=1
 GPUS=${GPUS:-8}
 GPUS_PER_NODE=${GPUS_PER_NODE:-8}
 QUOTA_TYPE="auto"
@@ -38,7 +39,8 @@ srun -p ${PARTITION} \
     python -u main.py \
     --model ${MODEL} \
     --epochs 300 \
-    --batch_size $((TOTAL_BATCH_SIZE/GPUS)) \
+    --update_freq ${UPDATE_FREQ} \
+    --batch_size $((TOTAL_BATCH_SIZE/GPUS/UPDATE_FREQ)) \
     --warmup_epochs 20 \
     --lr ${LR} \
     --warmup_init_lr ${INIT_LR} \

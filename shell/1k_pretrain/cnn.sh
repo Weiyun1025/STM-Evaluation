@@ -40,7 +40,7 @@ srun -p ${PARTITION} \
     --model ${MODEL} \
     --epochs 300 \
     --update_freq ${UPDATE_FREQ} \
-    --batch_size $((TOTAL_BATCH_SIZE/GPUS)) \
+    --batch_size $((TOTAL_BATCH_SIZE/GPUS/UPDATE_FREQ)) \
     --warmup_epochs 20 \
     --lr ${LR} \
     --warmup_init_lr ${INIT_LR} \
