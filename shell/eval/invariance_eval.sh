@@ -5,8 +5,8 @@ mkdir logs
 
 PARTITION=VC
 
-MODEL="conv_swin_tiny" 
-CKPT="/mnt/petrelfs/share_data/shimin/share_checkpoint/swin/swin_tiny/checkpoint-best.pth"
+MODEL=$1
+CKPT="/mnt/petrelfs/share_data/shimin/share_checkpoint/model_ckpt/${MODEL}.pth"
 
 
 DESC="invariance_eval" 

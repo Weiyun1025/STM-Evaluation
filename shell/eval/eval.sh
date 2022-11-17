@@ -5,7 +5,7 @@ mkdir logs
 
 PARTITION=VC
 MODEL=$1
-CKPT=$2
+CKPT="/mnt/petrelfs/share_data/shimin/share_checkpoint/model_ckpt/${MODEL}.pth"
 
 # key hyperparameters
 TOTAL_BATCH_SIZE="1024"
