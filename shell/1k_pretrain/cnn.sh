@@ -73,6 +73,6 @@ srun -p ${PARTITION} \
     --enable_wandb false \
     --project 'model evaluation' \
     --name ${PROJECT_NAME} \
-    --output_dir "/mnt/petrelfs/${USER}/model_evaluation/${PROJECT_NAME}"
+    --output_dir "/mnt/petrelfs/wangweiyun/model_evaluation/${PROJECT_NAME}"
     
 # sh shell/1k_pretrain/convnext_micro_1k_224.sh

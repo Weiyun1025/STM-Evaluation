@@ -64,7 +64,7 @@ def get_args_parser():
                         help='gradient accumulation steps')
 
     # Model parameters
-    parser.add_argument('--model', default='conv_convnext_v2_tiny', type=str, metavar='MODEL',
+    parser.add_argument('--model', default='unified_swin_tiny', type=str, metavar='MODEL',
                         help='Name of model to train')
     parser.add_argument('--input_size', default=224, type=int,
                         help='image input size')
@@ -210,9 +210,9 @@ def get_args_parser():
     # Weights and Biases arguments
     parser.add_argument('--enable_wandb', type=str2bool, default=False,
                         help="enable logging to Weights and Biases")
-    parser.add_argument('--project', default='convnext', type=str,
+    parser.add_argument('--project', default='unified_model_eval', type=str,
                         help="The name of the W&B project where you're sending the new run.")
-    parser.add_argument('--name', default='convnext', type=str,
+    parser.add_argument('--name', default='unified_model_eval', type=str,
                         help="The name of the new run.")
     parser.add_argument('--wandb_ckpt', type=str2bool, default=False,
                         help="Save model checkpoints as W&B Artifacts.")
@@ -358,7 +358,7 @@ def main(args):
     print("Number of training training per epoch = %d" % num_training_steps_per_epoch)
 
     if args.layer_decay < 1.0 or args.layer_decay > 1.0:
-        num_layers = 12  # convnext layers divided into 12 parts, each with a different decayed lr value.
+        num_layers = 12
         assigner = LayerDecayValueAssigner(list(args.layer_decay ** (num_layers + 1 - i) for i in range(num_layers + 2)))
     else:
         assigner = None
