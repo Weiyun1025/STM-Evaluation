@@ -47,4 +47,4 @@ srun -p ${PARTITION} \
     --data_on_memory false \
     --nb_classes 1000 \
     --use_amp true \
-    --output_dir "/mnt/petrelfs/${USER}/model_evaluation/invariance/${PROJECT_NAME}"
+    --output_dir "/mnt/petrelfs/wangweiyun/model_evaluation/invariance/${PROJECT_NAME}"
