@@ -21,7 +21,14 @@ class LayerNorm2d(nn.LayerNorm):
 
 
 class Stem(nn.Module):
-    def __init__(self, in_channels, out_channels, img_size, norm_layer, act_layer, ratio=0.5, **kwargs):
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 img_size,
+                 norm_layer,
+                 act_layer,
+                 ratio=0.5,
+                 **kwargs):
         super().__init__()
         img_size = to_2tuple(img_size)
         self.grid_size = (img_size[0] // 4, img_size[1] // 4)
@@ -42,7 +49,11 @@ class Stem(nn.Module):
 
 
 class DownsampleLayer(nn.Module):
-    def __init__(self, in_channels, out_channels, norm_layer, **kwargs):
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 norm_layer,
+                 **kwargs):
         super().__init__()
 
         # input_shape: B x C x H x W
@@ -57,67 +68,6 @@ class DownsampleLayer(nn.Module):
 
     def forward(self, x):
         return self.reduction(x)
-
-
-class PatchEmbed(nn.Module):
-    """ 2D Image to Patch Embedding
-    """
-
-    def __init__(self, in_channels, out_channels, img_size, patch_size, norm_layer, norm_first, **kwargs):
-        super().__init__()
-        img_size = to_2tuple(img_size)
-        patch_size = to_2tuple(patch_size)
-        self.img_size = img_size
-        self.patch_size = patch_size
-        self.grid_size = (img_size[0] // patch_size[0], img_size[1] // patch_size[1])
-        self.num_patches = self.grid_size[0] * self.grid_size[1]
-
-        self.pre_norm = norm_layer(in_channels) if norm_first and norm_layer else nn.Identity()
-        self.proj = nn.Conv2d(in_channels, out_channels, kernel_size=patch_size, stride=patch_size)
-        self.post_norm = norm_layer(out_channels) if not norm_first and norm_layer else nn.Identity()
-
-    def forward(self, x):
-        B, C, H, W = x.shape
-        assert H == self.img_size[0], f"Input image height ({H}) doesn't match model ({self.img_size[0]})."
-        assert W == self.img_size[1], f"Input image width ({W}) doesn't match model ({self.img_size[1]})."
-
-        x = self.pre_norm(x)
-        x = self.proj(x)
-        x = self.post_norm(x)
-        return x
-
-
-class PatchMerging(nn.Module):
-    def __init__(self, in_channels, out_channels, **kwargs):
-        super().__init__()
-        self.dim = in_channels
-        self.out_dim = out_channels or 2 * in_channels
-        self.norm = nn.LayerNorm(4 * in_channels)
-        self.reduction = nn.Linear(4 * in_channels, self.out_dim, bias=False)
-
-    def forward(self, x):
-        """
-        x: B, C, H, W
-        """
-        B, C, H, W = x.shape
-        assert H % 2 == 0 and W % 2 == 0, f"x size ({H}*{W}) are not even."
-
-        # x = x.view(B, H, W, C)
-        x = x.permute(0, 2, 3, 1)
-
-        x0 = x[:, 0::2, 0::2, :]  # B H/2 W/2 C
-        x1 = x[:, 1::2, 0::2, :]  # B H/2 W/2 C
-        x2 = x[:, 0::2, 1::2, :]  # B H/2 W/2 C
-        x3 = x[:, 1::2, 1::2, :]  # B H/2 W/2 C
-        x = torch.cat([x0, x1, x2, x3], -1)  # B H/2 W/2 4*C
-        x = x.view(B, -1, 4 * C)  # B H/2*W/2 4*C
-        x = x.view(B, H//2, W//2, 4 * C)
-
-        x = self.norm(x)
-        x = self.reduction(x)
-
-        x = x.permute(0, 3, 1, 2)
-        return x
 
 
 class MetaArch(nn.Module):
@@ -152,17 +102,23 @@ class MetaArch(nn.Module):
         self.deform_padding = deform_padding
 
         # stem + downsample_layers
-        stem = stem_type(in_channels=in_channels, out_channels=dims[0], img_size=img_size,
-                         norm_layer=norm_layer, norm_first=False, act_layer=act_layer, **stem_kwargs)
+        stem = stem_type(in_channels=in_channels,
+                         out_channels=dims[0],
+                         img_size=img_size,
+                         norm_layer=norm_layer,
+                         norm_first=False,
+                         act_layer=act_layer,
+                         **stem_kwargs)
         # H, W
         self.patch_grid = stem.grid_size
         self.downsample_layers = nn.ModuleList([stem])
         for i in range(3):
-            downsample_layer = downsample_type(in_channels=dims[i], out_channels=dims[i+1],
-                                               norm_layer=norm_layer, norm_first=True,
-                                               img_size=(self.patch_grid[0] // (2 ** i), self.patch_grid[1] // (2 ** i)),
-                                               **downsample_kwargs)
-            self.downsample_layers.append(downsample_layer)
+            self.downsample_layers.append(downsample_type(in_channels=dims[i],
+                                                          out_channels=dims[i+1],
+                                                          norm_layer=norm_layer,
+                                                          norm_first=True,
+                                                          img_size=(self.patch_grid[0] // (2 ** i), self.patch_grid[1] // (2 ** i)),
+                                                          **downsample_kwargs))
 
         # blocks
         cur = 0
@@ -170,16 +126,20 @@ class MetaArch(nn.Module):
         self.stages = nn.ModuleList()
         self.stage_norms = nn.ModuleList()
         for i, (depth, dim) in enumerate(zip(depths, dims)):
-            stage = nn.Sequential(
-                *[block_type(dim=dim, drop_path=dp_rates[cur + j], stage=i, depth=j, total_depth=cur+j,
+            self.stages.append(nn.Sequential(
+                *[block_type(dim=dim,
+                             drop_path=dp_rates[cur + j],
+                             stage=i,
+                             depth=j,
+                             total_depth=cur+j,
                              input_resolution=(self.patch_grid[0] // (2 ** i), self.patch_grid[1] // (2 ** i)),
                              layer_scale_init_value=layer_scale_init_value,
                              **block_kwargs)
                   for j in range(depth)]
-            )
-            self.stages.append(stage)
+            ))
             self.stage_norms.append(norm_layer(dim) if norm_every_stage else nn.Identity())
             cur += depths[i]
+
         self.stage_end_norm = nn.Identity() if norm_every_stage or norm_after_avg else norm_layer(dims[-1])
 
         self.conv_head = nn.Sequential(
@@ -234,7 +194,6 @@ class MetaArch(nn.Module):
                 x = self.block_type.post_stage_transform(x)
             x = x[0] if deform else x
             x = self.stage_norms[i](x)
-
         x = self.stage_end_norm(x)
 
         x = self.conv_head(x)
