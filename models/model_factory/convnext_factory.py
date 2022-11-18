@@ -147,6 +147,22 @@ def unified_convnext_v3_small(pretrained=False, **kwargs):
 
 
 @ register_model
+def unified_convnext_v3_large_kernel_small(pretrained=False, **kwargs):
+    model = MetaArch(img_size=224,
+                     depths=[2, 2, 24, 2],
+                     dims=[96, 192, 384, 768],
+                     block_type=ConvNeXtV3Block,
+                     block_kwargs=dict(kernel_size=13),
+                     drop_path_rate=0.4,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@ register_model
 def unified_convnext_v2_base(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
                      depths=[3, 3, 27, 3],
