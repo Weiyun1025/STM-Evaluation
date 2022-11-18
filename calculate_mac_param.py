@@ -159,8 +159,8 @@ def convnext_block(module, input, output):
 
 custom_modules_hooks = {
     timm.models.layers.halo_attn.PosEmbedRel: timm_halo_attn_posemb,
-    models.blocks.halonet_timm.HaloAttention: timm_halo_attn_haloatnn,
-    models.blocks.halonet_timm.HaloBlockV2: haloblock,
+    models.blocks.halonet.HaloAttn: timm_halo_attn_haloatnn,
+    models.blocks.halonet.HaloBlockV2: haloblock,
     torch.nn.LayerNorm: layernorm,
     timm.models.layers.LayerNorm2d: layernorm,
     models.blocks.swin.SwinBlock: swinblock,
