@@ -3,3 +3,5 @@ from . import pvt_factory
 from . import convnext_factory
 from . import swin_factory
 from . import dcnv3_factory
+
+from . import mobilenext_factory
