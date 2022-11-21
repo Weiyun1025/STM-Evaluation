@@ -57,7 +57,7 @@ def str2bool(v):
 
 def get_args_parser():
     parser = argparse.ArgumentParser('training and evaluation script for image classification', add_help=False)
-    parser.add_argument('--batch_size', default=2, type=int,
+    parser.add_argument('--batch_size', default=1024, type=int,
                         help='Per GPU batch size')
     parser.add_argument('--epochs', default=300, type=int)
     parser.add_argument('--update_freq', default=1, type=int,
@@ -70,10 +70,10 @@ def get_args_parser():
                         help='image input size')
 
     # EMA related parameters
-    parser.add_argument('--model_ema', type=str2bool, default=False)
+    parser.add_argument('--model_ema', type=str2bool, default=True)
     parser.add_argument('--model_ema_decay', type=float, default=0.9999, help='')
     parser.add_argument('--model_ema_force_cpu', type=str2bool, default=False, help='')
-    parser.add_argument('--model_ema_eval', type=str2bool, default=False, help='Using ema to eval during training.')
+    parser.add_argument('--model_ema_eval', type=str2bool, default=True, help='Using ema to eval during training.')
 
     # Optimization parameters
     parser.add_argument('--opt', default='adamw', type=str, metavar='OPTIMIZER',
@@ -82,7 +82,7 @@ def get_args_parser():
                         help='Optimizer Epsilon (default: 1e-8)')
     parser.add_argument('--opt_betas', default=None, type=float, nargs='+', metavar='BETA',
                         help='Optimizer Betas (default: None, use opt default)')
-    parser.add_argument('--clip_grad', type=float, default=None, metavar='NORM',
+    parser.add_argument('--clip_grad', type=float, default=5.0, metavar='NORM',
                         help='Clip gradient norm (default: None, no clipping)')
     parser.add_argument('--momentum', type=float, default=0.9, metavar='M',
                         help='SGD momentum (default: 0.9)')
@@ -94,12 +94,12 @@ def get_args_parser():
     parser.add_argument('--layer_scale_init_value', type=float, default=1e-6,
                         help='the initial value for layer scale, default=1e-6')
 
-    parser.add_argument('--lr', type=float, default=4e-3, metavar='LR',
+    parser.add_argument('--lr', type=float, default=1e-3, metavar='LR',
                         help='learning rate (default: 4e-3), with total batch size 4096')
-    parser.add_argument('--warmup_init_lr', type=float, default=0.0, metavar='LR',
+    parser.add_argument('--warmup_init_lr', type=float, default=1e-6, metavar='LR',
                         help='initial learning rate for before warm up')
     parser.add_argument('--layer_decay', type=float, default=1.0)
-    parser.add_argument('--min_lr', type=float, default=1e-6, metavar='LR',
+    parser.add_argument('--min_lr', type=float, default=1e-5, metavar='LR',
                         help='lower lr bound for cyclic schedulers that hit 0 (1e-6)')
     parser.add_argument('--warmup_epochs', type=int, default=20, metavar='N',
                         help='epochs to warmup LR, if scheduler supports')
@@ -119,7 +119,7 @@ def get_args_parser():
                         help="Use repeated augmentation.")
 
     # Evaluation parameters
-    parser.add_argument('--crop_pct', type=float, default=None)
+    parser.add_argument('--crop_pct', type=float, default=0.875)
 
     # * Random Erase params
     parser.add_argument('--reprob', type=float, default=0.25, metavar='PCT',
@@ -180,7 +180,7 @@ def get_args_parser():
                         help='resume from checkpoint')
     parser.add_argument('--auto_resume', type=str2bool, default=True)
     parser.add_argument('--save_ckpt', type=str2bool, default=True)
-    parser.add_argument('--save_interval_ckpt', type=str2bool, default=True)
+    parser.add_argument('--save_interval_ckpt', type=str2bool, default=False)
     parser.add_argument('--save_ckpt_freq', default=1, type=int)
     parser.add_argument('--save_ckpt_num', default=3, type=int)
 
@@ -204,7 +204,7 @@ def get_args_parser():
     parser.add_argument('--dist_url', default='env://',
                         help='url used to set up distributed training')
 
-    parser.add_argument('--use_amp', type=str2bool, default=False,
+    parser.add_argument('--use_amp', type=str2bool, default=True,
                         help="Use PyTorch's AMP (Automatic Mixed Precision) or not")
 
     # Weights and Biases arguments
