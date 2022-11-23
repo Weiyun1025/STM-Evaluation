@@ -318,7 +318,6 @@ def init_distributed_mode(args):
         args.rank = int(os.environ['SLURM_PROCID'])
         args.gpu = args.rank % torch.cuda.device_count()
 
-        # by jqxu
         world_size = int(os.environ["SLURM_NTASKS"])
         args.world_size = world_size
 
