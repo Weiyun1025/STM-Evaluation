@@ -43,7 +43,7 @@ torchrun \
     --warmup_init_lr ${INIT_LR} \
     --min_lr ${END_LR} \
     --data_set IMNET1k \
-    --data_path /mnt/cache/share/images/ \
+    --data_path ${PATH_TO_IMAGENET} \
     --nb_classes 1000 \
     --output_dir "output_dir"
 ```
@@ -70,7 +70,7 @@ torchrun \
     --batch_size ${BATCH_SIZE} \
     --input_size 224 \
     --data_set IMNET1k \
-    --data_path /mnt/cache/share/images/ \
+    --data_path ${PATH_TO_IMAGENET} \
     --data_on_memory false \
     --nb_classes 1000 \
     --use_amp false \
