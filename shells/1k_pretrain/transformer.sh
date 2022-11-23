@@ -46,7 +46,4 @@ srun -p ${PARTITION} \
     --min_lr ${END_LR} \
     --data_set IMNET1k \
     --data_path /mnt/cache/share/images/ \
-    --nb_classes 1000 \
     --output_dir "/mnt/petrelfs/wangweiyun/model_evaluation/${PROJECT_NAME}"
-
-# sh shell/1k_pretrain/swin_base_1k_224.sh

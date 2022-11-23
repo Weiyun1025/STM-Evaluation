@@ -9,12 +9,12 @@ DESC="unified_config"
 
 # key hyperparameters
 TOTAL_BATCH_SIZE="4096"
-LR="4e-3"
-INIT_LR="0"
-END_LR="1e-6"
+LR="1e-3"
+INIT_LR="1e-6"
+END_LR="1e-5"
 
 JOB_NAME=${MODEL}
-PROJECT_NAME="${MODEL}_1k_${DESC}"
+PROJECT_NAME="${MODEL}_22k_${DESC}"
 
 UPDATE_FREQ=1
 GPUS=${GPUS:-8}
@@ -38,13 +38,15 @@ srun -p ${PARTITION} \
     ${SRUN_ARGS} \
     python -u main.py \
     --model ${MODEL} \
-    --epochs 300 \
+    --epochs 90 \
     --update_freq ${UPDATE_FREQ} \
     --batch_size $((TOTAL_BATCH_SIZE/GPUS/UPDATE_FREQ)) \
     --lr ${LR} \
     --warmup_init_lr ${INIT_LR} \
     --min_lr ${END_LR} \
-    --data_set IMNET1k \
+    --data_set CEPH22k \
     --data_path /mnt/cache/share/images/ \
-    --output_dir "/mnt/petrelfs/wangweiyun/model_evaluation/${PROJECT_NAME}"
-    
+    --output_dir "/mnt/petrelfs/wangweiyun/model_evaluation/${PROJECT_NAME}" \
+    --warmup_epochs 5 \
+    --model_ema false \
+    --model_ema_eval false
