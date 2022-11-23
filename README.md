@@ -14,7 +14,7 @@ sh make.sh
 
 ## 1K Pretraining
 
-- To train a unified model on ImageNet-1K
+- To train a unified model on ImageNet-1K with slurm
 
 ```shell
 # training setting for unified_halonet, unified_swin and unified_pvt
@@ -24,7 +24,7 @@ sh shells/1k_pretrain/transformer.sh [model_name]
 sh shells/1k_pretrain/cnn.sh [model_name]
 ```
 
-or
+otherwise
 
 ```shell
 torchrun \
@@ -46,13 +46,14 @@ torchrun \
 
 ## Evaluation
 
-- To evaluate a unified model on ImageNet-1K
+- To evaluate a unified model on ImageNet-1K with slurm
+  - remember to modify the path to the pertained ckpt in the shell script
 
 ```shell
 sh shells/eval/eval.sh [model_name] [ckpt_path]
 ```
 
-or
+otherwise
 
 ```shell
 torchrun \
