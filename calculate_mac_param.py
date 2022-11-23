@@ -191,4 +191,7 @@ if __name__ == '__main__':
     main(parse_args())
 
 # salloc -p VC --gres=gpu:1 --quotatype=spot
-# srun -p VC --gres=gpu:1 --quotatype=spot python calulate_mac_param.py --model_name xxx
+# srun -p VC --gres=gpu:1 --quotatype=spot python calculate_mac_param.py --model_name xxx
+# srun -p VC --gres=gpu:1 --quotatype=spot python calculate_mac_param.py --model_name unified_swin_large
+# srun -p VC --gres=gpu:1 --quotatype=spot python calculate_mac_param.py --model_name unified_convnext_v3_large
+# srun -p VC --gres=gpu:1 --quotatype=spot python calculate_mac_param.py --model_name unified_halo_v2_base

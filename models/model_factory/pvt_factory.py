@@ -104,78 +104,16 @@ def unified_pvt_base(pretrained=False, **kwargs):
 
 
 @register_model
-def unified_pvt_b_small(pretrained=False, **kwargs):
+def unified_pvt_large(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
-                     depths=[3, 4, 21, 3],
-                     dims=[64, 128, 320, 512],
+                     depths=[3, 8, 45, 3],
+                     dims=[128, 256, 512, 1024],
                      block_type=PvtBlock,
-                     block_kwargs=dict(num_heads=[1, 2, 5, 8],
-                                       mlp_ratios=[8, 8, 4, 4],
+                     block_kwargs=dict(num_heads=[2, 4, 8, 16],
+                                       mlp_ratios=[4, 4, 4, 4],
                                        qkv_bias=True,
                                        sr_ratios=[8, 4, 2, 1],),
-                     norm_after_avg=True,
-                     drop_path_rate=0.3,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@register_model
-def unified_pvt_c_small(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
-                     depths=[3, 4, 21, 3],
-                     dims=[64, 128, 320, 512],
-                     block_type=PvtBlock,
-                     block_kwargs=dict(num_heads=[1, 2, 5, 8],
-                                       mlp_ratios=[8, 8, 4, 4],
-                                       qkv_bias=True,
-                                       sr_ratios=[8, 4, 2, 1],),
-                     norm_every_stage=False,
-                     norm_after_avg=True,
-                     drop_path_rate=0.3,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@register_model
-def unified_pvt_d_small(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
-                     depths=[3, 4, 21, 3],
-                     dims=[64, 128, 320, 512],
-                     block_type=PvtSingleResBlock,
-                     block_kwargs=dict(num_heads=[1, 2, 5, 8],
-                                       mlp_ratios=[8, 8, 4, 4],
-                                       qkv_bias=True,
-                                       sr_ratios=[8, 4, 2, 1],),
-                     drop_path_rate=0.3,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@register_model
-def unified_pvt_e_small(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
-                     depths=[3, 4, 21, 3],
-                     dims=[64, 128, 320, 512],
-                     block_type=PvtSingleResBlock,
-                     block_kwargs=dict(num_heads=[1, 2, 5, 8],
-                                       mlp_ratios=[8, 8, 4, 4],
-                                       qkv_bias=True,
-                                       sr_ratios=[8, 4, 2, 1],),
-                     norm_every_stage=False,
-                     norm_after_avg=True,
-                     drop_path_rate=0.3,
+                     drop_path_rate=0.5,
                      **kwargs)
 
     if pretrained:

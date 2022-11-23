@@ -104,10 +104,10 @@ def unified_halo_v2_base(pretrained=False, **kwargs):
 
 
 @register_model
-def unified_halo_v2_b_small(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
+def unified_halo_v2_large(pretrained=False, **kwargs):
+    dims = [192 * 2 ** i for i in range(4)]
     depths = [2, 2, 18, 2]
-    num_heads = [3, 6, 12, 24]
+    num_heads = [6, 12, 24, 48]
     block_size = 7
     halo_size = 3
 
@@ -119,8 +119,7 @@ def unified_halo_v2_b_small(pretrained=False, **kwargs):
                                        block_size=block_size,
                                        halo_size=halo_size,
                                        pos_embed_type='query_related'),
-                     norm_after_avg=True,
-                     drop_path_rate=0.3,
+                     drop_path_rate=0.5,
                      **kwargs)
 
     if pretrained:
@@ -128,81 +127,3 @@ def unified_halo_v2_b_small(pretrained=False, **kwargs):
 
     return model
 
-
-@register_model
-def unified_halo_v2_c_small(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [2, 2, 18, 2]
-    num_heads = [3, 6, 12, 24]
-    block_size = 7
-    halo_size = 3
-
-    model = MetaArch(img_size=224,
-                     depths=depths,
-                     dims=dims,
-                     block_type=HaloBlockV2,
-                     block_kwargs=dict(num_heads=num_heads,
-                                       block_size=block_size,
-                                       halo_size=halo_size,
-                                       pos_embed_type='query_related'),
-                     norm_every_stage=False,
-                     norm_after_avg=True,
-                     drop_path_rate=0.3,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@register_model
-def unified_halo_v2_d_small(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [2, 2, 18, 2]
-    num_heads = [3, 6, 12, 24]
-    block_size = 7
-    halo_size = 3
-
-    model = MetaArch(img_size=224,
-                     depths=depths,
-                     dims=dims,
-                     block_type=HaloSingleResBlock,
-                     block_kwargs=dict(num_heads=num_heads,
-                                       block_size=block_size,
-                                       halo_size=halo_size,
-                                       pos_embed_type='query_related'),
-                     drop_path_rate=0.3,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@register_model
-def unified_halo_v2_e_small(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [2, 2, 18, 2]
-    num_heads = [3, 6, 12, 24]
-    block_size = 7
-    halo_size = 3
-
-    model = MetaArch(img_size=224,
-                     depths=depths,
-                     dims=dims,
-                     block_type=HaloSingleResBlock,
-                     block_kwargs=dict(num_heads=num_heads,
-                                       block_size=block_size,
-                                       halo_size=halo_size,
-                                       pos_embed_type='query_related'),
-                     norm_every_stage=False,
-                     norm_after_avg=True,
-                     drop_path_rate=0.3,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model

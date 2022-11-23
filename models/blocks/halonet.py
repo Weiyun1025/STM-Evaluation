@@ -305,7 +305,7 @@ class HaloBlockV2(nn.Module):
                  mlp_ratio=4.,
                  drop=0.,
                  act_layer=nn.GELU,
-                 pos_embed_type='query_related',
+                 pos_embed_type='query_free',
                  **kwargs):
         super().__init__()
         self.dim = dim

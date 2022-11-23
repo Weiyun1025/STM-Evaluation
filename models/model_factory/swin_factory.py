@@ -116,12 +116,11 @@ def unified_swin_base(pretrained=False, **kwargs):
 
     return model
 
-
 @register_model
-def unified_swin_b_small(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
+def unified_swin_large(pretrained=False, **kwargs):
+    dims = [192 * 2 ** i for i in range(4)]
     depths = [2, 2, 18, 2]
-    num_heads = [3, 6, 12, 24]
+    num_heads = [6, 12, 24, 48]
     window_size = 7
 
     model = MetaArch(img_size=224,
@@ -129,75 +128,7 @@ def unified_swin_b_small(pretrained=False, **kwargs):
                      dims=dims,
                      block_type=SwinBlock,
                      block_kwargs=dict(num_heads=num_heads, window_size=window_size),
-                     norm_after_avg=True,
-                     drop_path_rate=0.3,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@register_model
-def unified_swin_c_small(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [2, 2, 18, 2]
-    num_heads = [3, 6, 12, 24]
-    window_size = 7
-
-    model = MetaArch(img_size=224,
-                     depths=depths,
-                     dims=dims,
-                     block_type=SwinBlock,
-                     block_kwargs=dict(num_heads=num_heads, window_size=window_size),
-                     norm_every_stage=False,
-                     norm_after_avg=True,
-                     drop_path_rate=0.3,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@register_model
-def unified_swin_d_small(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [2, 2, 18, 2]
-    num_heads = [3, 6, 12, 24]
-    window_size = 7
-
-    model = MetaArch(img_size=224,
-                     depths=depths,
-                     dims=dims,
-                     block_type=SwinSingleResBlock,
-                     block_kwargs=dict(num_heads=num_heads, window_size=window_size),
-                     drop_path_rate=0.3,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@register_model
-def unified_swin_e_small(pretrained=False, **kwargs):
-    dims = [96 * 2 ** i for i in range(4)]
-    depths = [2, 2, 18, 2]
-    num_heads = [3, 6, 12, 24]
-    window_size = 7
-
-    model = MetaArch(img_size=224,
-                     depths=depths,
-                     dims=dims,
-                     block_type=SwinSingleResBlock,
-                     block_kwargs=dict(num_heads=num_heads, window_size=window_size),
-                     norm_every_stage=False,
-                     norm_after_avg=True,
-                     drop_path_rate=0.3,
+                     drop_path_rate=0.5,
                      **kwargs)
 
     if pretrained:

@@ -22,6 +22,7 @@ ops/MultiScaleDeformableAttention.egg-info/*
 ops/MultiScaleDeformableAttention.egg-info
 ops/dist
 
+meta_data/*
 
 
 !.gitignore

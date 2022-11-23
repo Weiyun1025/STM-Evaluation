@@ -193,13 +193,12 @@ def unified_convnext_v3_base(pretrained=False, **kwargs):
 
 
 @ register_model
-def unified_convnext_b_small(pretrained=False, **kwargs):
+def unified_convnext_v3_large(pretrained=False, **kwargs):
     model = MetaArch(img_size=224,
                      depths=[2, 2, 24, 2],
-                     dims=[96, 192, 384, 768],
+                     dims=[192, 384, 768, 1536],
                      block_type=ConvNeXtV3Block,
-                     norm_after_avg=True,
-                     drop_path_rate=0.4,
+                     drop_path_rate=0.5,
                      **kwargs)
 
     if pretrained:
@@ -207,51 +206,3 @@ def unified_convnext_b_small(pretrained=False, **kwargs):
 
     return model
 
-
-@ register_model
-def unified_convnext_c_small(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
-                     depths=[2, 2, 24, 2],
-                     dims=[96, 192, 384, 768],
-                     block_type=ConvNeXtV3Block,
-                     norm_every_stage=False,
-                     norm_after_avg=True,
-                     drop_path_rate=0.4,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@ register_model
-def unified_convnext_d_small(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
-                     depths=[2, 2, 24, 2],
-                     dims=[96, 192, 384, 768],
-                     block_type=ConvNeXtV3SingleResBlock,
-                     drop_path_rate=0.4,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@ register_model
-def unified_convnext_e_small(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
-                     depths=[2, 2, 24, 2],
-                     dims=[96, 192, 384, 768],
-                     block_type=ConvNeXtV3SingleResBlock,
-                     norm_every_stage=False,
-                     norm_after_avg=True,
-                     drop_path_rate=0.4,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
