@@ -17,6 +17,10 @@ sh make.sh
 - To train a unified model on ImageNet-1K with slurm
 
 ```shell
+# supported model name: unified_[MODEL_TYPE]_[SCALE]
+# MODEL_TYPE: halonet, pvt, swin, convnext, dcn_v3
+# SCALE: micro, tiny, small, base
+
 # training setting for unified_halonet, unified_swin and unified_pvt
 sh shells/1k_pretrain/transformer.sh [model_name]
 
