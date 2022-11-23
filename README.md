@@ -15,6 +15,7 @@ sh make.sh
 ## 1K Pretraining
 
 - To train a unified model on ImageNet-1K with slurm
+  - remember to modify the path to the imagenet-1k in the shell script
 
 ```shell
 # supported model name: unified_[MODEL_TYPE]_[SCALE]
