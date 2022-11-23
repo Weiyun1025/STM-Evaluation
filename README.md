@@ -18,7 +18,7 @@ sh make.sh
 
 ```shell
 # supported model name: unified_[MODEL_TYPE]_[SCALE]
-# MODEL_TYPE: halonet, pvt, swin, convnext, dcn_v3
+# MODEL_TYPE: halonet, pvt, swin, convnext_v3, dcn_v3
 # SCALE: micro, tiny, small, base
 
 # training setting for unified_halonet, unified_swin and unified_pvt
