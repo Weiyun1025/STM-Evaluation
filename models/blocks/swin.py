@@ -114,6 +114,114 @@ class SwinBlock(nn.Module):
         return x
 
 
+class SwinBlockNoSwitch(nn.Module):
+    def __init__(self, dim, drop_path, layer_scale_init_value,
+                 input_resolution, stage, depth, num_heads, window_size,
+                 mlp_ratio=4., qkv_bias=True, drop=0., attn_drop=0.,
+                 head_dim=None, act_layer=nn.GELU, norm_layer=LayerNorm2d,
+                 **kwargs):
+        super().__init__()
+        self.dim = dim
+        self.input_resolution = input_resolution
+        self.window_size = window_size
+        self.shift_size = window_size // 2
+        self.mlp_ratio = mlp_ratio
+        if min(self.input_resolution) <= self.window_size:
+            # if window size is larger than input resolution, we don't partition windows
+            self.shift_size = 0
+            self.window_size = min(self.input_resolution)
+        assert 0 <= self.shift_size < self.window_size, "shift_size must in 0-window_size"
+
+        self.norm1 = norm_layer(dim)
+        self.attn = WindowAttention(
+            dim, num_heads=num_heads[stage], head_dim=head_dim, window_size=to_2tuple(self.window_size),
+            qkv_bias=qkv_bias, attn_drop=attn_drop, proj_drop=drop)
+
+        self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((dim)),
+                                    requires_grad=True) if layer_scale_init_value > 0 else None
+
+        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+        self.norm2 = norm_layer(dim)
+        self.mlp = Mlp(in_features=dim, hidden_features=int(dim * mlp_ratio), act_layer=act_layer, drop=drop)
+
+        if self.shift_size > 0:
+            # calculate attention mask for SW-MSA
+            H, W = self.input_resolution
+            img_mask = torch.zeros((1, H, W, 1))  # 1 H W 1
+            cnt = 0
+            for h in (
+                    slice(0, -self.window_size),
+                    slice(-self.window_size, -self.shift_size),
+                    slice(-self.shift_size, None)):
+                for w in (
+                        slice(0, -self.window_size),
+                        slice(-self.window_size, -self.shift_size),
+                        slice(-self.shift_size, None)):
+                    img_mask[:, h, w, :] = cnt
+                    cnt += 1
+            mask_windows = window_partition(img_mask, self.window_size)  # num_win, window_size, window_size, 1
+            mask_windows = mask_windows.view(-1, self.window_size * self.window_size)
+            attn_mask = mask_windows.unsqueeze(1) - mask_windows.unsqueeze(2)
+            attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
+        else:
+            attn_mask = None
+
+        self.register_buffer("attn_mask", attn_mask)
+
+        self.gamma_2 = nn.Parameter(layer_scale_init_value * torch.ones((dim)),
+                                    requires_grad=True) if layer_scale_init_value > 0 else None
+
+    def forward(self, x):
+        B, C, H, W = x.shape
+
+        shortcut = x
+        x = self.norm1(x)
+        # B, H, W, C
+        x = x.permute(0, 2, 3, 1).contiguous()
+
+        # cyclic shift
+        if self.shift_size > 0:
+            shifted_x = torch.roll(x, shifts=(-self.shift_size, -self.shift_size), dims=(1, 2))
+        else:
+            shifted_x = x
+
+        # partition windows
+        x_windows = window_partition(shifted_x, self.window_size)  # num_win*B, window_size, window_size, C
+        x_windows = x_windows.view(-1, self.window_size * self.window_size, C)  # num_win*B, window_size*window_size, C
+
+        # W-MSA/SW-MSA
+        attn_windows = self.attn(x_windows, mask=self.attn_mask)  # num_win*B, window_size*window_size, C
+
+        # merge windows
+        attn_windows = attn_windows.view(-1, self.window_size, self.window_size, C)
+        shifted_x = window_reverse(attn_windows, self.window_size, H, W)  # B H' W' C
+
+        # reverse cyclic shift
+        if self.shift_size > 0:
+            x = torch.roll(shifted_x, shifts=(self.shift_size, self.shift_size), dims=(1, 2))
+        else:
+            x = shifted_x
+
+        if self.gamma_1 is not None:
+            x = self.gamma_1 * x
+
+        # B, H, W, C -> B, C, H, W
+        x = x.permute(0, 3, 1, 2).contiguous()
+        x = shortcut + self.drop_path(x)
+
+        # FFN
+        shortcut = x
+
+        x = self.mlp(self.norm2(x).permute(0, 2, 3, 1).contiguous())
+        if self.gamma_2 is not None:
+            x = self.gamma_2 * x
+
+        x = x.permute(0, 3, 1, 2).contiguous()
+        x = shortcut + self.drop_path(x)
+
+        return x
+
+
 class SwinSingleResBlock(nn.Module):
     def __init__(self, dim, drop_path, layer_scale_init_value,
                  input_resolution, stage, depth, num_heads, window_size,

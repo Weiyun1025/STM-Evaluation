@@ -1,7 +1,7 @@
 from timm.models import register_model
 from ..meta_arch import MetaArch
 from ..blocks.swin import (
-    SwinBlock, SwinSingleResBlock,
+    SwinBlock, SwinBlockNoSwitch,
     SwinStem, SwinDownsampleLayer,
 )
 
@@ -94,6 +94,28 @@ def unified_swin_small(pretrained=False, **kwargs):
     model = MetaArch(depths=depths,
                      dims=dims,
                      block_type=SwinBlock,
+                     block_kwargs=dict(num_heads=num_heads, window_size=window_size),
+                     drop_path_rate=0.3,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@register_model
+def unified_swin_no_switch_small(pretrained=False, **kwargs):
+    dims = [96 * 2 ** i for i in range(4)]
+    depths = [2, 2, 18, 2]
+    num_heads = [3, 6, 12, 24]
+
+    img_size = kwargs.get('img_size', 224)
+    window_size = window_size_dict[img_size]
+
+    model = MetaArch(depths=depths,
+                     dims=dims,
+                     block_type=SwinBlockNoSwitch,
                      block_kwargs=dict(num_heads=num_heads, window_size=window_size),
                      drop_path_rate=0.3,
                      **kwargs)

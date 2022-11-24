@@ -360,6 +360,76 @@ class HaloBlockV2(nn.Module):
         return x
 
 
+class HaloBlockSwitch(nn.Module):
+
+    def __init__(self,
+                 dim,
+                 drop_path,
+                 layer_scale_init_value,
+                 block_size,
+                 halo_size,
+                 stage,
+                 num_heads,
+                 depth,
+                 mlp_ratio=4.,
+                 drop=0.,
+                 act_layer=nn.GELU,
+                 pos_embed_type='query_related',
+                 **kwargs):
+        super().__init__()
+        self.dim = dim
+        self.mlp_ratio = mlp_ratio
+        halo_size = 0 if (depth % 2 == 0) else halo_size
+
+        self.norm1 = nn.LayerNorm((dim, ))
+        self.attn = HaloAttn(dim=dim,
+                             dim_out=dim,
+                             num_heads=num_heads[stage],
+                             block_size=block_size,
+                             halo_size=halo_size,
+                             pos_embed_type=pos_embed_type)
+
+        self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((1, 1, 1, dim)),
+                                    requires_grad=True) if layer_scale_init_value > 0 else None
+
+        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+        self.norm2 = nn.LayerNorm((dim, ))
+        self.mlp = Mlp(in_features=dim,
+                       hidden_features=int(dim * mlp_ratio),
+                       act_layer=act_layer,
+                       drop=drop)
+
+        self.gamma_2 = nn.Parameter(layer_scale_init_value * torch.ones((1, 1, 1, dim)),
+                                    requires_grad=True) if layer_scale_init_value > 0 else None
+
+    @staticmethod
+    def pre_stage_transform(x):
+        return x.permute(0, 2, 3, 1).contiguous()
+
+    @staticmethod
+    def post_stage_transform(x):
+        return x.permute(0, 3, 1, 2).contiguous()
+
+    def forward(self, x):
+        # shape: (B, H, W, C)
+        shortcut = x
+        x = self.attn(self.norm1(x))
+
+        if self.gamma_1 is not None:
+            x = self.gamma_1 * x
+        x = shortcut + self.drop_path(x)
+
+        # FFN
+        shortcut = x
+        x = self.mlp(self.norm2(x))
+
+        if self.gamma_2 is not None:
+            x = self.gamma_2 * x
+        x = shortcut + self.drop_path(x)
+
+        return x
+
+
 class HaloSingleResBlock(nn.Module):
 
     def __init__(self,
