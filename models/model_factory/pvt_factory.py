@@ -29,7 +29,7 @@ def official_pvt_v2_b0(pretrained=False, **kwargs):
 
 @register_model
 def unified_pvt_micro(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
+    model = MetaArch(img_size=kwargs.get('img_size', 224),
                      depths=[2, 2, 3, 2],
                      dims=[32, 64, 160, 256],
                      block_type=PvtBlock,
@@ -48,7 +48,7 @@ def unified_pvt_micro(pretrained=False, **kwargs):
 
 @register_model
 def unified_pvt_tiny(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
+    model = MetaArch(img_size=kwargs.get('img_size', 224),
                      depths=[3, 4, 9, 3],
                      dims=[64, 128, 320, 512],
                      block_type=PvtBlock,
@@ -67,7 +67,7 @@ def unified_pvt_tiny(pretrained=False, **kwargs):
 
 @register_model
 def unified_pvt_small(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
+    model = MetaArch(img_size=kwargs.get('img_size', 224),
                      depths=[3, 4, 21, 3],
                      dims=[64, 128, 320, 512],
                      block_type=PvtBlock,
@@ -86,7 +86,7 @@ def unified_pvt_small(pretrained=False, **kwargs):
 
 @register_model
 def unified_pvt_base(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
+    model = MetaArch(img_size=kwargs.get('img_size', 224),
                      depths=[3, 8, 45, 3],
                      dims=[64, 128, 320, 512],
                      block_type=PvtBlock,
@@ -104,8 +104,27 @@ def unified_pvt_base(pretrained=False, **kwargs):
 
 
 @register_model
+def unified_pvt_large(pretrained=False, **kwargs):
+    model = MetaArch(img_size=kwargs.get('img_size', 224),
+                     depths=[3, 8, 45, 3],
+                     dims=[128, 256, 512, 1024],
+                     block_type=PvtBlock,
+                     block_kwargs=dict(num_heads=[2, 4, 8, 16],
+                                       mlp_ratios=[4, 4, 4, 4],
+                                       qkv_bias=True,
+                                       sr_ratios=[8, 4, 2, 1],),
+                     drop_path_rate=0.2,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model
+
+
+@register_model
 def unified_pvt_v2_micro(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
+    model = MetaArch(img_size=kwargs.get('img_size', 224),
                      depths=[2, 2, 3, 2],
                      dims=[32, 64, 160, 256],
                      block_type=PvtV2Block,
@@ -124,7 +143,7 @@ def unified_pvt_v2_micro(pretrained=False, **kwargs):
 
 @register_model
 def unified_pvt_v2_tiny(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
+    model = MetaArch(img_size=kwargs.get('img_size', 224),
                      depths=[3, 3, 9, 3],
                      dims=[64, 128, 320, 512],
                      block_type=PvtV2Block,
@@ -143,7 +162,7 @@ def unified_pvt_v2_tiny(pretrained=False, **kwargs):
 
 @register_model
 def unified_pvt_v2_small(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
+    model = MetaArch(img_size=kwargs.get('img_size', 224),
                      depths=[3, 3, 21, 3],
                      dims=[64, 128, 320, 512],
                      block_type=PvtV2Block,
@@ -162,7 +181,7 @@ def unified_pvt_v2_small(pretrained=False, **kwargs):
 
 @register_model
 def unified_pvt_v2_base(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
+    model = MetaArch(img_size=kwargs.get('img_size', 224),
                      depths=[3, 6, 45, 3],
                      dims=[64, 128, 320, 512],
                      block_type=PvtV2Block,

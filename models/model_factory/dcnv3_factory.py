@@ -12,7 +12,7 @@ def unified_dcn_v3_micro(pretrained=False, **kwargs):
     deform_padding = True
     kernel_size = 3
 
-    model = MetaArch(img_size=224,
+    model = MetaArch(img_size=kwargs.get('img_size', 224),
                      depths=depths,
                      dims=dims,
                      num_heads=num_heads,
@@ -37,7 +37,7 @@ def unified_dcn_v3_tiny(pretrained=False, **kwargs):
     deform_padding = True
     kernel_size = 3
 
-    model = MetaArch(img_size=224,
+    model = MetaArch(img_size=kwargs.get('img_size', 224),
                      depths=depths,
                      dims=dims,
                      num_heads=num_heads,
@@ -62,7 +62,7 @@ def unified_dcn_v3_small(pretrained=False, **kwargs):
     deform_padding = True
     kernel_size = 3
 
-    model = MetaArch(img_size=224,
+    model = MetaArch(img_size=kwargs.get('img_size', 224),
                      depths=depths,
                      dims=dims,
                      num_heads=num_heads,
@@ -87,7 +87,7 @@ def unified_dcn_v3_base(pretrained=False, **kwargs):
     deform_padding = True
     kernel_size = 3
 
-    model = MetaArch(img_size=224,
+    model = MetaArch(img_size=kwargs.get('img_size', 224),
                      depths=depths,
                      dims=dims,
                      num_heads=num_heads,
@@ -95,111 +95,6 @@ def unified_dcn_v3_base(pretrained=False, **kwargs):
                      block_kwargs=dict(num_heads=num_heads, deform_points=deform_points, kernel_size=kernel_size, deform_padding=deform_padding),
                      forward_kwargs=dict(deform_points=deform_points, deform_padding=deform_padding),
                      drop_path_rate=0.5,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@register_model
-def unified_dcn_v3_b_small(pretrained=False, **kwargs):
-    dims = [80 * 2 ** i for i in range(4)]
-    depths = [4, 4, 21, 4]
-    num_heads = [5, 10, 20, 40]
-    deform_points = 9
-    deform_padding = True
-    kernel_size = 3
-
-    model = MetaArch(img_size=224,
-                     depths=depths,
-                     dims=dims,
-                     num_heads=num_heads,
-                     block_type=DCNv3Block,
-                     block_kwargs=dict(num_heads=num_heads, deform_points=deform_points, kernel_size=kernel_size, deform_padding=deform_padding),
-                     forward_kwargs=dict(deform_points=deform_points, deform_padding=deform_padding),
-                     norm_after_avg=True,
-                     drop_path_rate=0.3,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@register_model
-def unified_dcn_v3_c_small(pretrained=False, **kwargs):
-    dims = [80 * 2 ** i for i in range(4)]
-    depths = [4, 4, 21, 4]
-    num_heads = [5, 10, 20, 40]
-    deform_points = 9
-    deform_padding = True
-    kernel_size = 3
-
-    model = MetaArch(img_size=224,
-                     depths=depths,
-                     dims=dims,
-                     num_heads=num_heads,
-                     block_type=DCNv3Block,
-                     block_kwargs=dict(num_heads=num_heads, deform_points=deform_points, kernel_size=kernel_size, deform_padding=deform_padding),
-                     forward_kwargs=dict(deform_points=deform_points, deform_padding=deform_padding),
-                     norm_every_stage=False,
-                     norm_after_avg=True,
-                     drop_path_rate=0.3,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@register_model
-def unified_dcn_v3_d_small(pretrained=False, **kwargs):
-    dims = [80 * 2 ** i for i in range(4)]
-    depths = [4, 4, 21, 4]
-    num_heads = [5, 10, 20, 40]
-    deform_points = 9
-    deform_padding = True
-    kernel_size = 3
-
-    model = MetaArch(img_size=224,
-                     depths=depths,
-                     dims=dims,
-                     num_heads=num_heads,
-                     block_type=DCNv3SingleResBlock,
-                     block_kwargs=dict(num_heads=num_heads, deform_points=deform_points, kernel_size=kernel_size, deform_padding=deform_padding),
-                     forward_kwargs=dict(deform_points=deform_points, deform_padding=deform_padding),
-                     drop_path_rate=0.3,
-                     **kwargs)
-
-    if pretrained:
-        raise NotImplementedError()
-
-    return model
-
-
-@register_model
-def unified_dcn_v3_e_small(pretrained=False, **kwargs):
-    dims = [80 * 2 ** i for i in range(4)]
-    depths = [4, 4, 21, 4]
-    num_heads = [5, 10, 20, 40]
-    deform_points = 9
-    deform_padding = True
-    kernel_size = 3
-
-    model = MetaArch(img_size=224,
-                     depths=depths,
-                     dims=dims,
-                     num_heads=num_heads,
-                     block_type=DCNv3SingleResBlock,
-                     block_kwargs=dict(num_heads=num_heads, deform_points=deform_points, kernel_size=kernel_size, deform_padding=deform_padding),
-                     forward_kwargs=dict(deform_points=deform_points, deform_padding=deform_padding),
-                     norm_every_stage=False,
-                     norm_after_avg=True,
-                     drop_path_rate=0.3,
                      **kwargs)
 
     if pretrained:
