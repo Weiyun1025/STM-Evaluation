@@ -50,4 +50,5 @@ srun -p ${PARTITION} \
     --warmup_epochs 5 \
     --model_ema false \
     --model_ema_eval false \
-    --weight_decay 1e-8
+    --weight_decay 1e-8 \
+    --use_checkpoint true

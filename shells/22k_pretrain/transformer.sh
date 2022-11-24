@@ -49,4 +49,5 @@ srun -p ${PARTITION} \
     --output_dir "/mnt/petrelfs/wangweiyun/model_evaluation/${PROJECT_NAME}" \
     --warmup_epochs 5 \
     --model_ema false \
-    --model_ema_eval false
+    --model_ema_eval false \
+    --use_checkpoint true
