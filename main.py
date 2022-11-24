@@ -206,6 +206,8 @@ def get_args_parser():
 
     parser.add_argument('--use_amp', type=str2bool, default=True,
                         help="Use PyTorch's AMP (Automatic Mixed Precision) or not")
+    parser.add_argument('--use_checkpoint', type=str2bool, default=False,
+                        help="Use PyTorch's gradient checkpoint or not")                  
 
     # Weights and Biases arguments
     parser.add_argument('--enable_wandb', type=str2bool, default=False,
@@ -307,6 +309,7 @@ def main(args):
         pretrained=False,
         num_classes=args.nb_classes,
         layer_scale_init_value=args.layer_scale_init_value,
+        use_checkpoint=args.use_checkpoint
     )
 
     if args.finetune:

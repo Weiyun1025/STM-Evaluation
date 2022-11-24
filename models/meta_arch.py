@@ -3,7 +3,7 @@ import torch.nn.functional as F
 
 from torch import nn
 from timm.models.layers import to_2tuple, trunc_normal_
-
+import torch.utils.checkpoint as checkpoint
 
 class LayerNorm2d(nn.LayerNorm):
     """ LayerNorm for channels of '2D' spatial NCHW tensors """
@@ -90,6 +90,7 @@ class MetaArch(nn.Module):
                  norm_after_avg=False,
                  act_layer=nn.GELU,
                  forward_kwargs=None,
+                 use_checkpoint=False,
                  **kwargs,
                  ):
         super().__init__()
@@ -102,6 +103,7 @@ class MetaArch(nn.Module):
         self.depths = depths
         self.block_type = block_type
         self.forward_kwargs = forward_kwargs
+        self.use_checkpoint = use_checkpoint
 
         # stem + downsample_layers
         stem = stem_type(in_channels=in_channels,
@@ -127,9 +129,28 @@ class MetaArch(nn.Module):
         dp_rates = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]
         self.stages = nn.ModuleList()
         self.stage_norms = nn.ModuleList()
+
+        ####
+        # for i, (depth, dim) in enumerate(zip(depths, dims)):
+        #     self.stages.append(nn.Sequential(
+        #         *[block_type(dim=dim,
+        #                      drop_path=dp_rates[cur + j],
+        #                      stage=i,
+        #                      depth=j,
+        #                      total_depth=cur+j,
+        #                      input_resolution=(self.patch_grid[0] // (2 ** i), self.patch_grid[1] // (2 ** i)),
+        #                      layer_scale_init_value=layer_scale_init_value,
+        #                      **block_kwargs)
+        #           for j in range(depth)]
+        #     ))
+        #     self.stage_norms.append(norm_layer(dim) if norm_every_stage else nn.Identity())
+        #     cur += depths[i]
+        ####
+
+        # sm: to add gradient checkpoint, each stage are implemented with list instead of sequential api.
         for i, (depth, dim) in enumerate(zip(depths, dims)):
-            self.stages.append(nn.Sequential(
-                *[block_type(dim=dim,
+            self.stages.append(nn.ModuleList(
+                [block_type(dim=dim,
                              drop_path=dp_rates[cur + j],
                              stage=i,
                              depth=j,
@@ -142,8 +163,8 @@ class MetaArch(nn.Module):
             self.stage_norms.append(norm_layer(dim) if norm_every_stage else nn.Identity())
             cur += depths[i]
 
-        self.stage_end_norm = nn.Identity() if norm_every_stage or norm_after_avg else norm_layer(dims[-1])
 
+        self.stage_end_norm = nn.Identity() if norm_every_stage or norm_after_avg else norm_layer(dims[-1])
         self.conv_head = nn.Sequential(
             nn.Conv2d(dims[-1], int(dims[-1] * extra_transform_ratio), 1, 1, 0, bias=False),
             nn.BatchNorm2d(int(dims[-1] * extra_transform_ratio)),
@@ -187,13 +208,35 @@ class MetaArch(nn.Module):
             extra_inputs = self.block_type.extra_inputs(x, **self.forward_kwargs)
 
         # shape: (B, C, H, W)
+        # for i in range(len(self.depths)):
+        #     x = self.downsample_layers[i](x)
+
+        #     if hasattr(self.block_type, 'pre_stage_transform'):  # halonet
+        #         x = self.block_type.pre_stage_transform(x)
+
+        #     x = self.stages[i](x if extra_inputs is None else (x, extra_inputs[i]))
+
+        #     if hasattr(self.block_type, 'post_stage_transform'):
+        #         x = self.block_type.post_stage_transform(x)
+
+        #     x = x if extra_inputs is None else x[0]
+        #     x = self.stage_norms[i](x)
+
+        # sm: add checkpoint version
         for i in range(len(self.depths)):
             x = self.downsample_layers[i](x)
 
             if hasattr(self.block_type, 'pre_stage_transform'):  # halonet
                 x = self.block_type.pre_stage_transform(x)
 
-            x = self.stages[i](x if extra_inputs is None else (x, extra_inputs[i]))
+            for blk in self.stages[i]:
+                x = x if extra_inputs is None else (x, extra_inputs[i])
+                if self.use_checkpoint:
+                    x = checkpoint.checkpoint(blk, x)
+                else:
+                    x = blk(x)
+
+            #x = self.stages[i](x if extra_inputs is None else (x, extra_inputs[i]))
 
             if hasattr(self.block_type, 'post_stage_transform'):
                 x = self.block_type.post_stage_transform(x)

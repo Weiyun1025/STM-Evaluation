@@ -5,7 +5,7 @@ mkdir logs
 
 PARTITION=VC
 #MODEL=$1
-MODEL="unified_swin_large"
+MODEL="unified_swin_large_224_w7"
 DESC="unified_config_run_test" 
 
 # key hyperparameters
@@ -44,6 +44,7 @@ srun -p ${PARTITION} \
     --lr ${LR} \
     --warmup_init_lr ${INIT_LR} \
     --min_lr ${END_LR} \
+    --use_checkpoint True \
     --data_set "CEPH22k" \
     --data_path "s3://image22k/" \
     --nb_classes 1000 \

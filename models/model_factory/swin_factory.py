@@ -135,3 +135,23 @@ def unified_swin_large(pretrained=False, **kwargs):
         raise NotImplementedError()
 
     return model
+
+@register_model
+def unified_swin_large_224_w7(pretrained=False, **kwargs):
+    dims = [192 * 2 ** i for i in range(4)]
+    depths = [2, 2, 18, 2]
+    num_heads = [6, 12, 24, 48]
+    window_size = 7
+
+    model = MetaArch(img_size=224,
+                     depths=depths,
+                     dims=dims,
+                     block_type=SwinBlock,
+                     block_kwargs=dict(num_heads=num_heads, window_size=window_size),
+                     drop_path_rate=0.5,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model

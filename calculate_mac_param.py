@@ -176,7 +176,7 @@ custom_modules_hooks = {
 
 def main(args):
     model = create_model(args.model_name, pretrained=False,
-                         num_classes=1000).eval().cuda()
+                         num_classes=1000, use_checkpoint=True).eval().cuda()
 
     macs, params = profile(model, (torch.randn(1, 3, 224, 224).cuda(), ),
                            custom_ops=custom_modules_hooks,

@@ -10,7 +10,7 @@ class SwinBlock(nn.Module):
     def __init__(self, dim, drop_path, layer_scale_init_value,
                  input_resolution, stage, depth, num_heads, window_size,
                  mlp_ratio=4., qkv_bias=True, drop=0., attn_drop=0.,
-                 head_dim=None, act_layer=nn.GELU, norm_layer=LayerNorm2d,
+                 head_dim=None, act_layer=nn.GELU, norm_layer=LayerNorm2d, use_checkpoint=False,
                  **kwargs):
         super().__init__()
         self.dim = dim
@@ -18,6 +18,8 @@ class SwinBlock(nn.Module):
         self.window_size = window_size
         self.shift_size = 0 if (depth % 2 == 0) else window_size // 2
         self.mlp_ratio = mlp_ratio
+        self.use_checkpoint=use_checkpoint
+
         if min(self.input_resolution) <= self.window_size:
             # if window size is larger than input resolution, we don't partition windows
             self.shift_size = 0
