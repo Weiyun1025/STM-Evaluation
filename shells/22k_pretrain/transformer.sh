@@ -45,7 +45,7 @@ srun -p ${PARTITION} \
     --warmup_init_lr ${INIT_LR} \
     --min_lr ${END_LR} \
     --data_set CEPH22k \
-    --data_path /mnt/cache/share/images/ \
+    --data_path "s3://image22k/" \
     --output_dir "/mnt/petrelfs/wangweiyun/model_evaluation/${PROJECT_NAME}" \
     --warmup_epochs 5 \
     --model_ema false \

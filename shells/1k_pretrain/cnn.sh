@@ -45,6 +45,6 @@ srun -p ${PARTITION} \
     --warmup_init_lr ${INIT_LR} \
     --min_lr ${END_LR} \
     --data_set IMNET1k \
-    --data_path /mnt/cache/share/images/ \
+    --data_path "/mnt/cache/share/images/" \
     --output_dir "/mnt/petrelfs/wangweiyun/model_evaluation/${PROJECT_NAME}"
     
