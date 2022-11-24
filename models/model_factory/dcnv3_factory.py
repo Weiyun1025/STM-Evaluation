@@ -12,8 +12,7 @@ def unified_dcn_v3_micro(pretrained=False, **kwargs):
     deform_padding = True
     kernel_size = 3
 
-    model = MetaArch(img_size=kwargs.get('img_size', 224),
-                     depths=depths,
+    model = MetaArch(depths=depths,
                      dims=dims,
                      num_heads=num_heads,
                      block_type=DCNv3Block,
@@ -37,8 +36,7 @@ def unified_dcn_v3_tiny(pretrained=False, **kwargs):
     deform_padding = True
     kernel_size = 3
 
-    model = MetaArch(img_size=kwargs.get('img_size', 224),
-                     depths=depths,
+    model = MetaArch(depths=depths,
                      dims=dims,
                      num_heads=num_heads,
                      block_type=DCNv3Block,
@@ -62,8 +60,7 @@ def unified_dcn_v3_small(pretrained=False, **kwargs):
     deform_padding = True
     kernel_size = 3
 
-    model = MetaArch(img_size=kwargs.get('img_size', 224),
-                     depths=depths,
+    model = MetaArch(depths=depths,
                      dims=dims,
                      num_heads=num_heads,
                      block_type=DCNv3Block,
@@ -87,8 +84,7 @@ def unified_dcn_v3_base(pretrained=False, **kwargs):
     deform_padding = True
     kernel_size = 3
 
-    model = MetaArch(img_size=kwargs.get('img_size', 224),
-                     depths=depths,
+    model = MetaArch(depths=depths,
                      dims=dims,
                      num_heads=num_heads,
                      block_type=DCNv3Block,

@@ -25,8 +25,7 @@ def unified_halonet_micro(pretrained=False, **kwargs):
     block_size = block_size_dict[img_size]
     halo_size = halo_size_dict[img_size]
 
-    model = MetaArch(img_size=img_size,
-                     depths=depths,
+    model = MetaArch(depths=depths,
                      dims=dims,
                      block_type=HaloBlockV2,
                      block_kwargs=dict(num_heads=num_heads,
@@ -52,8 +51,7 @@ def unified_halonet_tiny(pretrained=False, **kwargs):
     block_size = block_size_dict[img_size]
     halo_size = halo_size_dict[img_size]
 
-    model = MetaArch(img_size=img_size,
-                     depths=depths,
+    model = MetaArch(depths=depths,
                      dims=dims,
                      block_type=HaloBlockV2,
                      block_kwargs=dict(num_heads=num_heads,
@@ -79,8 +77,7 @@ def unified_halonet_small(pretrained=False, **kwargs):
     block_size = block_size_dict[img_size]
     halo_size = halo_size_dict[img_size]
 
-    model = MetaArch(img_size=img_size,
-                     depths=depths,
+    model = MetaArch(depths=depths,
                      dims=dims,
                      block_type=HaloBlockV2,
                      block_kwargs=dict(num_heads=num_heads,
@@ -106,8 +103,7 @@ def unified_halonet_base(pretrained=False, **kwargs):
     block_size = block_size_dict[img_size]
     halo_size = halo_size_dict[img_size]
 
-    model = MetaArch(img_size=img_size,
-                     depths=depths,
+    model = MetaArch(depths=depths,
                      dims=dims,
                      block_type=HaloBlockV2,
                      block_kwargs=dict(num_heads=num_heads,
@@ -133,8 +129,7 @@ def unified_halo_v2_large(pretrained=False, **kwargs):
     block_size = block_size_dict[img_size]
     halo_size = halo_size_dict[img_size]
 
-    model = MetaArch(img_size=img_size,
-                     depths=depths,
+    model = MetaArch(depths=depths,
                      dims=dims,
                      block_type=HaloBlockV2,
                      block_kwargs=dict(num_heads=num_heads,

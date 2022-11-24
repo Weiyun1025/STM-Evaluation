@@ -19,8 +19,7 @@ def official_swin_tiny(pretrained=False, **kwargs):
     num_heads = [3, 6, 12, 24]
     window_size = 7
 
-    model = MetaArch(img_size=kwargs.get('img_size', 224),
-                     depths=depths,
+    model = MetaArch(depths=depths,
                      dims=dims,
                      stem_type=SwinStem,
                      stem_kwargs=dict(patch_size=4),
@@ -48,8 +47,7 @@ def unified_swin_micro(pretrained=False, **kwargs):
     img_size = kwargs.get('img_size', 224)
     window_size = window_size_dict[img_size]
 
-    model = MetaArch(img_size=img_size,
-                     depths=depths,
+    model = MetaArch(depths=depths,
                      dims=dims,
                      block_type=SwinBlock,
                      block_kwargs=dict(num_heads=num_heads, window_size=window_size),
@@ -71,8 +69,7 @@ def unified_swin_tiny(pretrained=False, **kwargs):
     img_size = 224
     window_size = window_size_dict[img_size]
 
-    model = MetaArch(img_size=img_size,
-                     depths=depths,
+    model = MetaArch(depths=depths,
                      dims=dims,
                      block_type=SwinBlock,
                      block_kwargs=dict(num_heads=num_heads, window_size=window_size),
@@ -94,8 +91,7 @@ def unified_swin_small(pretrained=False, **kwargs):
     img_size = kwargs.get('img_size', 224)
     window_size = window_size_dict[img_size]
 
-    model = MetaArch(img_size=img_size,
-                     depths=depths,
+    model = MetaArch(depths=depths,
                      dims=dims,
                      block_type=SwinBlock,
                      block_kwargs=dict(num_heads=num_heads, window_size=window_size),
@@ -117,8 +113,7 @@ def unified_swin_base(pretrained=False, **kwargs):
     img_size = kwargs.get('img_size', 224)
     window_size = window_size_dict[img_size]
 
-    model = MetaArch(img_size=img_size,
-                     depths=depths,
+    model = MetaArch(depths=depths,
                      dims=dims,
                      block_type=SwinBlock,
                      block_kwargs=dict(num_heads=num_heads, window_size=window_size),
@@ -141,8 +136,7 @@ def unified_swin_large(pretrained=False, **kwargs):
     img_size = kwargs.get('img_size', 224)
     window_size = window_size_dict[img_size]
 
-    model = MetaArch(img_size=img_size,
-                     depths=depths,
+    model = MetaArch(depths=depths,
                      dims=dims,
                      block_type=SwinBlock,
                      block_kwargs=dict(num_heads=num_heads, window_size=window_size),

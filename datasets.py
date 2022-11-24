@@ -29,9 +29,6 @@ _logger = logging.getLogger(__name__)
 
 _ERROR_RETRY = 50
 
-# cluster = 1424
-cluster = 1400
-
 
 def build_dataset(is_train, args):
     transform = build_transform(is_train, args)
@@ -68,7 +65,8 @@ def build_dataset(is_train, args):
         dataset = ImageCephDataset(args.data_path, 'train', transform=transform)
         nb_classes = len(dataset.parser.class_to_idx.keys())
     elif args.data_set == "CEPH22k" and not is_train:
-        dataset = ImageCephDataset(args.data_path, 'val', transform=transform)
+        val_data_path = "/mnt/cache/share/images/"
+        dataset = ImageCephDataset(val_data_path, 'val', transform=transform)
         nb_classes = 1000
     else:
         raise NotImplementedError()
@@ -138,7 +136,7 @@ class ImageCephDataset(data.Dataset):
             on_memory=False,
     ):
         if '22k' in root and split == 'train':
-            raise NotImplementedError()
+            annotation_root = "meta_data/"
         else:
             annotation_root = osp.join(root, 'meta')
 
@@ -274,7 +272,8 @@ class ParserCephImage(Parser):
             self.io_backend = 'petrel'
             with open(osp.join(annotation_root, '22k_class_to_idx.json'), 'r') as f:
                 self.class_to_idx = json.loads(f.read())
-            with open(osp.join(annotation_root, '22k_label.txt'), 'r') as f:
+            sample_path = "/mnt/petrelfs/share_data/wangwenhai/DCNv3-dev/classification/meta_data/22k_label.txt"
+            with open(sample_path, 'r') as f:
                 self.samples = f.read().splitlines()
         else:
             self.io_backend = 'disk'
@@ -352,10 +351,12 @@ class ParserCephImage(Parser):
             self.file_client = FileClient(self.io_backend, **self.kwargs)
 
         filepath, target = self.samples[index].split(' ')
-        filepath = osp.join(self.root, self.split, filepath)
 
-        if cluster == '1424':
-            filepath = filepath.replace('image22k/', 'imagenet22k/')
+        if '22k' in self.root:
+            filepath = osp.join(self.root, filepath)
+        else:
+            filepath = osp.join(self.root, self.split, filepath)
+
         try:
             if self.on_memory:
                 img_bytes = self.holder[filepath]

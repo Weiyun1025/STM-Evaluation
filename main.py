@@ -167,7 +167,7 @@ def get_args_parser():
     parser.add_argument('--imagenet_default_mean_and_std', type=str2bool, default=True)
     parser.add_argument('--data_set', default='IMNET1k',
                         # choices=['CIFAR', 'IMNET', 'image_folder'],
-                        choices=['IMNET1k'],
+                        choices=['IMNET1k', 'CEPH22k'],
                         type=str, help='ImageNet dataset path')
     parser.add_argument('--output_dir', default='',
                         help='path where to save, empty for no saving')
