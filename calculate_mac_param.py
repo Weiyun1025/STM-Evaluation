@@ -42,7 +42,8 @@ def haloblock(module, input, output):
 
 
 def timm_halo_attn_haloatnn(module, input, output):
-    B, C, H, W = input[0].shape
+    # B, C, H, W = input[0].shape
+    B, H, W, C = input[0].shape
     num_h_blocks = H // module.block_size
     num_w_blocks = W // module.block_size
     num_blocks = num_h_blocks * num_w_blocks
