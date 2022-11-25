@@ -198,7 +198,7 @@ def unified_halonet_base(pretrained=False, **kwargs):
 
 
 @register_model
-def unified_halo_v2_large(pretrained=False, **kwargs):
+def unified_halonet_large(pretrained=False, **kwargs):
     dims = [192 * 2 ** i for i in range(4)]
     depths = [2, 2, 18, 2]
     num_heads = [6, 12, 24, 48]
