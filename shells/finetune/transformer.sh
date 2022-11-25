@@ -48,6 +48,7 @@ srun -p ${PARTITION} \
     --data_path "/mnt/cache/share/images/" \
     --output_dir "/mnt/petrelfs/wangweiyun/model_evaluation/${PROJECT_NAME}" \
     --warmup_epochs 5 \
+    --input_size 384 \
     --model_ema false \
     --model_ema_eval false \
     --weight_decay 1e-8 \

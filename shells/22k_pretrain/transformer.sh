@@ -48,6 +48,7 @@ srun -p ${PARTITION} \
     --data_path "s3://image22k/" \
     --output_dir "/mnt/petrelfs/wangweiyun/model_evaluation/${PROJECT_NAME}" \
     --warmup_epochs 5 \
+    --input_size 192 \
     --model_ema false \
     --model_ema_eval false \
     --use_checkpoint true
