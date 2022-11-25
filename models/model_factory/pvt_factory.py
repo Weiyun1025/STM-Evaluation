@@ -100,7 +100,7 @@ def unified_pvt_base(pretrained=False, **kwargs):
 
 @register_model
 def unified_pvt_large(pretrained=False, **kwargs):
-    model = MetaArch(depths=[3, 8, 45, 3],
+    model = MetaArch(depths=[3, 8, 35, 3],
                      dims=[128, 256, 512, 1024],
                      block_type=PvtBlock,
                      block_kwargs=dict(num_heads=[2, 4, 8, 16],
