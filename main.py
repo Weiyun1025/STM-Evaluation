@@ -62,6 +62,8 @@ def get_args_parser():
     parser.add_argument('--epochs', default=300, type=int)
     parser.add_argument('--update_freq', default=1, type=int,
                         help='gradient accumulation steps')
+    parser.add_argument('--use_checkpoint', type=str2bool, default=False)
+    parser.add_argument('--label_map', type=str2bool, default=False)
 
     # Model parameters
     parser.add_argument('--model', default='unified_swin_tiny', type=str, metavar='MODEL',
@@ -166,7 +168,7 @@ def get_args_parser():
     parser.add_argument('--imagenet_default_mean_and_std', type=str2bool, default=True)
     parser.add_argument('--data_set', default='IMNET1k',
                         # choices=['CIFAR', 'IMNET', 'image_folder'],
-                        choices=['IMNET1k'],
+                        choices=['IMNET1k', 'CEPH22k'],
                         type=str, help='ImageNet dataset path')
     parser.add_argument('--output_dir', default='',
                         help='path where to save, empty for no saving')
@@ -305,8 +307,10 @@ def main(args):
     model = create_model(
         args.model,
         pretrained=False,
+        img_size=args.input_size,
         num_classes=args.nb_classes,
         layer_scale_init_value=args.layer_scale_init_value,
+        use_checkpoint=args.use_checkpoint,
     )
 
     if args.finetune:

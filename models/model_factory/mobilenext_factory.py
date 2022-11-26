@@ -5,8 +5,7 @@ from ..blocks.mobilenext import MobileNeXtV2Block
 
 @ register_model
 def unified_mobilenext_v2_small(pretrained=False, **kwargs):
-    model = MetaArch(img_size=224,
-                     depths=[3, 3, 21, 3],
+    model = MetaArch(depths=[3, 3, 21, 3],
                      dims=[96, 192, 384, 768],
                      block_type=MobileNeXtV2Block,
                      **kwargs)

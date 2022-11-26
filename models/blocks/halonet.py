@@ -91,6 +91,7 @@ class QueryRelatedPosEmbedRel(nn.Module):
             scale (float): scale factor (for init)
         """
         super().__init__()
+        self.win_size = win_size
         self.block_size = block_size
         self.dim_head = dim_head
         self.height_rel = nn.Parameter(torch.randn(win_size * 2 - 1, dim_head) * scale)
@@ -114,6 +115,21 @@ class QueryRelatedPosEmbedRel(nn.Module):
         rel_logits = rel_logits.reshape(B, BB, HW, -1)
         # bsz, num_heads, num_blocks ** 2, block_size ** 2, win_size ** 2
         return rel_logits.reshape(B // NH, NH, BB, HW, -1)
+
+    def load_state_dict(self, state_dict, strict: bool = True):
+        new_state_dict = {}
+        for key, value in state_dict.items():
+            if 'height_rel' in key or 'width_rel' in key:
+                value = value.permute(1, 0).contiguous().unsqueeze(0)
+                value = F.interpolate(value,
+                                      size=self.win_size * 2 - 1,
+                                      mode='linear',
+                                      align_corners=True)
+                value = value.squeeze(0).permute(1, 0).contiguous()
+
+            new_state_dict[key] = value
+
+        return super().load_state_dict(new_state_dict, strict)
 
 
 class HaloAttn(nn.Module):
@@ -158,7 +174,8 @@ class HaloAttn(nn.Module):
                  qkv_bias=False,
                  avg_down=False,
                  pos_embed_type='query_free',
-                 scale_pos_embed=False):
+                 scale_pos_embed=False,
+                 input_resolution=None):
         super().__init__()
         dim_out = dim_out or dim
         assert dim_out % num_heads == 0
@@ -176,6 +193,9 @@ class HaloAttn(nn.Module):
         self.win_size = block_size + halo_size * 2  # neighbourhood window size
         self.block_stride = 1
         use_avg_pool = False
+
+        if min(input_resolution) < self.block_size:
+            self.block_size = min(input_resolution)
 
         # FIXME not clear if this stride behaviour is what the paper intended
         # Also, the paper mentions using a 3D conv for dealing with the blocking/gather, and leaving
@@ -302,6 +322,7 @@ class HaloBlockV2(nn.Module):
                  halo_size,
                  stage,
                  num_heads,
+                 input_resolution,
                  mlp_ratio=4.,
                  drop=0.,
                  act_layer=nn.GELU,
@@ -317,7 +338,80 @@ class HaloBlockV2(nn.Module):
                              num_heads=num_heads[stage],
                              block_size=block_size,
                              halo_size=halo_size,
-                             pos_embed_type=pos_embed_type)
+                             pos_embed_type=pos_embed_type,
+                             input_resolution=input_resolution)
+
+        self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((1, 1, 1, dim)),
+                                    requires_grad=True) if layer_scale_init_value > 0 else None
+
+        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+        self.norm2 = nn.LayerNorm((dim, ))
+        self.mlp = Mlp(in_features=dim,
+                       hidden_features=int(dim * mlp_ratio),
+                       act_layer=act_layer,
+                       drop=drop)
+
+        self.gamma_2 = nn.Parameter(layer_scale_init_value * torch.ones((1, 1, 1, dim)),
+                                    requires_grad=True) if layer_scale_init_value > 0 else None
+
+    @staticmethod
+    def pre_stage_transform(x):
+        return x.permute(0, 2, 3, 1).contiguous()
+
+    @staticmethod
+    def post_stage_transform(x):
+        return x.permute(0, 3, 1, 2).contiguous()
+
+    def forward(self, x):
+        # shape: (B, H, W, C)
+        shortcut = x
+        x = self.attn(self.norm1(x))
+
+        if self.gamma_1 is not None:
+            x = self.gamma_1 * x
+        x = shortcut + self.drop_path(x)
+
+        # FFN
+        shortcut = x
+        x = self.mlp(self.norm2(x))
+
+        if self.gamma_2 is not None:
+            x = self.gamma_2 * x
+        x = shortcut + self.drop_path(x)
+
+        return x
+
+
+class HaloBlockSwitch(nn.Module):
+
+    def __init__(self,
+                 dim,
+                 drop_path,
+                 layer_scale_init_value,
+                 block_size,
+                 halo_size,
+                 stage,
+                 num_heads,
+                 depth,
+                 input_resolution,
+                 mlp_ratio=4.,
+                 drop=0.,
+                 act_layer=nn.GELU,
+                 pos_embed_type='query_related',
+                 **kwargs):
+        super().__init__()
+        self.dim = dim
+        self.mlp_ratio = mlp_ratio
+        halo_size = 0 if (depth % 2 == 0) else halo_size
+
+        self.norm1 = nn.LayerNorm((dim, ))
+        self.attn = HaloAttn(dim=dim,
+                             dim_out=dim,
+                             num_heads=num_heads[stage],
+                             block_size=block_size,
+                             halo_size=halo_size,
+                             pos_embed_type=pos_embed_type,
+                             input_resolution=input_resolution)
 
         self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((1, 1, 1, dim)),
                                     requires_grad=True) if layer_scale_init_value > 0 else None
