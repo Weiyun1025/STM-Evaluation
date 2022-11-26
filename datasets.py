@@ -66,7 +66,7 @@ def build_dataset(is_train, args):
         nb_classes = len(dataset.parser.class_to_idx.keys())
     elif args.data_set == "CEPH22k" and not is_train:
         val_data_path = "/mnt/cache/share/images/"
-        dataset = ImageCephDataset(val_data_path, 'val', transform=transform)
+        dataset = ImageCephDataset(val_data_path, 'val', transform=transform, label_map=True)
         nb_classes = 1000
     else:
         raise NotImplementedError()
@@ -133,6 +133,7 @@ class ImageCephDataset(data.Dataset):
             parser=None,
             transform=None,
             target_transform=None,
+            label_map=False,
             on_memory=False,
     ):
         if '22k' in root and split == 'train':
@@ -143,6 +144,7 @@ class ImageCephDataset(data.Dataset):
         if parser is None or isinstance(parser, str):
             parser = ParserCephImage(root=root, split=split,
                                      annotation_root=annotation_root,
+                                     label_map=label_map,
                                      on_memory=on_memory)
         self.parser = parser
         self.transform = transform
@@ -259,6 +261,7 @@ class ParserCephImage(Parser):
             root,
             split,
             annotation_root,
+            label_map=False,
             on_memory=False,
             **kwargs):
         super().__init__()
@@ -280,6 +283,13 @@ class ParserCephImage(Parser):
             self.class_to_idx = None
             with open(osp.join(annotation_root, f'{split}.txt'), 'r') as f:
                 self.samples = f.read().splitlines()
+
+        if label_map:
+            self.label_mapper = {}
+            with open(osp.join(annotation_root, 'map22kto1k.txt'), 'r') as f:
+                for idx, line in enumerate(f):
+                    self.label_mapper[idx] = int(line)
+
         local_rank = None
         local_size = None
         self._consecutive_errors = 0
@@ -379,6 +389,9 @@ class ParserCephImage(Parser):
             target = self.class_to_idx[target]
         else:
             target = int(target)
+
+        if hasattr(self, 'label_mapper'):
+            target = self.label_mapper[target]
 
         return img, target
 
