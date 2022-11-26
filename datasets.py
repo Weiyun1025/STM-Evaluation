@@ -144,7 +144,7 @@ class ImageCephDataset(data.Dataset):
         if parser is None or isinstance(parser, str):
             parser = ParserCephImage(root=root, split=split,
                                      annotation_root=annotation_root,
-                                     label_map=label_map,
+                                     label_map_path=annotation_root if label_map else None,
                                      on_memory=on_memory)
         self.parser = parser
         self.transform = transform
@@ -261,7 +261,7 @@ class ParserCephImage(Parser):
             root,
             split,
             annotation_root,
-            label_map=False,
+            label_map_path=None,
             on_memory=False,
             **kwargs):
         super().__init__()
@@ -284,9 +284,9 @@ class ParserCephImage(Parser):
             with open(osp.join(annotation_root, f'{split}.txt'), 'r') as f:
                 self.samples = f.read().splitlines()
 
-        if label_map:
+        if label_map_path:
             self.label_mapper = {}
-            with open(osp.join(annotation_root, 'map22kto1k.txt'), 'r') as f:
+            with open(osp.join(label_map_path, 'map22kto1k.txt'), 'r') as f:
                 for idx, line in enumerate(f):
                     self.label_mapper[idx] = int(line)
 
