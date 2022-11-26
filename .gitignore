@@ -22,6 +22,7 @@ ops/MultiScaleDeformableAttention.egg-info/*
 ops/MultiScaleDeformableAttention.egg-info
 ops/dist
 
+shells/22k_pretrain/sm_shell/*
 
 
 !.gitignore
