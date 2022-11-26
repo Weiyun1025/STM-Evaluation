@@ -54,5 +54,6 @@ srun -p ${PARTITION} \
     --weight_decay 1e-8 \
     --mixup 0 \
     --cutmix 0 \
-    --use_checkpoint true
+    --use_checkpoint true \
+    --label_map true
     

@@ -52,4 +52,5 @@ srun -p ${PARTITION} \
     --model_ema false \
     --model_ema_eval false \
     --weight_decay 1e-8 \
-    --use_checkpoint true
+    --use_checkpoint true \
+    --label_map true

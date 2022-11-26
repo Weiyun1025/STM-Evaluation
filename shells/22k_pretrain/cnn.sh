@@ -51,5 +51,6 @@ srun -p ${PARTITION} \
     --input_size 192 \
     --model_ema false \
     --model_ema_eval false \
-    --use_checkpoint false
+    --use_checkpoint false \
+    --label_map true
     

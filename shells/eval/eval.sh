@@ -35,3 +35,4 @@ srun -p ${PARTITION} \
     --data_on_memory false \
     --nb_classes 1000 \
     --use_amp false \
+    --label_map false \
