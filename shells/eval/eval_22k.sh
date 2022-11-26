@@ -30,8 +30,8 @@ srun -p ${PARTITION} \
     --resume ${CKPT} \
     --batch_size $((TOTAL_BATCH_SIZE/GPUS_PER_NODE)) \
     --input_size 192 \
-    --data_set IMNET1k \
-    --data_path /mnt/cache/share/images/ \
+    --data_set CEPH22k \
+    --data_path "s3://image22k/" \
     --data_on_memory false \
     --nb_classes 21841 \
     --use_amp false \
