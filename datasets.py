@@ -144,7 +144,7 @@ class ImageCephDataset(data.Dataset):
         if parser is None or isinstance(parser, str):
             parser = ParserCephImage(root=root, split=split,
                                      annotation_root=annotation_root,
-                                     label_map_path=annotation_root if label_map else None,
+                                     label_map_path="meta_data/" if label_map else None,
                                      on_memory=on_memory)
         self.parser = parser
         self.transform = transform
