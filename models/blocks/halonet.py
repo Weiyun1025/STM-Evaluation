@@ -196,6 +196,8 @@ class HaloAttn(nn.Module):
 
         if min(input_resolution) < self.block_size:
             self.block_size = min(input_resolution)
+            self.halo_size = 0
+            self.win_size = self.block_size + self.halo_size * 2  # neighbourhood window size
 
         # FIXME not clear if this stride behaviour is what the paper intended
         # Also, the paper mentions using a 3D conv for dealing with the blocking/gather, and leaving
