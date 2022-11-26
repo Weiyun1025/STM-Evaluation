@@ -63,6 +63,7 @@ def get_args_parser():
     parser.add_argument('--update_freq', default=1, type=int,
                         help='gradient accumulation steps')
     parser.add_argument('--use_checkpoint', type=str2bool, default=False)
+    parser.add_argument('--label_map', type=str2bool, default=False)
 
     # Model parameters
     parser.add_argument('--model', default='unified_swin_tiny', type=str, metavar='MODEL',

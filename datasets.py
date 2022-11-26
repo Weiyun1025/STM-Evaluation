@@ -66,7 +66,7 @@ def build_dataset(is_train, args):
         nb_classes = len(dataset.parser.class_to_idx.keys())
     elif args.data_set == "CEPH22k" and not is_train:
         val_data_path = "/mnt/cache/share/images/"
-        dataset = ImageCephDataset(val_data_path, 'val', transform=transform, label_map=True)
+        dataset = ImageCephDataset(val_data_path, 'val', transform=transform, label_map=args.label_map)
         nb_classes = 1000
     else:
         raise NotImplementedError()
