@@ -393,6 +393,7 @@ class HaloBlockSwitch(nn.Module):
                  stage,
                  num_heads,
                  depth,
+                 input_resolution,
                  mlp_ratio=4.,
                  drop=0.,
                  act_layer=nn.GELU,
@@ -409,7 +410,8 @@ class HaloBlockSwitch(nn.Module):
                              num_heads=num_heads[stage],
                              block_size=block_size,
                              halo_size=halo_size,
-                             pos_embed_type=pos_embed_type)
+                             pos_embed_type=pos_embed_type,
+                             input_resolution=input_resolution)
 
         self.gamma_1 = nn.Parameter(layer_scale_init_value * torch.ones((1, 1, 1, dim)),
                                     requires_grad=True) if layer_scale_init_value > 0 else None
