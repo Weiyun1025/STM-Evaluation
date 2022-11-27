@@ -236,7 +236,7 @@ class HaloAttn(nn.Module):
 
         q = self.q(x)
         # unfold
-        q = q.reshape(-1, num_h_blocks, self.block_size_ds, num_w_blocks,
+        q = q.reshape(B, num_h_blocks, self.block_size_ds, num_w_blocks,
                       self.block_size_ds, self.num_heads,
                       self.dim_head_qk).permute(0, 5, 1, 3, 2, 4, 6).contiguous()
         # B, num_heads, num_h_blocks, num_w_blocks, block_size_ds, block_size_ds, dim_head_qk
