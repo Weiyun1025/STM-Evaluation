@@ -168,7 +168,7 @@ class HaloAttn(nn.Module):
                  stride=1,
                  num_heads=8,
                  dim_head=None,
-                 block_size=8,
+                 block_size=7,
                  halo_size=3,
                  qk_ratio=1.0,
                  qkv_bias=False,
@@ -180,6 +180,11 @@ class HaloAttn(nn.Module):
         dim_out = dim_out or dim
         assert dim_out % num_heads == 0
         assert stride in (1, 2)
+
+        if min(input_resolution) < block_size:
+            block_size = min(input_resolution)
+            halo_size = 0
+
         self.num_heads = num_heads
         self.dim_head_qk = dim_head or make_divisible(dim_out * qk_ratio,
                                                       divisor=8) // num_heads
@@ -193,11 +198,6 @@ class HaloAttn(nn.Module):
         self.win_size = block_size + halo_size * 2  # neighbourhood window size
         self.block_stride = 1
         use_avg_pool = False
-
-        if min(input_resolution) < self.block_size:
-            self.block_size = min(input_resolution)
-            self.halo_size = 0
-            self.win_size = self.block_size + self.halo_size * 2  # neighbourhood window size
 
         # FIXME not clear if this stride behaviour is what the paper intended
         # Also, the paper mentions using a 3D conv for dealing with the blocking/gather, and leaving
