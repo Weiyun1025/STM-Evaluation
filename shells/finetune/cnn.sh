@@ -5,6 +5,7 @@ mkdir logs
 
 PARTITION=VC
 MODEL=$1
+CKPT="/mnt/petrelfs/wangweiyun/model_evaluation/${MODEL}_22k_unified_config/checkpoint-best.pth"
 DESC="unified_config" 
 
 # key hyperparameters
@@ -14,7 +15,7 @@ INIT_LR="0"
 END_LR="1e-6"
 
 JOB_NAME=${MODEL}
-PROJECT_NAME="${MODEL}_22k_${DESC}"
+PROJECT_NAME="${MODEL}_1k_ft_${DESC}"
 
 UPDATE_FREQ=1
 GPUS=${GPUS:-8}
@@ -38,6 +39,7 @@ srun -p ${PARTITION} \
     ${SRUN_ARGS} \
     python -u main.py \
     --model ${MODEL} \
+    --resume ${CKPT} \
     --epochs 30 \
     --update_freq ${UPDATE_FREQ} \
     --batch_size $((TOTAL_BATCH_SIZE/GPUS/UPDATE_FREQ)) \
