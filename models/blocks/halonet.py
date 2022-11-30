@@ -116,21 +116,6 @@ class QueryRelatedPosEmbedRel(nn.Module):
         # bsz, num_heads, num_blocks ** 2, block_size ** 2, win_size ** 2
         return rel_logits.reshape(B // NH, NH, BB, HW, -1)
 
-    def load_state_dict(self, state_dict, strict: bool = True):
-        new_state_dict = {}
-        for key, value in state_dict.items():
-            if 'height_rel' in key or 'width_rel' in key:
-                value = value.permute(1, 0).contiguous().unsqueeze(0)
-                value = F.interpolate(value,
-                                      size=self.win_size * 2 - 1,
-                                      mode='linear',
-                                      align_corners=True)
-                value = value.squeeze(0).permute(1, 0).contiguous()
-
-            new_state_dict[key] = value
-
-        return super().load_state_dict(new_state_dict, strict)
-
 
 class HaloAttn(nn.Module):
     """ Halo Attention

@@ -234,6 +234,9 @@ def main(args):
     cudnn.benchmark = True
 
     dataset_train, args.nb_classes = build_dataset(is_train=True, args=args)
+    if args.label_map:
+        args.nb_classes = 21841  # num_classes of ImageNet-22k
+
     if args.disable_eval:
         args.dist_eval = False
         dataset_val = None

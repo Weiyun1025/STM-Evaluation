@@ -113,24 +113,6 @@ class SwinBlock(nn.Module):
 
         return x
 
-    def load_state_dict(self, state_dict, strict: bool = True):
-        new_state_dict = {}
-        for key, value in state_dict.items():
-            if 'relative_position_bias_table' in key:
-                L1, nH1 = value.shape
-                S1 = int(L1 ** 0.5)
-                S2 = self.window_size * 2 - 1
-
-                value = value.permute(1, 0).view(1, nH1, S1, S1)
-                value = F.interpolate(value,
-                                      size=(S2, S2),
-                                      mode='bicubic')
-                value = value.view(nH1, S2 * S2).permute(1, 0)
-
-            new_state_dict[key] = value
-
-        return super().load_state_dict(new_state_dict, strict)
-
 
 class SwinBlockNoSwitch(nn.Module):
     def __init__(self, dim, drop_path, layer_scale_init_value,

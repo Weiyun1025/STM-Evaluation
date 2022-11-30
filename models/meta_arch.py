@@ -220,3 +220,58 @@ class MetaArch(nn.Module):
         x = self.forward_features(x)
         x = self.head(x)
         return x
+
+    def load_state_dict(self, state_dict, strict: bool = True):
+        new_state_dict = {}
+        for key, value in state_dict.items():
+            if 'relative_position_index' in key:
+                continue
+
+            if 'attn_mask' in key:
+                continue
+
+            # swin pos embed
+            if 'relative_position_bias_table' in key:
+                L1, nH1 = value.shape
+                S1 = int(L1 ** 0.5)
+
+                L2, nH2 = self.state_dict()[key].shape
+                S2 = int(L2 ** 0.5)
+
+                assert nH1 == nH2
+
+                value = value.permute(1, 0).view(1, nH1, S1, S1)
+                value = F.interpolate(value,
+                                      size=(S2, S2),
+                                      mode='bicubic')
+                value = value.view(nH2, L2).permute(1, 0)
+
+            # halonet pos embed
+            if 'height_rel' in key or 'width_rel' in key:
+                win_size = self.state_dict()[key].shape[0]
+                value = value.permute(1, 0).contiguous().unsqueeze(0)
+                value = F.interpolate(value,
+                                      size=win_size,
+                                      mode='linear',
+                                      align_corners=True)
+                value = value.squeeze(0).permute(1, 0).contiguous()
+
+            new_state_dict[key] = value
+
+        if strict:
+            ckpt_keys = new_state_dict.keys()
+            model_keys = self.state_dict().keys()
+
+            for key in ckpt_keys:
+                assert key in model_keys
+
+            for key in model_keys:
+                if 'relative_position_index' in key:
+                    continue
+
+                if 'attn_mask' in key:
+                    continue
+
+                assert key in ckpt_keys
+
+        return super().load_state_dict(new_state_dict, False)
