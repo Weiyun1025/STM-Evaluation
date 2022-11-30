@@ -322,21 +322,9 @@ def main(args):
         else:
             checkpoint = torch.load(args.finetune, map_location='cpu')
 
+        model.load_state_dict(checkpoint['model'])
         print("Load ckpt from %s" % args.finetune)
-        checkpoint_model = None
-        for model_key in args.model_key.split('|'):
-            if model_key in checkpoint:
-                checkpoint_model = checkpoint[model_key]
-                print("Load state_dict by model_key = %s" % model_key)
-                break
-        if checkpoint_model is None:
-            checkpoint_model = checkpoint
-        state_dict = model.state_dict()
-        for k in ['head.weight', 'head.bias']:
-            if k in checkpoint_model and checkpoint_model[k].shape != state_dict[k].shape:
-                print(f"Removing key {k} from pretrained checkpoint")
-                del checkpoint_model[k]
-        utils.load_state_dict(model, checkpoint_model, prefix=args.model_prefix)
+
     model.to(device)
 
     model_ema = None

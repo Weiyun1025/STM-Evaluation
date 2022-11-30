@@ -39,7 +39,7 @@ srun -p ${PARTITION} \
     ${SRUN_ARGS} \
     python -u main.py \
     --model ${MODEL} \
-    --resume ${CKPT} \
+    --finetune ${CKPT} \
     --epochs 30 \
     --update_freq ${UPDATE_FREQ} \
     --batch_size $((TOTAL_BATCH_SIZE/GPUS/UPDATE_FREQ)) \
