@@ -52,4 +52,3 @@ srun -p ${PARTITION} \
     --model_ema false \
     --model_ema_eval false \
     --use_checkpoint false \
-    --label_map true

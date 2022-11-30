@@ -57,5 +57,4 @@ srun -p ${PARTITION} \
     --mixup 0 \
     --cutmix 0 \
     --use_checkpoint true \
-    --label_map true
     
