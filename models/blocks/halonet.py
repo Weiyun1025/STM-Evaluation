@@ -116,21 +116,6 @@ class QueryRelatedPosEmbedRel(nn.Module):
         # bsz, num_heads, num_blocks ** 2, block_size ** 2, win_size ** 2
         return rel_logits.reshape(B // NH, NH, BB, HW, -1)
 
-    def load_state_dict(self, state_dict, strict: bool = True):
-        new_state_dict = {}
-        for key, value in state_dict.items():
-            if 'height_rel' in key or 'width_rel' in key:
-                value = value.permute(1, 0).contiguous().unsqueeze(0)
-                value = F.interpolate(value,
-                                      size=self.win_size * 2 - 1,
-                                      mode='linear',
-                                      align_corners=True)
-                value = value.squeeze(0).permute(1, 0).contiguous()
-
-            new_state_dict[key] = value
-
-        return super().load_state_dict(new_state_dict, strict)
-
 
 class HaloAttn(nn.Module):
     """ Halo Attention
@@ -168,7 +153,7 @@ class HaloAttn(nn.Module):
                  stride=1,
                  num_heads=8,
                  dim_head=None,
-                 block_size=8,
+                 block_size=7,
                  halo_size=3,
                  qk_ratio=1.0,
                  qkv_bias=False,
@@ -180,6 +165,11 @@ class HaloAttn(nn.Module):
         dim_out = dim_out or dim
         assert dim_out % num_heads == 0
         assert stride in (1, 2)
+
+        if min(input_resolution) < block_size:
+            block_size = min(input_resolution)
+            halo_size = 0
+
         self.num_heads = num_heads
         self.dim_head_qk = dim_head or make_divisible(dim_out * qk_ratio,
                                                       divisor=8) // num_heads
@@ -193,9 +183,6 @@ class HaloAttn(nn.Module):
         self.win_size = block_size + halo_size * 2  # neighbourhood window size
         self.block_stride = 1
         use_avg_pool = False
-
-        if min(input_resolution) < self.block_size:
-            self.block_size = min(input_resolution)
 
         # FIXME not clear if this stride behaviour is what the paper intended
         # Also, the paper mentions using a 3D conv for dealing with the blocking/gather, and leaving
@@ -234,7 +221,7 @@ class HaloAttn(nn.Module):
 
         q = self.q(x)
         # unfold
-        q = q.reshape(-1, num_h_blocks, self.block_size_ds, num_w_blocks,
+        q = q.reshape(B, num_h_blocks, self.block_size_ds, num_w_blocks,
                       self.block_size_ds, self.num_heads,
                       self.dim_head_qk).permute(0, 5, 1, 3, 2, 4, 6).contiguous()
         # B, num_heads, num_h_blocks, num_w_blocks, block_size_ds, block_size_ds, dim_head_qk

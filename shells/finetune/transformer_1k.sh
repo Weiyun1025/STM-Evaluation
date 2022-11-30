@@ -5,6 +5,7 @@ mkdir logs
 
 PARTITION=VC
 MODEL=$1
+CKPT="/mnt/petrelfs/wangweiyun/model_ckpt_22k/${MODEL}.pth"
 DESC="unified_config" 
 
 # key hyperparameters
@@ -14,9 +15,9 @@ INIT_LR="4e-8"
 END_LR="4e-7"
 
 JOB_NAME=${MODEL}
-PROJECT_NAME="${MODEL}_22k_${DESC}"
+PROJECT_NAME="${MODEL}_1k_ft_${DESC}"
 
-UPDATE_FREQ=1
+UPDATE_FREQ=2
 GPUS=${GPUS:-8}
 GPUS_PER_NODE=${GPUS_PER_NODE:-8}
 QUOTA_TYPE="auto"
@@ -38,6 +39,7 @@ srun -p ${PARTITION} \
     ${SRUN_ARGS} \
     python -u main.py \
     --model ${MODEL} \
+    --finetune ${CKPT} \
     --epochs 30 \
     --update_freq ${UPDATE_FREQ} \
     --batch_size $((TOTAL_BATCH_SIZE/GPUS/UPDATE_FREQ)) \
@@ -52,5 +54,5 @@ srun -p ${PARTITION} \
     --model_ema false \
     --model_ema_eval false \
     --weight_decay 1e-8 \
-    --use_checkpoint true \
-    --label_map true
+    --use_amp true \
+    --use_checkpoint false \

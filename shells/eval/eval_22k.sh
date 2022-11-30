@@ -5,7 +5,8 @@ mkdir logs
 
 PARTITION=VC
 MODEL=$1
-CKPT="/mnt/petrelfs/wangweiyun/model_ckpt/${MODEL}.pth"
+# CKPT="/mnt/petrelfs/wangweiyun/model_ckpt/${MODEL}.pth"
+CKPT="/mnt/petrelfs/wangweiyun/model_evaluation/${MODEL}_22k_unified_config/checkpoint-best.pth"
 
 # key hyperparameters
 TOTAL_BATCH_SIZE="128"
@@ -29,9 +30,9 @@ srun -p ${PARTITION} \
     --eval true \
     --resume ${CKPT} \
     --batch_size $((TOTAL_BATCH_SIZE/GPUS_PER_NODE)) \
-    --input_size 224 \
-    --data_set IMNET1k \
-    --data_path /mnt/cache/share/images/ \
+    --input_size 192 \
+    --data_set CEPH22k \
+    --data_path "s3://image22k/" \
     --data_on_memory false \
-    --nb_classes 1000 \
+    --nb_classes 21841 \
     --use_amp false \

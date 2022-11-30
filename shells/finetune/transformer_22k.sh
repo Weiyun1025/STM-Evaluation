@@ -5,19 +5,20 @@ mkdir logs
 
 PARTITION=VC
 MODEL=$1
+CKPT="/mnt/petrelfs/wangweiyun/model_ckpt_22k/${MODEL}.pth"
 DESC="unified_config" 
 
 # key hyperparameters
-TOTAL_BATCH_SIZE="4096"
-LR="4e-3"
-INIT_LR="0"
-END_LR="1e-6"
+TOTAL_BATCH_SIZE="1024"
+LR="4e-5"
+INIT_LR="4e-8"
+END_LR="4e-7"
 
 JOB_NAME=${MODEL}
-PROJECT_NAME="${MODEL}_22k_${DESC}"
+PROJECT_NAME="${MODEL}_22k_ft_${DESC}"
 
-UPDATE_FREQ=1
-GPUS=${GPUS:-16}
+UPDATE_FREQ=2
+GPUS=${GPUS:-8}
 GPUS_PER_NODE=${GPUS_PER_NODE:-8}
 QUOTA_TYPE="auto"
 
@@ -38,7 +39,8 @@ srun -p ${PARTITION} \
     ${SRUN_ARGS} \
     python -u main.py \
     --model ${MODEL} \
-    --epochs 90 \
+    --finetune ${CKPT} \
+    --epochs 30 \
     --update_freq ${UPDATE_FREQ} \
     --batch_size $((TOTAL_BATCH_SIZE/GPUS/UPDATE_FREQ)) \
     --lr ${LR} \
@@ -48,8 +50,9 @@ srun -p ${PARTITION} \
     --data_path "s3://image22k/" \
     --output_dir "/mnt/petrelfs/wangweiyun/model_evaluation/${PROJECT_NAME}" \
     --warmup_epochs 5 \
-    --input_size 192 \
+    --input_size 384 \
     --model_ema false \
     --model_ema_eval false \
+    --weight_decay 1e-8 \
+    --use_amp true \
     --use_checkpoint false \
-    

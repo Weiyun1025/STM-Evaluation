@@ -5,6 +5,7 @@ mkdir logs
 
 PARTITION=VC
 MODEL=$1
+CKPT="/mnt/petrelfs/wangweiyun/model_ckpt_22k/${MODEL}.pth"
 DESC="unified_config" 
 
 # key hyperparameters
@@ -14,9 +15,9 @@ INIT_LR="0"
 END_LR="1e-6"
 
 JOB_NAME=${MODEL}
-PROJECT_NAME="${MODEL}_22k_${DESC}"
+PROJECT_NAME="${MODEL}_22k_ft_${DESC}"
 
-UPDATE_FREQ=1
+UPDATE_FREQ=2
 GPUS=${GPUS:-8}
 GPUS_PER_NODE=${GPUS_PER_NODE:-8}
 QUOTA_TYPE="auto"
@@ -38,14 +39,15 @@ srun -p ${PARTITION} \
     ${SRUN_ARGS} \
     python -u main.py \
     --model ${MODEL} \
+    --finetune ${CKPT} \
     --epochs 30 \
     --update_freq ${UPDATE_FREQ} \
     --batch_size $((TOTAL_BATCH_SIZE/GPUS/UPDATE_FREQ)) \
     --lr ${LR} \
     --warmup_init_lr ${INIT_LR} \
     --min_lr ${END_LR} \
-    --data_set IMNET1k \
-    --data_path "/mnt/cache/share/images/" \
+    --data_set CEPH22k \
+    --data_path "s3://image22k/" \
     --output_dir "/mnt/petrelfs/wangweiyun/model_evaluation/${PROJECT_NAME}" \
     --warmup_epochs 0 \
     --input_size 384 \
@@ -54,6 +56,6 @@ srun -p ${PARTITION} \
     --weight_decay 1e-8 \
     --mixup 0 \
     --cutmix 0 \
-    --use_checkpoint true \
-    --label_map true
+    --use_amp true \
+    --use_checkpoint false \
     

@@ -63,7 +63,7 @@ def get_args_parser():
     parser.add_argument('--update_freq', default=1, type=int,
                         help='gradient accumulation steps')
     parser.add_argument('--use_checkpoint', type=str2bool, default=False)
-    parser.add_argument('--label_map', type=str2bool, default=False)
+    parser.add_argument('--label_map_path', type=str, default='./meta_data/map22kto1k.txt')
 
     # Model parameters
     parser.add_argument('--model', default='unified_swin_tiny', type=str, metavar='MODEL',
@@ -234,6 +234,7 @@ def main(args):
     cudnn.benchmark = True
 
     dataset_train, args.nb_classes = build_dataset(is_train=True, args=args)
+
     if args.disable_eval:
         args.dist_eval = False
         dataset_val = None
@@ -311,6 +312,7 @@ def main(args):
         num_classes=args.nb_classes,
         layer_scale_init_value=args.layer_scale_init_value,
         use_checkpoint=args.use_checkpoint,
+        label_map_path=args.label_map_path,
     )
 
     if args.finetune:
@@ -320,21 +322,9 @@ def main(args):
         else:
             checkpoint = torch.load(args.finetune, map_location='cpu')
 
+        model.load_state_dict(checkpoint['model'])
         print("Load ckpt from %s" % args.finetune)
-        checkpoint_model = None
-        for model_key in args.model_key.split('|'):
-            if model_key in checkpoint:
-                checkpoint_model = checkpoint[model_key]
-                print("Load state_dict by model_key = %s" % model_key)
-                break
-        if checkpoint_model is None:
-            checkpoint_model = checkpoint
-        state_dict = model.state_dict()
-        for k in ['head.weight', 'head.bias']:
-            if k in checkpoint_model and checkpoint_model[k].shape != state_dict[k].shape:
-                print(f"Removing key {k} from pretrained checkpoint")
-                del checkpoint_model[k]
-        utils.load_state_dict(model, checkpoint_model, prefix=args.model_prefix)
+
     model.to(device)
 
     model_ema = None
