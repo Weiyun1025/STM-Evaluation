@@ -92,7 +92,7 @@ class MetaArch(nn.Module):
                  act_layer=nn.GELU,
                  forward_kwargs=None,
                  use_checkpoint=False,
-                 label_map=None,
+                 label_map_path=None,
                  **kwargs,
                  ):
         super().__init__()
@@ -106,9 +106,10 @@ class MetaArch(nn.Module):
         self.block_type = block_type
         self.forward_kwargs = forward_kwargs
         self.use_checkpoint = use_checkpoint
+        self.label_map_path = label_map_path
 
-        if label_map is not None and num_classes != 1000:
-            with open(label_map, 'r', encoding='utf-8') as file:
+        if label_map_path is not None and num_classes != 1000:
+            with open(label_map_path, 'r', encoding='utf-8') as file:
                 self.label_map = [int(i) for i in file.readlines()]
 
         # stem + downsample_layers
@@ -263,8 +264,9 @@ class MetaArch(nn.Module):
 
             if 'head' in key and 'conv' not in key:
                 if self.state_dict()[key].shape[0] != value.shape[0]:
-                    assert hasattr(self, 'label_map')
-                    value = value[self.label_map]
+                    with open(self.label_map_path, 'r', encoding='utf-8') as file:
+                        label_map = [int(i) for i in file.readlines()]
+                    value = value[label_map]
 
             new_state_dict[key] = value
 
