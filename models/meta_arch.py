@@ -107,7 +107,7 @@ class MetaArch(nn.Module):
         self.forward_kwargs = forward_kwargs
         self.use_checkpoint = use_checkpoint
 
-        if label_map is not None:
+        if label_map is not None and num_classes != 1000:
             with open(label_map, 'r', encoding='utf-8') as file:
                 self.label_map = [int(i) for i in file.readlines()]
 
