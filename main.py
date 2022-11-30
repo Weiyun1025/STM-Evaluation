@@ -63,7 +63,7 @@ def get_args_parser():
     parser.add_argument('--update_freq', default=1, type=int,
                         help='gradient accumulation steps')
     parser.add_argument('--use_checkpoint', type=str2bool, default=False)
-    parser.add_argument('--label_map', type=str2bool, default=False)
+    parser.add_argument('--label_map', type=str, default='./meta_data/map22kto1k.txt')
 
     # Model parameters
     parser.add_argument('--model', default='unified_swin_tiny', type=str, metavar='MODEL',
@@ -234,8 +234,6 @@ def main(args):
     cudnn.benchmark = True
 
     dataset_train, args.nb_classes = build_dataset(is_train=True, args=args)
-    if args.label_map:
-        args.nb_classes = 21841  # num_classes of ImageNet-22k
 
     if args.disable_eval:
         args.dist_eval = False
@@ -314,6 +312,7 @@ def main(args):
         num_classes=args.nb_classes,
         layer_scale_init_value=args.layer_scale_init_value,
         use_checkpoint=args.use_checkpoint,
+        label_map=args.label_map,
     )
 
     if args.finetune:
