@@ -5,7 +5,7 @@ mkdir logs
 
 PARTITION=VC
 MODEL=$1
-CKPT="/mnt/petrelfs/wangweiyun/model_evaluation/${MODEL}_22k_unified_config/checkpoint-best.pth"
+CKPT="/mnt/petrelfs/wangweiyun/model_ckpt_22k/${MODEL}.pth"
 DESC="unified_config" 
 
 # key hyperparameters
