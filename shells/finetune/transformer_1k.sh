@@ -5,7 +5,7 @@ mkdir logs
 
 PARTITION=VC
 MODEL=$1
-CKPT="/mnt/petrelfs/wangweiyun/model_ckpt_22k/${MODEL}.pth"
+CKPT="/mnt/petrelfs/wangweiyun/model_evaluation/${MODEL}_22k_ft_unified_config/checkpoint-best.pth"
 DESC="unified_config" 
 
 # key hyperparameters
@@ -17,8 +17,8 @@ END_LR="4e-7"
 JOB_NAME=${MODEL}
 PROJECT_NAME="${MODEL}_1k_ft_${DESC}"
 
-UPDATE_FREQ=2
-GPUS=${GPUS:-8}
+UPDATE_FREQ=1
+GPUS=${GPUS:-16}
 GPUS_PER_NODE=${GPUS_PER_NODE:-8}
 QUOTA_TYPE="auto"
 
