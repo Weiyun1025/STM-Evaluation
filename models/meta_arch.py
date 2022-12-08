@@ -203,8 +203,8 @@ class MetaArch(nn.Module):
             if hasattr(self.block_type, 'pre_stage_transform'):  # halonet
                 x = self.block_type.pre_stage_transform(x)
 
+            x = x if extra_inputs is None else (x, extra_inputs[i])
             for blk in self.stages[i]:
-                x = x if extra_inputs is None else (x, extra_inputs[i])
                 if self.use_checkpoint:
                     x = cp.checkpoint(blk, x)
                 else:
