@@ -97,3 +97,26 @@ def unified_dcn_v3_base(pretrained=False, **kwargs):
         raise NotImplementedError()
 
     return model
+
+@register_model
+def unified_dcn_v3_large(pretrained=False, **kwargs):
+    dims = [160 * 2 ** i for i in range(4)]
+    depths = [5, 5, 21, 5]
+    num_heads = [10, 20, 40, 80]
+    deform_points = 9
+    deform_padding = True
+    kernel_size = 3
+
+    model = MetaArch(depths=depths,
+                     dims=dims,
+                     num_heads=num_heads,
+                     block_type=DCNv3Block,
+                     block_kwargs=dict(num_heads=num_heads, deform_points=deform_points, kernel_size=kernel_size, deform_padding=deform_padding),
+                     forward_kwargs=dict(deform_points=deform_points, deform_padding=deform_padding),
+                     drop_path_rate=0.5,
+                     **kwargs)
+
+    if pretrained:
+        raise NotImplementedError()
+
+    return model

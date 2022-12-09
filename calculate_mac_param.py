@@ -150,6 +150,34 @@ def pvt_v2_block(module, input, output):
     module.total_ops += sum_submodule_ops(module)
 
 
+def pvt_atten(module, input, output):
+    B, N, C = input[0].shape
+
+    if module.sr_ratio > 1:
+        N = N / (module.sr_ratio ** 2)
+
+    num_heads = module.num_heads
+    dim = C // num_heads
+    # q shape: B, num_heads, N,  C // num_heads
+    # k v shape:  B, num_heads, N, C // num_heads
+    module.total_ops += B * num_heads * N * (dim * N
+                                             )  # q @ k.transpose(-2, -1)
+    module.total_ops += B * num_heads * N * N  # scale
+    module.total_ops += B * num_heads * N * (2 * N)  # softmax
+    module.total_ops += B * num_heads * N * (N * dim)  # attn @ v
+    module.total_ops += sum_submodule_ops(module)
+
+
+def pvt_block(module, input, output):
+    x = input[0]
+    if module.gamma_1 is not None:
+        module.total_ops += x.numel()
+    if module.gamma_2 is not None:
+        module.total_ops += x.numel()
+    module.total_ops += 2 * x.numel()
+    module.total_ops += sum_submodule_ops(module)
+
+
 def convnext_block(module, input, output):
     x = input[0]
     if module.gamma is not None:
@@ -171,6 +199,8 @@ custom_modules_hooks = {
     models.blocks.dcn_v3.DCNv3Block: dcnv3,
     models.blocks.pvt_v2.Attention: pvt_v2_atten,
     models.blocks.pvt_v2.PvtV2Block: pvt_v2_block,
+    models.blocks.pvt.Attention: pvt_atten,
+    models.blocks.pvt.PvtBlock: pvt_block,
     models.blocks.convnext.ConvNeXtBlock: convnext_block,
 }
 
@@ -192,4 +222,4 @@ if __name__ == '__main__':
     main(parse_args())
 
 # salloc -p VC --gres=gpu:1 --quotatype=spot
-# srun -p VC --gres=gpu:1 --quotatype=spot python calulate_mac_param.py --model_name xxx
+# srun -p VC --gres=gpu:1 --quotatype=spot python calculate_mac_param.py --model_name unified_pvt_micro

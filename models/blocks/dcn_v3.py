@@ -120,7 +120,7 @@ class DCNv3Block(DCNv3Base):
         def deform_forward(x):
             n, h, w, c = x.shape
             x = self.attn(
-                query=x.reshape(n, h*w, c),
+                x.reshape(n, h*w, c),
                 reference_points=deform_inputs[0],
                 input_flatten=None,
                 input_spatial_shapes=deform_inputs[1],
@@ -186,7 +186,7 @@ class DCNv3SingleResBlock(DCNv3Base):
         def deform_forward(x):
             n, h, w, c = x.shape
             x = self.attn(
-                query=x.reshape(n, h*w, c),
+                x.reshape(n, h*w, c),
                 reference_points=deform_inputs[0],
                 input_flatten=None,
                 input_spatial_shapes=deform_inputs[1],
