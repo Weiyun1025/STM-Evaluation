@@ -190,6 +190,7 @@ custom_modules_hooks = {
     timm.models.layers.halo_attn.PosEmbedRel: timm_halo_attn_posemb,
     models.blocks.halonet.HaloAttn: timm_halo_attn_haloatnn,
     models.blocks.halonet.HaloBlockV2: haloblock,
+    models.blocks.halonet.QueryRelatedPosEmbedRel: timm_halo_attn_posemb,
     torch.nn.LayerNorm: layernorm,
     timm.models.layers.LayerNorm2d: layernorm,
     models.blocks.swin.SwinBlock: swinblock,
@@ -209,13 +210,14 @@ def main(args):
     model = create_model(args.model_name, pretrained=False,
                          num_classes=1000).eval().cuda()
 
-    macs, params = profile(model, (torch.randn(1, 3, 224, 224).cuda(), ),
-                           custom_ops=custom_modules_hooks,
-                           verbose=False)
+    # macs, params = profile(model, (torch.randn(1, 3, 224, 224).cuda(), ),
+    #                        custom_ops=custom_modules_hooks,
+    #                        verbose=False)
 
-    macs = str(round(macs / 10.**9, 2))
-    params = str(round(params / 10**6, 2))
-    print(f"{args.model_name}: MACs {macs}G, Params {params}M")
+    # macs = str(round(macs / 10.**9, 2))
+    # params = str(round(params / 10**6, 2))
+    # print(f"{args.model_name}: MACs {macs}G, Params {params}M")
+    print(hasattr(model, 'label_map'))
 
 
 if __name__ == '__main__':

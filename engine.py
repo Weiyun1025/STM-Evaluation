@@ -172,7 +172,8 @@ def evaluate(data_loader, model, device, use_amp=False):
             output = model(images)
             loss = criterion(output, target)
 
-        if hasattr(model.module, 'label_map'):
+        temp_model = model.module if hasattr(model, 'module') else model
+        if hasattr(temp_model, 'label_map'):
             output = output[:, model.module.label_map]
 
         acc1, acc5 = accuracy(output, target, topk=(1, 5))

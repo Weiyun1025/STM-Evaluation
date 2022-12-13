@@ -9,7 +9,7 @@ wandb
 object_detection
 semantic_segmentation
 
-# shimin add, omitting training outputs
+# omitting training outputs
 outputs/*
 backbone_outputdir/*
 batchscript-*
@@ -23,6 +23,6 @@ ops/MultiScaleDeformableAttention.egg-info
 ops/dist
 
 shells/22k_pretrain/sm_shell/*
-
+shells/1k_pretrain/sm_shell/*
 
 !.gitignore

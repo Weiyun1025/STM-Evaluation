@@ -335,6 +335,10 @@ def main(args):
             decay=args.model_ema_decay,
             device='cpu' if args.model_ema_force_cpu else '',
             resume='')
+        
+        if hasattr(model, 'label_map'):
+            model_ema.label_map = model.label_map
+
         print("Using EMA with decay = %.8f" % args.model_ema_decay)
 
     model_without_ddp = model

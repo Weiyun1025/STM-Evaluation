@@ -101,7 +101,7 @@ def unified_dcn_v3_base(pretrained=False, **kwargs):
 @register_model
 def unified_dcn_v3_large(pretrained=False, **kwargs):
     dims = [160 * 2 ** i for i in range(4)]
-    depths = [5, 5, 21, 5]
+    depths = [5, 5, 22, 5]
     num_heads = [10, 20, 40, 80]
     deform_points = 9
     deform_padding = True
