@@ -4,6 +4,7 @@ import torch.utils.checkpoint as cp
 
 from torch import nn
 from timm.models.layers import to_2tuple, trunc_normal_
+from .blocks.pvt import PvtBlock
 
 
 class LayerNorm2d(nn.LayerNorm):
@@ -267,6 +268,12 @@ class MetaArch(nn.Module):
                     with open(self.label_map_path, 'r', encoding='utf-8') as file:
                         label_map = [int(i) for i in file.readlines()]
                     value = value[label_map]
+
+            if self.block_type is PvtBlock and 'pos_embed' in key:
+                value = F.interpolate(value,
+                                      size=self.state_dict()[key].shape[-2:],
+                                      mode='bilinear',
+                                      align_corners=True)
 
             new_state_dict[key] = value
 
