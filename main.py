@@ -157,7 +157,7 @@ def get_args_parser():
     parser.add_argument('--model_prefix', default='', type=str)
 
     # Dataset parameters
-    parser.add_argument('--data_path', default='./minidata', type=str,
+    parser.add_argument('--data_path', default='s3://openmmlab/datasets/classification/imagenet', type=str,
                         help='dataset path')
     parser.add_argument('--eval_data_path', default=None, type=str,
                         help='dataset path for evaluation')

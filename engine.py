@@ -157,8 +157,8 @@ def evaluate(data_loader, model, device, use_amp=False):
     # switch to evaluation mode
     model.eval()
     for batch in metric_logger.log_every(data_loader, 10, header):
-        images = batch[0]
-        target = batch[-1]
+        images = batch[0]   # bsz, 3, h, w
+        target = batch[-1]  # bsz
 
         images = images.to(device, non_blocking=True)
         target = target.to(device, non_blocking=True)

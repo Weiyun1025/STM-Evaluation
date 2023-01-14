@@ -18,7 +18,8 @@ from timm.data.constants import \
 from timm.data import create_transform
 
 import mmcv
-from mmcv.fileio import FileClient
+# from mmcv.fileio import FileClient
+from mmengine.fileio import FileClient, list_from_file
 import json
 from PIL import Image
 from abc import abstractmethod
@@ -281,8 +282,7 @@ class ParserCephImage(Parser):
         else:
             self.io_backend = 'petrel' if root.startswith('s3') else 'disk'
             self.class_to_idx = None
-            with open(osp.join(annotation_root, f'{split}.txt'), 'r') as f:
-                self.samples = f.read().splitlines()
+            self.samples = list_from_file(osp.join(annotation_root, f'{split}.txt'))
 
         # if label_map_path:
         #     self.label_mapper = {}
