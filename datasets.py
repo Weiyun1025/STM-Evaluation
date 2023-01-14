@@ -279,7 +279,7 @@ class ParserCephImage(Parser):
             with open(sample_path, 'r') as f:
                 self.samples = f.read().splitlines()
         else:
-            self.io_backend = 'disk'
+            self.io_backend = 'petrel' if root.startswith('s3') else 'disk'
             self.class_to_idx = None
             with open(osp.join(annotation_root, f'{split}.txt'), 'r') as f:
                 self.samples = f.read().splitlines()
